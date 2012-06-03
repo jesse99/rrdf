@@ -6,3 +6,15 @@
 #[doc = "Resource Description Language (RDF) library"];
 
 use std;
+
+mod query;
+mod sparql;
+
+#[cfg(test)]
+mod tests
+{
+	mod test_data;
+	mod test_helpers;
+	mod test_sparql;
+}
+

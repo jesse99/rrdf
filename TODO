@@ -4,17 +4,20 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 // object can be a bag, seq, or alt container of values
 // value literals are a string+type		http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes
 
-* Create some query functions modeled after sparql:
-	- need a way to match subject and/or predicate
-	- need to be able to match start, in, or end of subject
-	- need a way to specify which predicates to return
-	- how are they returned? hashmap of vectors? can we return something sendable?
+* Work on sparql support:
+	- get the simplest possible query working
+	- probably want to use queries from w3c tests
+	- get enough working for current needs
+* May want to update readme.
 * See if we can do a better job now with stuff like date.
 * Add a sparql parser:
 	- don't need the full thing for now
 
 * Get the types setup.
 	- rename predicate relation?
+* Run the w3c tests:
+	- http://www.w3.org/2009/sparql/docs/tests/
+	- will need a turtle parser
 * IRIs must be absolute (i.e. they must have a scheme name followed by a colon).
 * Language tags must be non-empty and normalized to lower case.
 * Should we have primitive or functions like get_i32_value?
@@ -73,7 +76,7 @@ if distinct bindings are used then the unmatched binding won't have a value
 
 ORDERBY ?x ?y	sort results
 DISTINCT			don't return duplicate rows
-OFFSET/LIMIT		slice results
+OFFSET/LIMIT	slice results
 ASK				return true/false instead of matches/no matches
 	
 STRSTARTS

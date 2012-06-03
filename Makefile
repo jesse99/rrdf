@@ -8,8 +8,11 @@ dummy1 := $(shell mkdir bin 2> /dev/null)
 # Primary targets
 all: lib
 
-#check: bin/test-rrest
-#	export RUST_LOG=rrest=1,rparse=1 && ./bin/test-rrest
+check: bin/test-rrdf
+	export RUST_LOG=rrdf=2,rparse=1 && ./bin/test-rrdf
+
+check1: bin/test-rrdf
+	export RUST_LOG=rrdf=2,rparse=1 && ./bin/test-rrdf something
 
 # Better to use /usr/local/lib but linking it in with -L /usr/local/lib fails because
 # there is a libccore there and in the nested rustc directory.
@@ -28,5 +31,5 @@ install: lib
 lib:
 	$(RUSTC) --out-dir bin -O src/rrdf.rc
 
-#bin/test-rrest: src/rrest.rc src/*.rs
-#	$(RUSTC) -g -L /usr/lib --test -o $@ $<
+bin/test-rrdf: src/rrdf.rc src/*.rs src/tests/*.rs
+	$(RUSTC) -g -L bin --test -o $@ $<
