@@ -1,7 +1,12 @@
 import io;
 import io::writer_util;
 
-export check_result;
+export ref_uri_str, check_result;
+
+fn ref_uri_str(subject: str, property: str, object: str) -> [option<object>]
+{
+	[option::some(reference(iri(subject))), option::some(anyURI(property)), option::some(string(object))]
+}
 
 fn check_result(triples: [triple], expr: str, expected: query::result) -> bool
 {

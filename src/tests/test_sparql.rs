@@ -1,7 +1,4 @@
-fn str_spo(subject: str, property: str, object: str) -> [option<object>]
-{
-	[option::some(reference(iri(subject))), option::some(anyURI(property)), option::some(string(object))]
-}
+import test_helpers::*;
 
 #[test]
 fn trivial()
@@ -9,11 +6,11 @@ fn trivial()
 	let expr = "SELECT ?s ?p ?o WHERE {?s ?p ?o}";
 	let triples = test_data::got_cast1();
 	let expected = {names: ["s", "p", "o"], rows: [
-		str_spo("got:Eddard_Stark", "v:fn", "Eddard_Stark"), 
-		str_spo("got:Eddard_Stark", "v:nickname", "Ned")
+		ref_uri_str("got:Eddard_Stark", "v:fn", "Eddard_Stark"), 
+		ref_uri_str("got:Eddard_Stark", "v:nickname", "Ned")
 	]};
 	
-	assert test_helpers::check_result(triples, expr, expected);
+	assert check_result(triples, expr, expected);
 }
 
 // TODO:
