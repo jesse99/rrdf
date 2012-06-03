@@ -1,7 +1,18 @@
+http://www.w3.org/TR/sparql11-query/
+http://jena.sourceforge.net/ARQ/Tutorial/index.html
+
 // object can be a bag, seq, or alt container of values
 // value literals are a string+type		http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes
 
-* Need to push this to github.
+* Create some query functions modeled after sparql:
+	- need a way to match subject and/or predicate
+	- need to be able to match start, in, or end of subject
+	- need a way to specify which predicates to return
+	- how are they returned? hashmap of vectors? can we return something sendable?
+* See if we can do a better job now with stuff like date.
+* Add a sparql parser:
+	- don't need the full thing for now
+
 * Get the types setup.
 	- rename predicate relation?
 * IRIs must be absolute (i.e. they must have a scheme name followed by a colon).
@@ -34,14 +45,37 @@ http://schemapedia.com/
 
 
 
-#[doc = "Maps a primitive value to the IRI for its type."]
-fn primitive_to_iri(value: primitive) -> iri
-{
-	alt value
-	{
-		xml_P(_)		{'http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral'}
-		string_P(_)	{'http://www.w3.org/2001/XMLSchema#string'}	// or xsd:string
-		// TODO: add the rest
-	}
-}
+SELECT ?x
+WHERE {subject predicate object}
 
+can use ?x to name a wildcard argument
+IRIs appear as <http://foo/bar#blah>
+strings as "foo"
+
+WHERE can have multiple patterns
+matches triples that match all the patterns
+variable matches must match the same value
+
+pattern can be appended with FILTER
+FILTER regex(?x, "foo|bar") filters out triples that aren't foo/bar
+FILTER NOT EXISTS {pattern} filters out triples that match pattern
+FILTER EXISTS {pattern} filters out triples that don't match pattern
+	does not add bindings (tho they nay be used)
+FILTER (?age >= 24)
+
+OPTIONAL {pattern}
+adds a binding
+binding may not actually have a value
+
+pattern UNION pattern
+returns triples that match either pattern
+if distinct bindings are used then the unmatched binding won't have a value
+
+ORDERBY ?x ?y	sort results
+DISTINCT			don't return duplicate rows
+OFFSET/LIMIT		slice results
+ASK				return true/false instead of matches/no matches
+	
+STRSTARTS
+STRENDS
+CONTAINS
