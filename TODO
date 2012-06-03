@@ -1,0 +1,47 @@
+// object can be a bag, seq, or alt container of values
+// value literals are a string+type		http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes
+
+* Need to push this to github.
+* Get the types setup.
+	- rename predicate relation?
+* IRIs must be absolute (i.e. they must have a scheme name followed by a colon).
+* Language tags must be non-empty and normalized to lower case.
+* Should we have primitive or functions like get_i32_value?
+* Triple equality:
+	- http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830/#section-IRIs
+	- http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830/#section-Literal-Equality
+* Should support CURIEs
+	- http://www.w3.org/TR/2011/WD-rdf-interfaces-20110510/#terms--prefixes-and-profiles
+* Maybe want a (mutable) hashmap based tiplet store
+	- subject => [(relation, object)]
+	- http://www.w3.org/TR/2011/WD-rdf-interfaces-20110510/#graphs
+* Will need a way to merge two triple sets
+	- need to fixup blank nodes
+* Might want a graph type, possibly based on a (hidden) hashset
+* Maybe add some query methods
+	- see http://en.wikipedia.org/wiki/Resource_Description_Framework#Query_and_inference_languages
+* Add a turtle parser.
+
+http://www.w3.org/TR/2004/REC-rdf-primer-20040210
+http://www.w3.org/TR/2011/WD-turtle-20110809
+http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830	1.1 version
+http://www.w3.org/TR/2004/REC-rdf-concepts-20040210		1.0 version
+http://www.w3.org/TR/2004/REC-rdf-mt-20040210			semantics
+
+http://schemapedia.com/
+
+/Users/jessejones/Documents/Developer/rust.rtf
+
+
+
+#[doc = "Maps a primitive value to the IRI for its type."]
+fn primitive_to_iri(value: primitive) -> iri
+{
+	alt value
+	{
+		xml_P(_)		{'http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral'}
+		string_P(_)	{'http://www.w3.org/2001/XMLSchema#string'}	// or xsd:string
+		// TODO: add the rest
+	}
+}
+

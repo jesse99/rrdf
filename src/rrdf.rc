@@ -1,0 +1,8 @@
+#[link(name = "rrdf", vers = "0.1", uuid = "04400014-FB9C-44DD-B5DD-A49BE5613BD7")];
+#[crate_type = "lib"];
+
+#[author = "Jesse Jones"];
+#[license = "MIT"];
+#[doc = "Resource Description Language (RDF) library"];
+
+use std;
