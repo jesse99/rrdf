@@ -9,10 +9,15 @@ dummy1 := $(shell mkdir bin 2> /dev/null)
 all: lib
 
 check: bin/test-rrdf
-	export RUST_LOG=rrdf=2,rparse=1 && ./bin/test-rrdf
+	export RUST_LOG=rrdf=1,rparse=1 && ./bin/test-rrdf
 
 check1: bin/test-rrdf
-	export RUST_LOG=rrdf=2,rparse=1 && ./bin/test-rrdf something
+	export RUST_LOG=rrdf=2,rparse=1 && ./bin/test-rrdf trivial
+
+# You can either use this target (assuming that the libraries are in /usr/local/lib/rust)
+# or install them via cargo.
+update-libraries:
+	cp /usr/local/lib/rust/librparse-*-0.3.dylib bin
 
 # Better to use /usr/local/lib but linking it in with -L /usr/local/lib fails because
 # there is a libccore there and in the nested rustc directory.
