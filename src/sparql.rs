@@ -5,9 +5,10 @@ import query::*;
 
 export compile;
 
-fn find_dupes(in_names: [str]) -> [str]
+fn find_dupes(names: [str]) -> [str]
 {
-	let names = std::sort::merge_sort({|x, y| x <= y}, in_names);
+	let names = std::sort::merge_sort({|x, y| x <= y}, names);
+	
 	let mut dupes = [];
 	
 	for vec::eachi(names)
@@ -21,23 +22,82 @@ fn find_dupes(in_names: [str]) -> [str]
 	ret dupes;
 }
 
+fn match_string_body_char(input: [char], i: uint, quote: char) -> uint
+{
+	let ch = input[i] as char;
+	
+	if ch == '\\' && option::is_some(str::find_char("tbnrf\"'", input[i+1u] as char))	// input ends with EOT so we don't need a range check here
+	{
+		// [150] ECHAR ::= '\' [tbnrf"']
+		2u
+	}
+	else if ch != quote && ch != '\\' && ch != '\r' && ch != '\n' && ch != EOT
+	{
+		// [^#x22#x5C#xA#xD] or [^#x27#x5C#xA#xD]
+		1u
+	}
+	else
+	{
+		0u
+	}
+}
+
+fn match_string_body(quote: char) -> parser<str>
+{
+	{|input: state|
+		let mut i = input.index;
+		loop
+		{
+			let delta = match_string_body_char(input.text, i, quote);
+			if delta > 0u
+			{
+				i += delta;
+			}
+			else
+			{
+				break;
+			}
+		}
+		
+		let text = str::from_chars(vec::slice(input.text, input.index, i));
+		log_ok("match_string_body", input, {new_state: {index: i with input}, value: text})
+	}
+}
+
 // http://www.w3.org/TR/sparql11-query/#grammar
 fn make_parser() -> parser<selector>
 {
 	// [156] VARNAME ::= ( PN_CHARS_U | [0-9] ) ( PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040] )*
 	let VARNAME = identifier().space0();
 	
+	// [147] STRING_LITERAL2 ::= '"' ( ([^#x22#x5C#xA#xD]) | ECHAR )* '"'
+	let STRING_LITERAL2 = sequence3(literal("\""), match_string_body('"'), literal("\""))
+		{|_l, s, _r| result::ok(string_literal(s))};
+	
+	// [146] STRING_LITERAL1 ::= "'" ( ([^#x27#x5C#xA#xD]) | ECHAR )* "'"
+	let STRING_LITERAL1 = sequence3(literal("'"), match_string_body('\''), literal("'"))
+		{|_l, s, _r| result::ok(string_literal(s))};
+	
 	// [133] VAR1 ::= '?' VARNAME
 	let VAR1 = sequence2(literal("?").space0(), VARNAME)
-		{|_l, name| result::ok(name)};
+		{|_l, name| result::ok(variable(name))};
+		
+	// [125] String ::= STRING_LITERAL1 | STRING_LITERAL2 | STRING_LITERAL_LONG1 | STRING_LITERAL_LONG2
+	let String = STRING_LITERAL1.or(STRING_LITERAL2);
+		
+	// [119] RDFLiteral ::= String ( LANGTAG | ( '^^' IRIref ) )?
+	let RDFLiteral = String;
+		
+	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral |	BooleanLiteral |	BlankNode |	NIL
+	let GraphTerm = RDFLiteral;
 	
 	// [98] Var ::= VAR1 | VAR2
 	let Var = VAR1;
 	
 	// [96] VarOrTerm ::= Var | GraphTerm
-	let VarOrTerm = Var;
+	let VarOrTerm = Var.or(GraphTerm);
 	
-	// [95] GraphNode ::= VarOrTerm |	TriplesNode
+	// [95] GraphNode ::= VarOrTerm | TriplesNode
 	let GraphNode = VarOrTerm;
 	
 	// [81] VerbSimple ::= Var
@@ -51,11 +111,11 @@ fn make_parser() -> parser<selector>
 	
 	// [78] PropertyListNotEmptyPath	::= (VerbPath | VerbSimple) ObjectList ( ';' ( ( VerbPath | VerbSimple ) ObjectList )? )*
 	let PropertyListNotEmptyPath= sequence2(VerbSimple, ObjectList)
-		{|prop, object| result::ok([variable_property(prop), variable_object(object)])};
+		{|prop, object| result::ok([match_property(prop), match_object(object)])};
 		
 	// [77] TriplesSameSubjectPath ::= VarOrTerm PropertyListNotEmptyPath | TriplesNode PropertyListPath 
 	let TriplesSameSubjectPath = sequence2(VarOrTerm, PropertyListNotEmptyPath)
-		{|subject, plist| result::ok([variable_subject(subject), plist[0], plist[1]])};
+		{|subject, plist| result::ok([match_subject(subject), plist[0], plist[1]])};
 		
 	// [56] TriplesBlock ::= TriplesSameSubjectPath ( '.' TriplesBlock? )?
 	let TriplesBlock = TriplesSameSubjectPath;
@@ -78,6 +138,9 @@ fn make_parser() -> parser<selector>
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = sequence2(SelectClause, WhereClause)
 		{|names, matchers|
+			let variables = vec::filter(names) {|p| alt p {variable(_l) {true} _ {false}}};
+			let names = vec::map(variables) {|p| alt p {variable(n) {n} _ {fail}}};
+			
 			let dupes = find_dupes(names);
 			if vec::is_empty(dupes)
 			{

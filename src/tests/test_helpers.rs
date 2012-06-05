@@ -1,16 +1,21 @@
 import io;
 import io::writer_util;
 
-export ref_uri_none, ref_uri_str, check_ok, check_err;
+export ref_uri, ref_uri_none, ref_uri_str, check_ok, check_err;
 
-fn ref_uri_none(subject: str, property: str) -> [option<object>]
+fn ref_uri(r: str, u: str) -> [option<object>]
 {
-	[option::some(reference(iri(subject))), option::some(anyURI(property)), option::none]
+	[option::some(reference(iri(r))), option::some(anyURI(u))]
 }
 
-fn ref_uri_str(subject: str, property: str, object: str) -> [option<object>]
+fn ref_uri_none(r: str, u: str) -> [option<object>]
 {
-	[option::some(reference(iri(subject))), option::some(anyURI(property)), option::some(string(object))]
+	[option::some(reference(iri(r))), option::some(anyURI(u)), option::none]
+}
+
+fn ref_uri_str(r: str, u: str, s: str) -> [option<object>]
+{
+	[option::some(reference(iri(r))), option::some(anyURI(u)), option::some(string(s))]
 }
 
 fn check_ok(triples: [triple], expr: str, expected: query::solution) -> bool

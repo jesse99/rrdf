@@ -57,7 +57,24 @@ fn unbound_variable()
 	assert check_ok(triples, expr, expected);
 }
 
+#[test]
+fn string_match()
+{
+	let expr = "SELECT ?s ?p WHERE {?s ?p \"Ned\"}";
+	let triples = test_data::got_cast1();
+	let expected = {names: ["s", "p"], rows: [
+		ref_uri("got:Eddard_Stark", "v:nickname")
+	]};
+	
+	assert check_ok(triples, expr, expected);
+}
+
 // TODO:
-// test string literal pattern
-// test int literal pattern
 // test no matches
+// long string literals
+// iri literals
+// int literal
+// float literal
+// boolean literal
+// NIL literal
+// might want a test_literals.rs file

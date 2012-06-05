@@ -5,33 +5,84 @@ import std::map::hashmap;
 type solution = {names: [str], rows: [[core::option::option<object>]]};	// len(names) == len(rows[x])
 
 type binding = {name: str, value: option<object>};
-type match = core::either::either<[binding], bool>;			// match succeeded if bindings or true
+type match = core::either::either<[binding], bool>;				// match succeeded if bindings or true
 type matcher = fn@ (triple) -> match;
 
-type selector = fn@ ([triple]) -> result::result<solution, str>;
+type selector = fn@ ([triple]) -> result::result<solution, str>;	// returns a solution or an error
 
-fn variable_subject(name: str) -> matcher
+enum pattern
+{
+	variable(str),
+	string_literal(str)
+}
+
+fn match_subject(pattern: pattern) -> matcher
 {
 	{|triplet: triple|
 		let s = triplet.subject;
-		let b = {name: name, value: some(reference(s))};
-		core::either::left([b])
+		
+		alt pattern
+		{
+			variable(name)
+			{
+				let b = {name: name, value: some(reference(s))};
+				core::either::left([b])
+			}
+			string_literal(text)
+			{
+				core::either::right(text == s.to_str())
+			}
+		}
 	}
 }
 
-fn variable_property(name: str) -> matcher
+fn match_property(pattern: pattern) -> matcher
 {
 	{|triplet: triple|
-		let b = {name: name, value: some(anyURI(triplet.property))};
-		core::either::left([b])
+		let p = triplet.property;
+		
+		alt pattern
+		{
+			variable(name)
+			{
+				let b = {name: name, value: some(anyURI(p))};
+				core::either::left([b])
+			}
+			string_literal(text)
+			{
+				core::either::right(text == p)
+			}
+		}
 	}
 }
 
-fn variable_object(name: str) -> matcher
+fn match_object(pattern: pattern) -> matcher
 {
 	{|triplet: triple|
-		let b = {name: name, value: some(triplet.object)};
-		core::either::left([b])
+		let o = triplet.object;
+		
+		alt pattern
+		{
+			variable(name)
+			{
+				let b = {name: name, value: some(triplet.object)};
+				core::either::left([b])
+			}
+			string_literal(text)
+			{
+				alt o
+				{
+					string(s)
+					{
+						core::either::right(text == s)
+					}
+					_
+					{
+						core::either::right(false)
+					}
+				}
+			}
+		}
 	}
 }
 
