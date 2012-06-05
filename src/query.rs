@@ -8,7 +8,7 @@ type binding = {name: str, value: option<object>};
 type match = core::either::either<[binding], bool>;			// match succeeded if bindings or true
 type matcher = fn@ (triple) -> match;
 
-type selector = fn@ ([triple]) -> solution;
+type selector = fn@ ([triple]) -> result::result<solution, str>;
 
 fn variable_subject(name: str) -> matcher
 {
@@ -59,7 +59,17 @@ fn select(names: [str], matchers: [matcher]) -> selector
 							{
 								option::some(index)
 								{
-									row[index] = binding.value;
+									if row[index] == option::none
+									{
+										row[index] = binding.value;
+									}
+									else
+									{
+										// Spec isn't clear what the semantics of this should be, but it seems
+										// likely to be, at best, confusing and normally a bug so we'll call it
+										// an error for now.
+										ret result::err(#fmt["Binding %s was set more than once.", binding.name]);
+									}
 								}
 								option::none
 								{
@@ -89,6 +99,6 @@ fn select(names: [str], matchers: [matcher]) -> selector
 			}
 		};
 		
-		{names: names, rows: rows}
+		result::ok({names: names, rows: rows})
 	}
 }

@@ -5,6 +5,22 @@ import query::*;
 
 export compile;
 
+fn find_dupes(in_names: [str]) -> [str]
+{
+	let names = std::sort::merge_sort({|x, y| x <= y}, in_names);
+	let mut dupes = [];
+	
+	for vec::eachi(names)
+	{|i, name|
+		if i+1u < vec::len(names) && name == names[i+1u] && !vec::contains(dupes, name)
+		{
+			vec::push(dupes, name);
+		}
+	};
+	
+	ret dupes;
+}
+
 // http://www.w3.org/TR/sparql11-query/#grammar
 fn make_parser() -> parser<selector>
 {
@@ -52,16 +68,26 @@ fn make_parser() -> parser<selector>
 		{|_l, matchers, _r| result::ok(matchers)};
 	
 	// [17] WhereClause ::= 'WHERE'? GroupGraphPattern
-	let WhereClause = sequence2((literal("WHERE").space0()).optional("_"), GroupGraphPattern)
+	let WhereClause = sequence2((literali("WHERE").space0()).optional("_"), GroupGraphPattern)
 		{|_l, matchers| result::ok(matchers)};
 	
 	// [9] SelectClause ::= 'SELECT' ( 'DISTINCT' | 'REDUCED' )? ( ( Var | ( '(' Expression 'AS' Var ')' ) )+ | '*' )
-	let SelectClause = sequence2(literal("SELECT").space0(), Var.repeat1("Variable's"))
+	let SelectClause = sequence2(literali("SELECT").space0(), Var.repeat1("Variable's"))
 		{|_l, names| result::ok(names)};
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = sequence2(SelectClause, WhereClause)
-		{|names, matchers| result::ok(select(names, matchers))};
+		{|names, matchers|
+			let dupes = find_dupes(names);
+			if vec::is_empty(dupes)
+			{
+				result::ok(select(names, matchers))
+			}
+			else
+			{
+				result::err(#fmt["Select clause has duplicates: %s", str::connect(dupes, " ")])
+			}
+		};
 	
 	// [2] Query ::= Prologue ( SelectQuery | ConstructQuery | DescribeQuery | AskQuery ) BindingsClause
 	let Query = SelectQuery;

@@ -7,7 +7,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 * Work on sparql support:
 	- get the simplest possible query working
 	- probably want to use queries from w3c tests
-	- get enough working for current needs
+	- make sure that the feature we have an immediate need for are all supported
 * May want to update readme.
 * See if we can do a better job now with stuff like date.
 * Add a sparql parser:
