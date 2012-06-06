@@ -1,7 +1,7 @@
 import io;
 import io::writer_util;
 
-export ref_uri, ref_uri_none, ref_uri_str, check_ok, check_err;
+export ref_uri, ref_uri_none, ref_uri_str, str_ref_uri, check_ok, check_err;
 
 fn ref_uri(r: str, u: str) -> [option<object>]
 {
@@ -16,6 +16,11 @@ fn ref_uri_none(r: str, u: str) -> [option<object>]
 fn ref_uri_str(r: str, u: str, s: str) -> [option<object>]
 {
 	[option::some(reference(iri(r))), option::some(anyURI(u)), option::some(string(s))]
+}
+
+fn str_ref_uri(s: str, r: str, u: str) -> [option<object>]
+{
+	[option::some(string(s)), option::some(reference(iri(r))), option::some(anyURI(u))]
 }
 
 fn check_ok(triples: [triple], expr: str, expected: query::solution) -> bool

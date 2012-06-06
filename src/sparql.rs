@@ -161,7 +161,7 @@ fn make_parser() -> parser<selector>
 	ret QueryUnit;
 }
 
-#[doc = "Return either a function capable of matching triples or a parse error.
+#[doc = "Returns either a function capable of matching triples or a parse error.
 
 Expr can be a subset of http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"SPARQL\"."]
 fn compile(expr: str) -> result::result<selector, str>

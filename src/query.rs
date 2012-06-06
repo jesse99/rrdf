@@ -2,10 +2,13 @@
 // then creating a selector function using the select function.
 import std::map::hashmap;
 
-type solution = {names: [str], rows: [[core::option::option<object>]]};	// len(names) == len(rows[x])
+#[doc = "Names appear in the same order as the variables in the SELECT clause.
+
+Each returned row will name (len(names) columns."]
+type solution = {names: [str], rows: [[option<object>]]};
 
 type binding = {name: str, value: option<object>};
-type match = core::either::either<[binding], bool>;				// match succeeded if bindings or true
+type match = either::either<[binding], bool>;					// match succeeded if bindings or true
 type matcher = fn@ (triple) -> match;
 
 type selector = fn@ ([triple]) -> result::result<solution, str>;	// returns a solution or an error

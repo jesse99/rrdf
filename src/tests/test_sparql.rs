@@ -14,6 +14,32 @@ fn trivial()
 }
 
 #[test]
+fn out_of_order()
+{
+	let expr = "SELECT ?o ?s ?p WHERE {?s ?p ?o}";
+	let triples = test_data::got_cast1();
+	let expected = {names: ["o", "s", "p"], rows: [
+		str_ref_uri("Eddard Stark", "got:Eddard_Stark", "v:fn"),
+		str_ref_uri("Ned", "got:Eddard_Stark", "v:nickname")
+	]};
+	
+	assert check_ok(triples, expr, expected);
+}
+
+#[test]
+fn long_names()
+{
+	let expr = "SELECT ?subject ?p ?obj WHERE {?subject ?p ?obj}";
+	let triples = test_data::got_cast1();
+	let expected = {names: ["subject", "p", "obj"], rows: [
+		ref_uri_str("got:Eddard_Stark", "v:fn", "Eddard Stark"),
+		ref_uri_str("got:Eddard_Stark", "v:nickname", "Ned")
+	]};
+	
+	assert check_ok(triples, expr, expected);
+}
+
+#[test]
 fn keyword_case()
 {
 	let expr = "SeLecT ?s ?p ?o where {?s ?p ?o}";
@@ -70,11 +96,18 @@ fn string_match()
 }
 
 // TODO:
+// add expr_type enum: string_type, unsupported_type(mesg), incompatible_type(mesg)
+// add get_str_value(o)-> (value, languge)
+// instead of string_literal may want literal(object)
+// typed literal where type is xsd:string counts as a string
+// plain literal counts as a string (but for equality languages must match)
 // test no matches
 // long string literals
 // iri literals
-// int literal
+// int literal (will need to type this as numeric because there are no conversion functions other than STR)
 // float literal
 // boolean literal
 // NIL literal
+// maybe datetime literals
+// would it make sense to use NIL instead of option::none?
 // might want a test_literals.rs file
