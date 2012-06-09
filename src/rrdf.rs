@@ -21,9 +21,6 @@ enum subject
 * reference identifies a subject.
 * typed_literal is an arbitrary lexical value along with an IRI for its type.
 * plain_literal is a string along with a language tag (e.g. \"en-us\") See http://tools.ietf.org/html/bcp47 \"Tags for Identifying Languages\".
-* seq is sequentially ordered list of objects, possibly containing duplicates.
-* bag is an un-ordered list of objects, possibly containing duplicates.
-* alt is a list of alternative values (e.g. of download servers).
 * xml is embedded xml, see: http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830/#dfn-rdf-xmlliteral.
 * The rest are primitive values based on the http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"XML Schema\".
 "]
@@ -32,9 +29,6 @@ enum object
 	reference(subject),
 	typed_literal(str, iri),
 	plain_literal(str, str),
-	seq([object]),
-	bag([object]),
-	alt_([object]),
 	xml(str),
 	
 	string(str),				// character strings
@@ -42,8 +36,8 @@ enum object
 	
 	decimal(str),				// arbitrary precision floating-point number, TODO: use a better type value
 	integer(str),				// arbitrary precision integral number, TODO: use a better type value
-	nonPositiveInteger(str),	// integer that cannot have negative values
-	nonNegativeInteger(str),// integer that cannot have positive values
+	nonPositiveInteger(str),	// integer that cannot have positive values
+	nonNegativeInteger(str),// integer that cannot have negative values
 	long(i64),					// 64-bit integer
 	int(i32),					// 32-bit integer
 	short(i16),				// 16-bit integer
@@ -104,9 +98,6 @@ impl of to_str for object
 			reference(v)			{v.to_str()}
 			typed_literal(v, t)	{#fmt["(%s, %s)", v, t.to_str()]}
 			plain_literal(v, t)		{#fmt["(%s, %s)", v, t]}
-			seq(v)					{"[" + str::connect(vec::map(v, {|o| o.to_str()}), ", ") + "]"}
-			bag(v)					{"{" + str::connect(vec::map(v, {|o| o.to_str()}), ", ") + "}"}
-			alt_(v)					{"[" + str::connect(vec::map(v, {|o| o.to_str()}), " | ") + "]"}
 			
 			xml(v)			{v}
 			string(v)		{#fmt["\"%s\"", v]}
