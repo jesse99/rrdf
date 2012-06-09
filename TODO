@@ -4,10 +4,18 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 // object can be a bag, seq, or alt container of values
 // value literals are a string+type		http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes
 
+enum expr_type 
+{
+	string_type,
+	unsupported_type(str),		// an object type with no operators/functions
+	incompatible_type(str)		// an operator/function which was invoked with incompatible arguments
+}
+
 * Work on sparql support:
-	- get the simplest possible query working
-	- probably want to use queries from w3c tests
 	- make sure that the feature we have an immediate need for are all supported
+	- 1402 has a nav example
+		` apply second rule to results of the first rule?
+	- can do queries with http://dbpedia.org/sparql
 * May want to update readme.
 * See if we can do a better job now with stuff like date.
 * Add a sparql parser:

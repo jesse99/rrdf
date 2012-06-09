@@ -95,12 +95,29 @@ fn string_match()
 	assert check_ok(triples, expr, expected);
 }
 
+fn fancy_types() -> [triple]
+{
+	[
+		{subject: iri("x:Hans"), property: "x:greeting", object: plain_literal("guten tag", "de")},
+		{subject: iri("x:Jones"), property: "x:greeting", object: plain_literal("guten tag", "en-US")}
+	]
+}
+
+#[test]
+fn language_tags()
+{
+	let expr = "SELECT ?s WHERE {?s ?p \"guten tag\"@en-US}";
+	let triples = fancy_types();
+	let expected = {names: ["s"], rows: [
+		[option::some(reference(iri("x:Jones")))]
+	]};
+	
+	assert check_ok(triples, expr, expected);
+}
+
 // TODO:
-// add expr_type enum: string_type, unsupported_type(mesg), incompatible_type(mesg)
-// add get_str_value(o)-> (value, languge)
-// instead of string_literal may want literal(object)
-// typed literal where type is xsd:string counts as a string
-// plain literal counts as a string (but for equality languages must match)
+// support the tagged version of RDFLiteral
+// do a commit and push
 // test no matches
 // long string literals
 // iri literals

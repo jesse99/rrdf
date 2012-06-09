@@ -1,6 +1,4 @@
 import rparse::*;
-import rparse::misc::*;
-import rparse::types::*;
 import query::*;
 
 export compile;
@@ -23,7 +21,7 @@ fn find_dupes(names: [str]) -> [str]
 }
 
 fn match_string_body_char(input: [char], i: uint, quote: char) -> uint
-{
+{ 
 	let ch = input[i] as char;
 	
 	if ch == '\\' && option::is_some(str::find_char("tbnrf\"'", input[i+1u] as char))	// input ends with EOT so we don't need a range check here
@@ -64,29 +62,72 @@ fn match_string_body(quote: char) -> parser<str>
 	}
 }
 
+pure fn is_langtag_prefix(ch: char) -> bool
+{
+	ret is_alpha(ch);
+}
+
+pure fn is_langtag_suffix(ch: char) -> bool
+{
+	ret is_langtag_prefix(ch) || is_digit(ch);
+}
+
+fn langtag() -> parser<str>
+{
+	let at = "@".lit();													// '@'
+	let prefix = match1(is_langtag_prefix).tag("Expected language");	// [a-zA-Z]+
+	let suffix = seq2("-".lit(), match1(is_langtag_suffix).tag("Expected language"))
+		{|_l, name| result::ok("-" + name)};
+	let suffixes = suffix.r0();											// ('-' [a-zA-Z0-9]+)*
+	
+	seq3(at, prefix, suffixes)
+		{|_l, p, s| result::ok(p + str::connect(s, ""))}
+}
+
 // http://www.w3.org/TR/sparql11-query/#grammar
 fn make_parser() -> parser<selector>
 {
 	// [156] VARNAME ::= ( PN_CHARS_U | [0-9] ) ( PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040] )*
-	let VARNAME = identifier().space0();
+	let VARNAME = identifier().s0();
 	
 	// [147] STRING_LITERAL2 ::= '"' ( ([^#x22#x5C#xA#xD]) | ECHAR )* '"'
-	let STRING_LITERAL2 = sequence3(literal("\""), match_string_body('"'), literal("\""))
-		{|_l, s, _r| result::ok(string_literal(s))};
+	let STRING_LITERAL2 = seq3_ret1("\"".lit(), match_string_body('"'), "\"".lit());
 	
 	// [146] STRING_LITERAL1 ::= "'" ( ([^#x27#x5C#xA#xD]) | ECHAR )* "'"
-	let STRING_LITERAL1 = sequence3(literal("'"), match_string_body('\''), literal("'"))
-		{|_l, s, _r| result::ok(string_literal(s))};
+	let STRING_LITERAL1 = seq3_ret1("'".lit(), match_string_body('\''), "'".lit());
+		
+	// [135] LANGTAG ::= '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
+	let LANGTAG = langtag();
 	
 	// [133] VAR1 ::= '?' VARNAME
-	let VAR1 = sequence2(literal("?").space0(), VARNAME)
-		{|_l, name| result::ok(variable(name))};
+	let VAR1 = seq2_ret1("?".lit().s0(), VARNAME).thene({|v| return(variable((v)))});
+	
+	// [163] PN_LOCAL_ESC ::=  '\' ( '_' | '~' | '.' | '-' | '!' | '$' | '&' | "'" | '(' | ')' | '*' | '+' | ',' | ';' | '=' | ':' | '/' | '?' | '#' | '@' | '%' )
+	// [162] HEX ::= [0-9] | [A-F] | [a-f]
+	// [161] PERCENT ::= '%' HEX HEX
+	// [160] PLX ::= PERCENT | PN_LOCAL_ESC
+	// [159] PN_LOCAL ::= (PN_CHARS_U | [0-9] | PLX ) ( ( PN_CHARS | '.' | PLX )* ( PN_CHARS | PLX ) ) ? >
+	// [158] PN_PREFIX	::= PN_CHARS_BASE ((PN_CHARS|'.')* PN_CHARS)?
+	// [157] PN_CHARS	::= PN_CHARS_U | '-' | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040]
+	// [155] PN_CHARS_U ::= PN_CHARS_BASE | '_'
+	// [154] PN_CHARS_BASE	::= [A-Z] | [a-z] | [#x00C0-#x00D6] | [#x00D8-#x00F6] | [#x00F8-#x02FF] | [#x0370-#x037D] | [#x037F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
+	// [131] PNAME_LN	::= PNAME_NS PN_LOCAL
+	// [130] PNAME_NS	::= PN_PREFIX? ':'
+	// [127] PrefixedName ::= PNAME_LN | PNAME_NS
+	
+	// [129] IRI_REF	 ::= '<' ([^<>"{}|^`\]-[#x00-#x20])* '>'
+	// [126] IRIref ::= IRI_REF | PrefixedName
 		
 	// [125] String ::= STRING_LITERAL1 | STRING_LITERAL2 | STRING_LITERAL_LONG1 | STRING_LITERAL_LONG2
 	let String = STRING_LITERAL1.or(STRING_LITERAL2);
-		
+	
 	// [119] RDFLiteral ::= String ( LANGTAG | ( '^^' IRIref ) )?
-	let RDFLiteral = String;
+	let RDFLiteral1 = String.thene({|v| return(constant(string(v)))});
+	
+	let RDFLiteral2 = seq2(String, LANGTAG)
+		{|l, r| result::ok(constant(plain_literal(l, r)))};
+	
+	let RDFLiteral = RDFLiteral2.or(RDFLiteral1);
 		
 	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral |	BooleanLiteral |	BlankNode |	NIL
 	let GraphTerm = RDFLiteral;
@@ -110,11 +151,11 @@ fn make_parser() -> parser<selector>
 	let ObjectList = Object;
 	
 	// [78] PropertyListNotEmptyPath	::= (VerbPath | VerbSimple) ObjectList ( ';' ( ( VerbPath | VerbSimple ) ObjectList )? )*
-	let PropertyListNotEmptyPath= sequence2(VerbSimple, ObjectList)
+	let PropertyListNotEmptyPath= seq2(VerbSimple, ObjectList)
 		{|prop, object| result::ok([match_property(prop), match_object(object)])};
 		
 	// [77] TriplesSameSubjectPath ::= VarOrTerm PropertyListNotEmptyPath | TriplesNode PropertyListPath 
-	let TriplesSameSubjectPath = sequence2(VarOrTerm, PropertyListNotEmptyPath)
+	let TriplesSameSubjectPath = seq2(VarOrTerm, PropertyListNotEmptyPath)
 		{|subject, plist| result::ok([match_subject(subject), plist[0], plist[1]])};
 		
 	// [56] TriplesBlock ::= TriplesSameSubjectPath ( '.' TriplesBlock? )?
@@ -124,19 +165,16 @@ fn make_parser() -> parser<selector>
 	let GroupGraphPatternSub = TriplesBlock;
 		
 	// [54] GroupGraphPattern ::= '{' ( SubSelect | GroupGraphPatternSub ) '}'
-	let GroupGraphPattern = sequence3(literal("{").space0(), GroupGraphPatternSub, literal("}").space0())
-		{|_l, matchers, _r| result::ok(matchers)};
+	let GroupGraphPattern = seq3_ret1("{".lit().s0(), GroupGraphPatternSub, "}".lit().s0());
 	
 	// [17] WhereClause ::= 'WHERE'? GroupGraphPattern
-	let WhereClause = sequence2((literali("WHERE").space0()).optional("_"), GroupGraphPattern)
-		{|_l, matchers| result::ok(matchers)};
+	let WhereClause = seq2_ret1(("WHERE".liti().s0()).optional(), GroupGraphPattern);
 	
 	// [9] SelectClause ::= 'SELECT' ( 'DISTINCT' | 'REDUCED' )? ( ( Var | ( '(' Expression 'AS' Var ')' ) )+ | '*' )
-	let SelectClause = sequence2(literali("SELECT").space0(), Var.repeat1("Variable's"))
-		{|_l, names| result::ok(names)};
+	let SelectClause = seq2_ret1("SELECT".liti().s0(), Var.r1());
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
-	let SelectQuery = sequence2(SelectClause, WhereClause)
+	let SelectQuery = seq2(SelectClause, WhereClause)
 		{|names, matchers|
 			let variables = vec::filter(names) {|p| alt p {variable(_l) {true} _ {false}}};
 			let names = vec::map(variables) {|p| alt p {variable(n) {n} _ {fail}}};

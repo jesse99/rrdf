@@ -6,7 +6,7 @@
 #[doc = "Resource Description Language (RDF) library"];
 
 use std;
-use rparse (name = "rparse", vers = "0.3");
+use rparse (name = "rparse", vers = "0.4");
 
 mod query;
 mod sparql;
