@@ -51,7 +51,19 @@ impl of to_str for store
 			for (*entries).eachi()
 			{|i, entry|
 				let pname = get_friendly_name(self, entry.predicate);
-				result += #fmt["%?: %s  %s  %s}\n", i, sname, pname, entry.object.to_str()];
+				result += #fmt["%?: %s  %s  ", i, sname, pname];
+				
+				alt entry.object
+				{
+					qref(q)
+					{
+						result += #fmt["%s}\n", get_friendly_name(self, q)];
+					}
+					_
+					{
+						result += #fmt["%s}\n", entry.object.to_str()];
+					}
+				}
 			}
 		};
 		
@@ -59,12 +71,24 @@ impl of to_str for store
 	}
 }
 
+#[doc = "Initializes a store object."]
 fn create_store(namespaces: [namespace]) -> store
 {
 	{
 		namespaces: [{prefix: "", path: ""}] + [{prefix: "_", path: "_"}] + namespaces,
-		subjects: hashmap(hash_qn, eq_qn)
+		subjects: hashmap(hash_qn, eq_qn),
+		mut next_blank: 0u
 	}
+}
+
+#[doc = "Returns a unique name for a blank node in particular store.
+
+Note that the prefix can be anything, including empty."]
+fn get_blank_name(store: store, prefix: str) -> str
+{
+	let name = #fmt["_:%s-%?", prefix, copy(store.next_blank)];
+	store.next_blank += 1u;
+	ret name;
 }
 
 #[doc = "Adds new triples to the store.
@@ -76,7 +100,23 @@ fn add_triples(store: store, triples: [triple])
 	for vec::each(triples)
 	{|triple|
 		let subject = make_qname(store, triple.subject);
-		let entry = {predicate: make_qname(store, triple.predicate), object: triple.object};
+		
+		let entry = {
+			predicate: make_qname(store, triple.predicate),
+			object:
+				alt triple.object
+				{
+					reference(r)
+					{
+						// References are always saved internally as qrefs (which should be
+						// substantially more efficient than dealing with long URL strings).
+						qref(make_qname(store, r))
+					}
+					_
+					{
+						triple.object
+					}
+				}};
 		
 		alt store.subjects.find(subject)
 		{
@@ -92,15 +132,29 @@ fn add_triples(store: store, triples: [triple])
 	};
 }
 	
-fn each_triple(store: store, f: fn (triple) -> bool) unsafe
+#[doc = "Calls the callback for each triple in the store (in an undefined order)."]
+fn each_triple(store: store, callback: fn (triple) -> bool) unsafe
 {
 	for store.subjects.each()
 	{|subject, entries|
 		let sname = get_friendly_name(store, subject);
 		for (*entries).each()
 		{|entry|
-			let triple = {subject: copy(sname), predicate: get_friendly_name(store, entry.predicate), object: copy(entry.object)};
-			if !f(triple)
+			let obj =
+				alt entry.object
+				{
+					qref(q)
+					{
+						reference(get_friendly_name(store, q))
+					}
+					_
+					{
+						entry.object
+					}
+				};
+				
+			let triple = {subject: copy(sname), predicate: get_friendly_name(store, entry.predicate), object: obj};
+			if !callback(triple)
 			{
 				ret;
 			}

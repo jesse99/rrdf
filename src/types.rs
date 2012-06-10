@@ -49,6 +49,7 @@ type namespace = {prefix: str, path: str};
 #[doc = "Stores triples in a more or less efficient format."]
 type store = {
 	namespaces: [namespace],					// 0 == "" (no namespace), 1 == "_" (blank)
-	subjects: hashmap<qname, @dvec<entry>>
+	subjects: hashmap<qname, @dvec<entry>>,
+	mut next_blank: uint
 };
 
