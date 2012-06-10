@@ -16,10 +16,13 @@ enum expr_type
 	- 1402 has a nav example
 		` apply second rule to results of the first rule?
 	- can do queries with http://dbpedia.org/sparql
+* Add a unit test demonstrating that solutions can be sent across tasks.
+* Add a unit test showing that add_triples args can be sent across threads.
 * May want to update readme.
 * See if we can do a better job now with stuff like date.
 * Add a sparql parser:
 	- don't need the full thing for now
+* May want to add to cargo.
 
 * Get the types setup.
 	- rename predicate relation?

@@ -1,21 +1,25 @@
-#[link(name = "rrdf", vers = "0.1", uuid = "04400014-FB9C-44DD-B5DD-A49BE5613BD7")];
+#[link(name = "rrdf", vers = "0.2", uuid = "04400014-FB9C-44DD-B5DD-A49BE5613BD7")];
 #[crate_type = "lib"];
 
 #[author = "Jesse Jones"];
 #[license = "MIT"];
 #[doc = "Resource Description Language (RDF) library"];
 
+#[warn(no_non_implicitly_copyable_typarams, no_vecs_not_implicitly_copyable)];
+
 use std;
 use rparse (name = "rparse", vers = "0.4");
 
-mod query;
-mod sparql;
+//mod query;
+//mod sparql;
+mod types;
 
 #[cfg(test)]
 mod tests
 {
+	mod test_store;
 	mod test_data;
-	mod test_helpers;
-	mod test_sparql;
+//	mod test_helpers;
+//	mod test_sparql;
 }
 

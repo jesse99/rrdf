@@ -4,35 +4,43 @@
 // 2) https://github.com/edumbill/doap/wiki
 // Profile used to describe open source software projects.
 
-// Namespaces:
-// got: 	<http://awoiaf.westeros.org/index.php/>
-// v:	<http://www.w3.org/2006/vcard/ns#>
-
-fn got_cast1() -> [triple]
+fn got_cast1() -> store
 {
-	[
-		{subject: iri("got:Eddard_Stark"), property: "v:fn", object: string("Eddard Stark")},
-		{subject: iri("got:Eddard_Stark"), property: "v:nickname", object: string("Ned")}
-	]
+	let store = create_store([
+		{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"},
+		{prefix: "v", path: "http://www.w3.org/2006/vcard/ns#"}
+		]);
+	
+	add_triples(store, [
+		{subject: "got:Eddard_Stark", predicate: "v:fn", object: typed_literal("Eddard Stark", "xsd:string")},
+		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: typed_literal("Ned", "xsd:string")}
+		]);
+	ret store;
 }
 
-fn got_cast3() -> [triple]
+fn got_cast3() -> store
 {
-	[
-		{subject: iri("got:Eddard_Stark"), property: "v:fn", object: string("Eddard Stark")},
-		{subject: iri("got:Eddard_Stark"), property: "v:nickname", object: string("Ned")},
-		{subject: iri("got:Eddard_Stark"), property: "v:honorific-prefix", object: string("Lord")},
-		{subject: iri("got:Eddard_Stark"), property: "v:org", object: reference(blank("_:o1"))},
-		{subject: blank("_:o1"), property: "v:organisation-name", object: string("Small Council")},
-		{subject: blank("_:o1"), property: "v:organisation-unit", object: string("Hand")},
+	let store = create_store([
+		{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"},
+		{prefix: "v", path: "http://www.w3.org/2006/vcard/ns#"}
+		]);
+	
+	add_triples(store, [
+		{subject: "got:Eddard_Stark", predicate: "v:fn", object: typed_literal("Eddard Stark", "xsd:string")},
+		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: typed_literal("Ned", "xsd:string")},
+		{subject: "got:Eddard_Stark", predicate: "v:honorific-prefix", object: typed_literal("Lord", "xsd:string")},
+		{subject: "got:Eddard_Stark", predicate: "v:org", object: reference("_:ned-org")},
+		{subject: "_:ned-org", predicate: "v:organisation-name", object: typed_literal("Small Council", "xsd:string")},
+		{subject: "_:ned-org", predicate: "v:organisation-unit", object: typed_literal("Hand", "xsd:string")},
 		
-		{subject: iri("got:Jon_Snow"), property: "v:fn", object: string("Jon Snow")},
-		{subject: iri("got:Jon_Snow"), property: "v:nickname", object: string("Lord Snow")},
-		{subject: iri("got:Jon_Snow"), property: "v:org", object: reference(blank("_:o1"))},
-		{subject: blank("_:o1"), property: "v:organisation-name", object: string("Night's Watch")},
-		{subject: blank("_:o1"), property: "v:organisation-unit", object: string("Stewards")},
+		{subject: "got:Jon_Snow", predicate: "v:fn", object: typed_literal("Jon Snow", "xsd:string")},
+		{subject: "got:Jon_Snow", predicate: "v:nickname", object: typed_literal("Lord Snow", "xsd:string")},
+		{subject: "got:Jon_Snow", predicate: "v:org", object: reference("_:jon-org")},
+		{subject: "_:jon-org", predicate: "v:organisation-name", object: typed_literal("Night's Watch", "xsd:string")},
+		{subject: "_:jon-org", predicate: "v:organisation-unit", object: typed_literal("Stewards", "xsd:string")},
 		
-		{subject: iri("got:Sandor_Clegane"), property: "v:fn", object: string("Sandor Clegane")},
-		{subject: iri("got:Sandor_Clegane"), property: "v:nickname", object: string("The Hound")}
-	]
+		{subject: "got:Sandor_Clegane", predicate: "v:fn", object: typed_literal("Sandor Clegane", "xsd:string")},
+		{subject: "got:Sandor_Clegane", predicate: "v:nickname", object: typed_literal("The Hound", "xsd:string")}
+		]);
+	ret store;
 }

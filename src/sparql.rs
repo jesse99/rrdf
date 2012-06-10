@@ -84,24 +84,8 @@ fn langtag() -> parser<str>
 		{|_l, p, s| result::ok(p + str::connect(s, ""))}
 }
 
-// http://www.w3.org/TR/sparql11-query/#grammar
-fn make_parser() -> parser<selector>
-{
-	// [156] VARNAME ::= ( PN_CHARS_U | [0-9] ) ( PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040] )*
-	let VARNAME = identifier().s0();
-	
-	// [147] STRING_LITERAL2 ::= '"' ( ([^#x22#x5C#xA#xD]) | ECHAR )* '"'
-	let STRING_LITERAL2 = seq3_ret1("\"".lit(), match_string_body('"'), "\"".lit());
-	
-	// [146] STRING_LITERAL1 ::= "'" ( ([^#x27#x5C#xA#xD]) | ECHAR )* "'"
-	let STRING_LITERAL1 = seq3_ret1("'".lit(), match_string_body('\''), "'".lit());
-		
-	// [135] LANGTAG ::= '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
-	let LANGTAG = langtag();
-	
-	// [133] VAR1 ::= '?' VARNAME
-	let VAR1 = seq2_ret1("?".lit().s0(), VARNAME).thene({|v| return(variable((v)))});
-	
+//fn prefixed_name() -> parser<str>
+//{
 	// [163] PN_LOCAL_ESC ::=  '\' ( '_' | '~' | '.' | '-' | '!' | '$' | '&' | "'" | '(' | ')' | '*' | '+' | ',' | ';' | '=' | ':' | '/' | '?' | '#' | '@' | '%' )
 	// [162] HEX ::= [0-9] | [A-F] | [a-f]
 	// [161] PERCENT ::= '%' HEX HEX
@@ -114,9 +98,22 @@ fn make_parser() -> parser<selector>
 	// [131] PNAME_LN	::= PNAME_NS PN_LOCAL
 	// [130] PNAME_NS	::= PN_PREFIX? ':'
 	// [127] PrefixedName ::= PNAME_LN | PNAME_NS
+//}
+
+fn graph_term() -> parser<pattern>
+{
+	// [147] STRING_LITERAL2 ::= '"' ( ([^#x22#x5C#xA#xD]) | ECHAR )* '"'
+	let STRING_LITERAL2 = seq3_ret1("\"".lit(), match_string_body('"'), "\"".lit());
+	
+	// [146] STRING_LITERAL1 ::= "'" ( ([^#x27#x5C#xA#xD]) | ECHAR )* "'"
+	let STRING_LITERAL1 = seq3_ret1("'".lit(), match_string_body('\''), "'".lit());
+		
+	// [135] LANGTAG ::= '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
+	let LANGTAG = langtag();
 	
 	// [129] IRI_REF	 ::= '<' ([^<>"{}|^`\]-[#x00-#x20])* '>'
 	// [126] IRIref ::= IRI_REF | PrefixedName
+	//let IRIref = IRI_REF;
 		
 	// [125] String ::= STRING_LITERAL1 | STRING_LITERAL2 | STRING_LITERAL_LONG1 | STRING_LITERAL_LONG2
 	let String = STRING_LITERAL1.or(STRING_LITERAL2);
@@ -130,7 +127,19 @@ fn make_parser() -> parser<selector>
 	let RDFLiteral = RDFLiteral2.or(RDFLiteral1);
 		
 	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral |	BooleanLiteral |	BlankNode |	NIL
-	let GraphTerm = RDFLiteral;
+	or_v([RDFLiteral, IRIref])
+}
+
+// http://www.w3.org/TR/sparql11-query/#grammar
+fn make_parser() -> parser<selector>
+{
+	let GraphTerm = graph_term();
+	
+	// [156] VARNAME ::= ( PN_CHARS_U | [0-9] ) ( PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040] )*
+	let VARNAME = identifier().s0();
+	
+	// [133] VAR1 ::= '?' VARNAME
+	let VAR1 = seq2_ret1("?".lit().s0(), VARNAME).thene({|v| return(variable((v)))});
 	
 	// [98] Var ::= VAR1 | VAR2
 	let Var = VAR1;
