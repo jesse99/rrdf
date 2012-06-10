@@ -48,10 +48,10 @@ impl of to_str for store
 		for self.subjects.each()
 		{|subject, entries|
 			let sname = get_friendly_name(self, subject);
-			for entries.eachi()
+			for (*entries).eachi()
 			{|i, entry|
 				let pname = get_friendly_name(self, entry.predicate);
-				result += #fmt["%?: %s  %s  %s}", i, sname, pname, entry.object.to_str()];
+				result += #fmt["%?: %s  %s  %s}\n", i, sname, pname, entry.object.to_str()];
 			}
 		};
 		
@@ -82,12 +82,11 @@ fn add_triples(store: store, triples: [triple])
 		{
 			option::some(entries)
 			{
-				entries.push(entry);
-				store.subjects.insert(subject, copy(entries));		// TODO: we're pushing onto a copy so we need to blow away the original, see bug 2567
+				(*entries).push(entry);
 			}
 			option::none
 			{
-				store.subjects.insert(subject, dvec::from_vec([mut entry]));
+				store.subjects.insert(subject, @dvec::from_vec([mut entry]));
 			}
 		}
 	};
@@ -98,7 +97,7 @@ fn each_triple(store: store, f: fn (triple) -> bool) unsafe
 	for store.subjects.each()
 	{|subject, entries|
 		let sname = get_friendly_name(store, subject);
-		for entries.each()
+		for (*entries).each()
 		{|entry|
 			let triple = {subject: copy(sname), predicate: get_friendly_name(store, entry.predicate), object: copy(entry.object)};
 			if !f(triple)

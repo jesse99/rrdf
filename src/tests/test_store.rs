@@ -76,11 +76,10 @@ fn to_strs()
 }
 
 #[test]
-fn iteration()
+fn iteration() 
 {
 	let store = got_cast1();
 	let mut actual = [];
-	io::println(store.to_str());
 	
 	for each_triple(store)
 	{|triple|
