@@ -5,32 +5,32 @@ export ref_uri, ref_uri_none, ref_uri_str, str_ref_uri, check_ok, check_err;
 
 fn ref_uri(r: str, u: str) -> [option<object>]
 {
-	[option::some(reference(iri(r))), option::some(anyURI(u))]
+	[option::some(reference(r)), option::some(typed_literal(u, "xsd:anyURI"))]
 }
 
 fn ref_uri_none(r: str, u: str) -> [option<object>]
 {
-	[option::some(reference(iri(r))), option::some(anyURI(u)), option::none]
+	[option::some(reference(r)), option::some(typed_literal(u, "xsd:anyURI")), option::none]
 }
 
 fn ref_uri_str(r: str, u: str, s: str) -> [option<object>]
 {
-	[option::some(reference(iri(r))), option::some(anyURI(u)), option::some(string(s))]
+	[option::some(reference(r)), option::some(typed_literal(u, "xsd:anyURI")), option::some(plain_literal(s, ""))]
 }
 
 fn str_ref_uri(s: str, r: str, u: str) -> [option<object>]
 {
-	[option::some(string(s)), option::some(reference(iri(r))), option::some(anyURI(u))]
+	[option::some(plain_literal(s, "")), option::some(reference(r)), option::some(typed_literal(u, "xsd:anyURI"))]
 }
 
-fn check_ok(triples: [triple], expr: str, expected: query::solution) -> bool
+fn check_ok(store: store, expr: str, expected: solution) -> bool
 {
 	#info["----------------------------------------------------"];
-	alt sparql::compile(expr)
+	alt compile(expr)
 	{
 		result::ok(selector)
 		{
-			alt selector(triples)
+			alt selector(store)
 			{
 				result::ok(actual)
 				{
@@ -93,14 +93,14 @@ fn check_ok(triples: [triple], expr: str, expected: query::solution) -> bool
 	}
 }
 
-fn check_err(triples: [triple], expr: str, expected: str) -> bool
+fn check_err(store: store, expr: str, expected: str) -> bool
 {
 	#info["----------------------------------------------------"];
-	alt sparql::compile(expr)
+	alt compile(expr)
 	{
 		result::ok(selector)
 		{
-			alt selector(triples)
+			alt selector(store)
 			{
 				result::ok(actual)
 				{
@@ -152,7 +152,7 @@ fn oo_to_str(value: option<object>) -> str
 	}
 }
 
-fn print_result(value: query::solution)
+fn print_result(value: solution)
 {
 	for vec::eachi(value.rows)
 	{|i, row|
@@ -162,7 +162,7 @@ fn print_result(value: query::solution)
 	}
 }
 
-fn print_failure(mesg: str, actual: query::solution, expected: query::solution)
+fn print_failure(mesg: str, actual: solution, expected: solution)
 {
 	io::stderr().write_line(mesg);
 	io::stderr().write_line("Actual:");

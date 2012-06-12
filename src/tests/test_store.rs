@@ -68,9 +68,6 @@ fn to_strs()
 	let obj = reference("some log url");
 	assert check_strs(obj.to_str(), "some log url");
 	
-	let obj = qref({nindex: 2u, name: "integer"});
-	assert check_strs(obj.to_str(), "2:integer");
-	
 	let obj = typed_literal("12", "xsd:integer");
 	assert check_strs(obj.to_str(), "\"12\"^^xsd:integer");
 	
@@ -90,8 +87,8 @@ fn iteration()
 	};
 	
 	let expected = [
-		{subject: "got:Eddard_Stark", predicate: "v:fn", object: typed_literal("Eddard Stark", "xsd:string")},
-		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: typed_literal("Ned", "xsd:string")}
+		{subject: "got:Eddard_Stark", predicate: "v:fn", object: plain_literal("Eddard Stark", "")},
+		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: plain_literal("Ned", "")}
 		];
 	assert check_triples(actual, expected);
 }
@@ -129,14 +126,14 @@ fn references()
 	assert check_triples(actual, expected);
 	
 	// But internally references are stored as qrefs.
-	assert store.namespaces[2u] == {prefix: "got", path: "http://awoiaf.westeros.org/index.php/"};
-	assert store.namespaces[4u] == {prefix: "foo", path: "http://www.whatever.org/"};
-	let entries = store.subjects.get({nindex: 2u, name: "Eddard_Stark"});
+	assert store.namespaces[3u] == {prefix: "got", path: "http://awoiaf.westeros.org/index.php/"};
+	assert store.namespaces[5u] == {prefix: "foo", path: "http://www.whatever.org/"};
+	let entries = store.subjects.get({nindex: 3u, name: "Eddard_Stark"});
 	
 	let entry = entries.data[2u];
-	io::println(#fmt["entry = %?", entry]);
-	assert entry.predicate == {nindex: 4u, name: "child"};
-	assert entry.object == qref({nindex: 2u, name: "Jon_Snow"});
+	//io::println(#fmt["entry = %?", entry]);
+	assert entry.predicate == {nindex: 5u, name: "child"};
+	assert entry.object == ireference({nindex: 3u, name: "Jon_Snow"});
 }
 
 #[test]
@@ -151,27 +148,21 @@ fn blank_nodes()
 	};
 	
 	let expected = [
-		{subject: "got:Eddard_Stark", predicate: "v:fn", object: typed_literal("Eddard Stark", "xsd:string")},
-		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: typed_literal("Ned", "xsd:string")},
-		{subject: "got:Eddard_Stark", predicate: "v:honorific-prefix", object: typed_literal("Lord", "xsd:string")},
+		{subject: "got:Eddard_Stark", predicate: "v:fn", object: plain_literal("Eddard Stark", "")},
+		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: plain_literal("Ned", "")},
+		{subject: "got:Eddard_Stark", predicate: "v:honorific-prefix", object: plain_literal("Lord", "")},
 		{subject: "got:Eddard_Stark", predicate: "v:org", object: reference("_:ned-org")},
-		{subject: "_:ned-org", predicate: "v:organisation-name", object: typed_literal("Small Council", "xsd:string")},
-		{subject: "_:ned-org", predicate: "v:organisation-unit", object: typed_literal("Hand", "xsd:string")},
+		{subject: "_:ned-org", predicate: "v:organisation-name", object: plain_literal("Small Council", "")},
+		{subject: "_:ned-org", predicate: "v:organisation-unit", object: plain_literal("Hand", "")},
 		
-		{subject: "got:Jon_Snow", predicate: "v:fn", object: typed_literal("Jon Snow", "xsd:string")},
-		{subject: "got:Jon_Snow", predicate: "v:nickname", object: typed_literal("Lord Snow", "xsd:string")},
+		{subject: "got:Jon_Snow", predicate: "v:fn", object: plain_literal("Jon Snow", "")},
+		{subject: "got:Jon_Snow", predicate: "v:nickname", object: plain_literal("Lord Snow", "")},
 		{subject: "got:Jon_Snow", predicate: "v:org", object: reference("_:jon-org")},
-		{subject: "_:jon-org", predicate: "v:organisation-name", object: typed_literal("Night's Watch", "xsd:string")},
-		{subject: "_:jon-org", predicate: "v:organisation-unit", object: typed_literal("Stewards", "xsd:string")},
+		{subject: "_:jon-org", predicate: "v:organisation-name", object: plain_literal("Night's Watch", "")},
+		{subject: "_:jon-org", predicate: "v:organisation-unit", object: plain_literal("Stewards", "")},
 		
-		{subject: "got:Sandor_Clegane", predicate: "v:fn", object: typed_literal("Sandor Clegane", "xsd:string")},
-		{subject: "got:Sandor_Clegane", predicate: "v:nickname", object: typed_literal("The Hound", "xsd:string")}
+		{subject: "got:Sandor_Clegane", predicate: "v:fn", object: plain_literal("Sandor Clegane", "")},
+		{subject: "got:Sandor_Clegane", predicate: "v:nickname", object: plain_literal("The Hound", "")}
 		];
 	assert check_triples(actual, expected);
 }
-
-// TODO:
-// query
-// remove
-// clean
-// add_store

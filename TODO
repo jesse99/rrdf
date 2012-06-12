@@ -1,8 +1,6 @@
 http://www.w3.org/TR/sparql11-query/
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
-// object can be a bag, seq, or alt container of values
-// value literals are a string+type		http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes
 
 enum expr_type 
 {
@@ -11,13 +9,29 @@ enum expr_type
 	incompatible_type(str)		// an operator/function which was invoked with incompatible arguments
 }
 
-* Work on sparql support:
-	- make sure that the feature we have an immediate need for are all supported
+
+* Can we use the following?
+	- type object = {value: str, kind: str, lang: str};
+	- xml would go to rdf:XMLLiteral
+* Need subject and entry matchers so we can avoid entry iteration.
+* Add rdf and rdfs to default namespaces
+* May want to drop the n from index.
+* How is anyUri capitalized?
+* make_qname is going to screw up with real URLs.
+* Move the test_store helpers into test_helpers.
+* Do a push.
+* Add a unit test demonstrating that solutions can be sent across tasks.
+* Add a unit test showing that add_triples args can be sent across threads.
+* Add support for sequences, bags, and alternatives.
+* Get more queries working:
+	- make sure that the features we have an immediate need for are all supported
 	- 1402 has a nav example
 		` apply second rule to results of the first rule?
 	- can do queries with http://dbpedia.org/sparql
-* Add a unit test demonstrating that solutions can be sent across tasks.
-* Add a unit test showing that add_triples args can be sent across threads.
+* Work on more stuff:
+	- remove
+	- clean
+	- add_store
 * May want to update readme.
 * See if we can do a better job now with stuff like date.
 * Add a sparql parser:

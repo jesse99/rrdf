@@ -4,10 +4,35 @@ import core::dvec::*;
 import types::*;
 
 // types
-export subject, predicate, object, triple;
+export subject, predicate, object, triple, solution;
 
 // this file
-export to_str, create_store, each_triple;
+export to_str, create_store, get_blank_name, add_triples, each_triple, compile;
+
+type qname = {nindex: uint, name: str};				// nindex is into namespaces
+
+// The value that is actually saved in the store.
+enum iobject
+{
+	ireference(qname),
+	ityped(str, qname),
+	iplain(str, str)
+}
+
+type entry = {predicate: qname, object: iobject};
+
+impl of to_str for iobject
+{
+	fn to_str() -> str
+	{
+		alt self
+		{
+			ireference(q)		{#fmt["%?:%s", q.nindex, q.name]}
+			ityped(v, q)		{#fmt["\"%s\"^^%?:%s", v, q.nindex, q.name]}
+			iplain(v, l)		{#fmt["\"%s\"@%s", v, l]}
+		}
+	}
+}
 
 impl of to_str for object
 {
@@ -16,10 +41,8 @@ impl of to_str for object
 		alt self
 		{
 			reference(v)			{v}
-			qref(v)				{#fmt["%?:%s", v.nindex, v.name]}
 			typed_literal(v, t)	{#fmt["\"%s\"^^%s", v, t]}
 			plain_literal(v, t)		{#fmt["\"%s\"@%s", v, t]}
-			xml(v)					{v}
 		}
 	}
 }
@@ -51,19 +74,7 @@ impl of to_str for store
 			for (*entries).eachi()
 			{|i, entry|
 				let pname = get_friendly_name(self, entry.predicate);
-				result += #fmt["%?: %s  %s  ", i, sname, pname];
-				
-				alt entry.object
-				{
-					qref(q)
-					{
-						result += #fmt["%s}\n", get_friendly_name(self, q)];
-					}
-					_
-					{
-						result += #fmt["%s}\n", entry.object.to_str()];
-					}
-				}
+				result += #fmt["%?: %s  %s  %s}\n", i, sname, pname, entry.object.to_str()];
 			}
 		};
 		
@@ -71,11 +82,16 @@ impl of to_str for store
 	}
 }
 
-#[doc = "Initializes a store object."]
+#[doc = "Initializes a store object.
+
+Note that the xsd namespace is automatically added."]
 fn create_store(namespaces: [namespace]) -> store
 {
 	{
-		namespaces: [{prefix: "", path: ""}] + [{prefix: "_", path: "_"}] + namespaces,
+		namespaces: [
+			{prefix: "", path: ""},
+			{prefix: "_", path: "_"},
+			{prefix: "xsd", path: "http://www.w3.org/2001/XMLSchema#"}] + namespaces,
 		subjects: hashmap(hash_qn, eq_qn),
 		mut next_blank: 0u
 	}
@@ -94,7 +110,8 @@ fn get_blank_name(store: store, prefix: str) -> str
 #[doc = "Adds new triples to the store.
  
 Note that these triples are considered to already belong to the store (so they
-may refererence blank nodes that are already in the store). It's an error"]
+may refererence blank nodes that are already in the store). It's an error to
+use a prefixed URL name if the namespace was not registered with the store."]
 fn add_triples(store: store, triples: [triple])
 {
 	for vec::each(triples)
@@ -103,20 +120,7 @@ fn add_triples(store: store, triples: [triple])
 		
 		let entry = {
 			predicate: make_qname(store, triple.predicate),
-			object:
-				alt triple.object
-				{
-					reference(r)
-					{
-						// References are always saved internally as qrefs (which should be
-						// substantially more efficient than dealing with long URL strings).
-						qref(make_qname(store, r))
-					}
-					_
-					{
-						triple.object
-					}
-				}};
+			object: make_iobject(store, triple.object)};
 		
 		alt store.subjects.find(subject)
 		{
@@ -131,7 +135,7 @@ fn add_triples(store: store, triples: [triple])
 		}
 	};
 }
-	
+
 #[doc = "Calls the callback for each triple in the store (in an undefined order)."]
 fn each_triple(store: store, callback: fn (triple) -> bool) unsafe
 {
@@ -140,19 +144,7 @@ fn each_triple(store: store, callback: fn (triple) -> bool) unsafe
 		let sname = get_friendly_name(store, subject);
 		for (*entries).each()
 		{|entry|
-			let obj =
-				alt entry.object
-				{
-					qref(q)
-					{
-						reference(get_friendly_name(store, q))
-					}
-					_
-					{
-						entry.object
-					}
-				};
-				
+			let obj = make_object(store, entry.object);
 			let triple = {subject: copy(sname), predicate: get_friendly_name(store, entry.predicate), object: obj};
 			if !callback(triple)
 			{
@@ -160,6 +152,18 @@ fn each_triple(store: store, callback: fn (triple) -> bool) unsafe
 			}
 		}
 	};
+}
+
+#[doc = "Returns either a function capable of matching triples or a parse error.
+
+Expr can be a subset of http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"SPARQL\"."]
+fn compile(expr: str) -> result::result<selector, str>
+{
+	let parser = sparql::make_parser();
+	result::chain_err(rparse::parse(parser, "sparql", expr))
+	{|err|
+		result::err(#fmt["%s on line %? col %?", err.mesg, err.line, err.col])
+	}
 }
 
 // ---- Internal Functions ----------------------------------------------------
@@ -177,6 +181,21 @@ fn get_friendly_name(store: store, qn: qname) -> str
 		_
 		{
 			store.namespaces[qn.nindex].prefix + ":" + qn.name
+		}
+	}
+}
+
+fn get_full_name(store: store, qn: qname) -> str
+{
+	alt qn.nindex 
+	{
+		0u
+		{
+			copy(qn.name)
+		}
+		_
+		{
+			store.namespaces[qn.nindex].path + qn.name
 		}
 	}
 }
@@ -205,6 +224,44 @@ fn make_qname(store: store, name: str) -> qname
 		option::none
 		{
 			fail(#fmt["%s is not a valid namespace", ns])
+		}
+	}
+}
+
+fn make_iobject(store: store, object: object) -> iobject
+{
+	alt object
+	{
+		reference(value)
+		{
+			ireference(make_qname(store, value))
+		}
+		typed_literal(value, kind)
+		{
+			ityped(value, make_qname(store, kind))
+		}
+		plain_literal(value, lang)
+		{
+			iplain(value, lang)
+		}
+	}
+}
+
+fn make_object(store: store, io: iobject) -> object
+{
+	alt io
+	{
+		ireference(value)
+		{
+			reference(get_friendly_name(store, value))
+		}
+		ityped(value, kind)
+		{
+			typed_literal(value, get_friendly_name(store, kind))
+		}
+		iplain(value, lang)
+		{
+			plain_literal(value, lang)
 		}
 	}
 }

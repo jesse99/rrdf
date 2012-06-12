@@ -12,7 +12,7 @@ check: bin/test-rrdf
 	export RUST_LOG=rrdf=1,rparse=1 && ./bin/test-rrdf
 
 check1: bin/test-rrdf
-	export RUST_LOG=rrdf=3,rparse=1 && ./bin/test-rrdf language_tags
+	export RUST_LOG=rrdf=3,rparse=1 && ./bin/test-rrdf iteration
 
 # You can either use this target (assuming that the libraries are in /usr/local/lib/rust)
 # or install them via cargo.

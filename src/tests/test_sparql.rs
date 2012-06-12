@@ -95,24 +95,30 @@ fn string_match()
 	assert check_ok(triples, expr, expected);
 }
 
-fn fancy_types() -> [triple]
+fn fancy_types() -> store
 {
-	[
-		{subject: iri("x:Hans"), property: "x:greeting", object: plain_literal("guten tag", "de")},
-		{subject: iri("x:Jones"), property: "x:greeting", object: plain_literal("guten tag", "en-US")}
-	]
+	let store = create_store([
+		{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"},
+		{prefix: "x", path: "http://blah#"}
+		]);
+	
+	add_triples(store, [
+		{subject: "x:Hans", predicate: "x:greeting", object: plain_literal("guten tag", "de")},
+		{subject: "x:Jones", predicate: "x:greeting", object: plain_literal("guten tag", "en-US")}
+		]);
+	ret store;
 }
 
 #[test]
 fn language_tags()
 {
 	let expr = "SELECT ?s WHERE {?s ?p \"guten tag\"@en-US}";
-	let triples = fancy_types();
+	let store = fancy_types();
 	let expected = {names: ["s"], rows: [
-		[option::some(reference(iri("x:Jones")))]
+		[option::some(reference("x:Jones"))]
 	]};
 	
-	assert check_ok(triples, expr, expected);
+	assert check_ok(store, expr, expected);
 }
 
 // TODO:

@@ -1,8 +1,6 @@
 import rparse::*;
 import query::*;
 
-export compile;
-
 fn find_dupes(names: [str]) -> [str]
 {
 	let names = std::sort::merge_sort({|x, y| x <= y}, names);
@@ -119,15 +117,16 @@ fn graph_term() -> parser<pattern>
 	let String = STRING_LITERAL1.or(STRING_LITERAL2);
 	
 	// [119] RDFLiteral ::= String ( LANGTAG | ( '^^' IRIref ) )?
-	let RDFLiteral1 = String.thene({|v| return(constant(string(v)))});
+	let RDFLiteral1 = String.thene({|v| return(constant(iplain(v, "")))});
 	
 	let RDFLiteral2 = seq2(String, LANGTAG)
-		{|l, r| result::ok(constant(plain_literal(l, r)))};
+		{|l, r| result::ok(constant(iplain(l, r)))};
 	
 	let RDFLiteral = RDFLiteral2.or(RDFLiteral1);
 		
 	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral |	BooleanLiteral |	BlankNode |	NIL
-	or_v([RDFLiteral, IRIref])
+	//or_v([RDFLiteral, IRIref])
+	or_v([RDFLiteral])
 }
 
 // http://www.w3.org/TR/sparql11-query/#grammar
@@ -161,7 +160,7 @@ fn make_parser() -> parser<selector>
 	
 	// [78] PropertyListNotEmptyPath	::= (VerbPath | VerbSimple) ObjectList ( ';' ( ( VerbPath | VerbSimple ) ObjectList )? )*
 	let PropertyListNotEmptyPath= seq2(VerbSimple, ObjectList)
-		{|prop, object| result::ok([match_property(prop), match_object(object)])};
+		{|prop, object| result::ok([match_predicate(prop), match_object(object)])};
 		
 	// [77] TriplesSameSubjectPath ::= VarOrTerm PropertyListNotEmptyPath | TriplesNode PropertyListPath 
 	let TriplesSameSubjectPath = seq2(VarOrTerm, PropertyListNotEmptyPath)
@@ -208,14 +207,3 @@ fn make_parser() -> parser<selector>
 	ret QueryUnit;
 }
 
-#[doc = "Returns either a function capable of matching triples or a parse error.
-
-Expr can be a subset of http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"SPARQL\"."]
-fn compile(expr: str) -> result::result<selector, str>
-{
-	let parser = make_parser();
-	result::chain_err(parse(parser, "sparql", expr))
-	{|err|
-		result::err(#fmt["%s on line %? col %?", err.mesg, err.line, err.col])
-	}
-}
