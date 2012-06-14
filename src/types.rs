@@ -10,18 +10,12 @@ type predicate = str;
 
 #[doc = "Value component of a triple.
 
-* reference identifies a subject. \"_:foo\" references a blank node.
-* typed_literal is an arbitrary lexical value along with an IRI for its type. Most common types are 
+* value is an abitrary lexical value.
+* kind is a prefixed name or an IRI indicating the value's type. Common types include 
    xsd:boolean, xsd:string, xsd:anyURI, xsd:double, xsd:integer, and xsd:positiveInteger, 
    see http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"XML Schema\" for more.
-* plain_literal is a string along with a language tag (e.g. \"en-us\") See http://tools.ietf.org/html/bcp47 \"Tags for Identifying Languages\".
-* xml is embedded xml, see: http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830/#dfn-rdf-xmlliteral."]
-enum object
-{
-	reference(subject),
-	typed_literal(str, str),
-	plain_literal(str, str)
-}
+* lang is either empty for an undefined language or a tag like  \"en-us\". See http://tools.ietf.org/html/bcp47 \"Tags for Identifying Languages\" for more."]
+type object = {value: str, kind: str, lang: str};
 
 #[doc = "A relationship between a subject and an object.
 

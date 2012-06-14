@@ -5,22 +5,22 @@ export ref_uri, ref_uri_none, ref_uri_str, str_ref_uri, check_ok, check_err;
 
 fn ref_uri(r: str, u: str) -> [option<object>]
 {
-	[option::some(reference(r)), option::some(typed_literal(u, "xsd:anyURI"))]
+	[option::some({value: r, kind: "xsd:anyURI", lang: ""}), option::some({value: u, kind: "xsd:anyURI", lang: ""})]
 }
 
 fn ref_uri_none(r: str, u: str) -> [option<object>]
 {
-	[option::some(reference(r)), option::some(typed_literal(u, "xsd:anyURI")), option::none]
+	[option::some({value: r, kind: "xsd:anyURI", lang: ""}), option::some({value: u, kind: "xsd:anyURI", lang: ""}), option::none]
 }
 
 fn ref_uri_str(r: str, u: str, s: str) -> [option<object>]
 {
-	[option::some(reference(r)), option::some(typed_literal(u, "xsd:anyURI")), option::some(plain_literal(s, ""))]
+	[option::some({value: r, kind: "xsd:anyURI", lang: ""}), option::some({value: u, kind: "xsd:anyURI", lang: ""}), option::some({value: s, kind: "xsd:string", lang: ""})]
 }
 
 fn str_ref_uri(s: str, r: str, u: str) -> [option<object>]
 {
-	[option::some(plain_literal(s, "")), option::some(reference(r)), option::some(typed_literal(u, "xsd:anyURI"))]
+	[option::some({value: s, kind: "xsd:string", lang: ""}), option::some({value: r, kind: "xsd:anyURI", lang: ""}), option::some({value: u, kind: "xsd:anyURI", lang: ""})]
 }
 
 fn check_ok(store: store, expr: str, expected: solution) -> bool

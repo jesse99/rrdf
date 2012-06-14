@@ -103,8 +103,8 @@ fn fancy_types() -> store
 		]);
 	
 	add_triples(store, [
-		{subject: "x:Hans", predicate: "x:greeting", object: plain_literal("guten tag", "de")},
-		{subject: "x:Jones", predicate: "x:greeting", object: plain_literal("guten tag", "en-US")}
+		{subject: "x:Hans", predicate: "x:greeting", object: {value: "guten tag", kind: "xsd:string", lang: "de"}},
+		{subject: "x:Jones", predicate: "x:greeting", object: {value: "guten tag", kind: "xsd:string", lang: "en-US"}}
 		]);
 	ret store;
 }
@@ -115,7 +115,7 @@ fn language_tags()
 	let expr = "SELECT ?s WHERE {?s ?p \"guten tag\"@en-US}";
 	let store = fancy_types();
 	let expected = {names: ["s"], rows: [
-		[option::some(reference("x:Jones"))]
+		[option::some({value: "x:Jones", kind: "xsd:anyURI", lang: ""})]
 	]};
 	
 	assert check_ok(store, expr, expected);

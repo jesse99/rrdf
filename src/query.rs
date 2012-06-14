@@ -18,15 +18,15 @@ fn get_match_type(object: iobject) -> str
 	{
 		ireference(_subject)
 		{
-			"reference"
+			"2:anyURI"
 		}
 		ityped(_value, kind)
 		{
 			#fmt["%?:%s", kind.nindex, kind.name] 
 		}
-		iplain(_value, lang)
+		istring(_value, _kind, lang)
 		{
-			#fmt["plain@%s", lang] 
+			"@" + lang
 		}
 	}
 }
@@ -155,6 +155,24 @@ fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
 				}
 			}
 		}
+		ityped(lvalue, {nindex: 2u, name: "string"})
+		{
+			alt rhs
+			{
+				ityped(rvalue, {nindex: 2u, name: "string"})
+				{
+					lvalue == rvalue
+				}
+				istring(rvalue, _, "")
+				{
+					lvalue == rvalue
+				}
+				_
+				{
+					false
+				}
+			}
+		}
 		ityped(lvalue, lkind)
 		{
 			alt rhs
@@ -169,11 +187,29 @@ fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
 				}
 			}
 		}
-		iplain(lvalue, llang)
+		istring(lvalue, _, "")
 		{
 			alt rhs
 			{
-				iplain(rvalue, rlang)
+				istring(rvalue, _, "")
+				{
+					lvalue == rvalue
+				}
+				ityped(rvalue, {nindex: 2u, name: "string"})
+				{
+					lvalue == rvalue
+				}
+				_
+				{
+					false
+				}
+			}
+		}
+		istring(lvalue, _, llang)
+		{
+			alt rhs
+			{
+				istring(rvalue, _, rlang)
 				{
 					llang == rlang && lvalue == rvalue
 				}

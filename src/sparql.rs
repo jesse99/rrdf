@@ -117,10 +117,10 @@ fn graph_term() -> parser<pattern>
 	let String = STRING_LITERAL1.or(STRING_LITERAL2);
 	
 	// [119] RDFLiteral ::= String ( LANGTAG | ( '^^' IRIref ) )?
-	let RDFLiteral1 = String.thene({|v| return(constant(iplain(v, "")))});
+	let RDFLiteral1 = String.thene({|v| return(constant(ityped(v, {nindex: 2u, name: "string"})))});
 	
 	let RDFLiteral2 = seq2(String, LANGTAG)
-		{|l, r| result::ok(constant(iplain(l, r)))};
+		{|v, l| result::ok(constant(istring(v, {nindex: 2u, name: "string"}, l)))};
 	
 	let RDFLiteral = RDFLiteral2.or(RDFLiteral1);
 		

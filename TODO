@@ -16,7 +16,6 @@ enum expr_type
 * Need subject and entry matchers so we can avoid entry iteration.
 * Add rdf and rdfs to default namespaces
 * May want to drop the n from index.
-* How is anyUri capitalized?
 * make_qname is going to screw up with real URLs.
 * Move the test_store helpers into test_helpers.
 * Do a push.

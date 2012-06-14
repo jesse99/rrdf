@@ -12,8 +12,8 @@ fn got_cast1() -> store
 		]);
 	
 	add_triples(store, [
-		{subject: "got:Eddard_Stark", predicate: "v:fn", object: plain_literal("Eddard Stark", "")},
-		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: plain_literal("Ned", "")}
+		{subject: "got:Eddard_Stark", predicate: "v:fn", object: {value: "Eddard Stark", kind: "xsd:string", lang: ""}},
+		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: {value: "Ned", kind: "xsd:string", lang: ""}}
 		]);
 	ret store;
 }
@@ -26,21 +26,21 @@ fn got_cast3() -> store
 		]);
 	
 	add_triples(store, [
-		{subject: "got:Eddard_Stark", predicate: "v:fn", object: plain_literal("Eddard Stark", "")},
-		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: plain_literal("Ned", "")},
-		{subject: "got:Eddard_Stark", predicate: "v:honorific-prefix", object: plain_literal("Lord", "")},
-		{subject: "got:Eddard_Stark", predicate: "v:org", object: reference("_:ned-org")},
-		{subject: "_:ned-org", predicate: "v:organisation-name", object: plain_literal("Small Council", "")},
-		{subject: "_:ned-org", predicate: "v:organisation-unit", object: plain_literal("Hand", "")},
+		{subject: "got:Eddard_Stark", predicate: "v:fn", object: {value: "Eddard Stark", kind: "xsd:string", lang: ""}},
+		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: {value: "Ned", kind: "xsd:string", lang: ""}},
+		{subject: "got:Eddard_Stark", predicate: "v:honorific-prefix", object: {value: "Lord", kind: "xsd:string", lang: ""}},
+		{subject: "got:Eddard_Stark", predicate: "v:org", object: {value: "_:ned-org", kind: "xsd:anyURI", lang: ""}},
+		{subject: "_:ned-org", predicate: "v:organisation-name", object: {value: "Small Council", kind: "xsd:string", lang: ""}},
+		{subject: "_:ned-org", predicate: "v:organisation-unit", object: {value: "Hand", kind: "xsd:string", lang: ""}},
 		
-		{subject: "got:Jon_Snow", predicate: "v:fn", object: plain_literal("Jon Snow", "")},
-		{subject: "got:Jon_Snow", predicate: "v:nickname", object: plain_literal("Lord Snow", "")},
-		{subject: "got:Jon_Snow", predicate: "v:org", object: reference("_:jon-org")},
-		{subject: "_:jon-org", predicate: "v:organisation-name", object: plain_literal("Night's Watch", "")},
-		{subject: "_:jon-org", predicate: "v:organisation-unit", object: plain_literal("Stewards", "")},
+		{subject: "got:Jon_Snow", predicate: "v:fn", object: {value: "Jon Snow", kind: "xsd:string", lang: ""}},
+		{subject: "got:Jon_Snow", predicate: "v:nickname", object: {value: "Lord Snow", kind: "xsd:string", lang: ""}},
+		{subject: "got:Jon_Snow", predicate: "v:org", object: {value: "_:jon-org", kind: "xsd:anyURI", lang: ""}},
+		{subject: "_:jon-org", predicate: "v:organisation-name", object: {value: "Night's Watch", kind: "xsd:string", lang: ""}},
+		{subject: "_:jon-org", predicate: "v:organisation-unit", object: {value: "Stewards", kind: "xsd:string", lang: ""}},
 		
-		{subject: "got:Sandor_Clegane", predicate: "v:fn", object: plain_literal("Sandor Clegane", "")},
-		{subject: "got:Sandor_Clegane", predicate: "v:nickname", object: plain_literal("The Hound", "")}
+		{subject: "got:Sandor_Clegane", predicate: "v:fn", object: {value: "Sandor Clegane", kind: "xsd:string", lang: ""}},
+		{subject: "got:Sandor_Clegane", predicate: "v:nickname", object: {value: "The Hound", kind: "xsd:string", lang: ""}}
 		]);
 	ret store;
 }

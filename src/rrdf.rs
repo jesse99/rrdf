@@ -15,8 +15,8 @@ type qname = {nindex: uint, name: str};				// nindex is into namespaces
 enum iobject
 {
 	ireference(qname),
-	ityped(str, qname),
-	iplain(str, str)
+	ityped(str, qname),		// qname may be xsd:string
+	istring(str, qname, str)	// string + type (eg string or normalizedString) + lang (which won't be empy)
 }
 
 type entry = {predicate: qname, object: iobject};
@@ -29,7 +29,7 @@ impl of to_str for iobject
 		{
 			ireference(q)		{#fmt["%?:%s", q.nindex, q.name]}
 			ityped(v, q)		{#fmt["\"%s\"^^%?:%s", v, q.nindex, q.name]}
-			iplain(v, l)		{#fmt["\"%s\"@%s", v, l]}
+			istring(v, q, l)	{#fmt["\"%s\"^^%?:%s@%s", v, q.nindex, q.name, l]}
 		}
 	}
 }
@@ -40,9 +40,12 @@ impl of to_str for object
 	{
 		alt self
 		{
-			reference(v)			{v}
-			typed_literal(v, t)	{#fmt["\"%s\"^^%s", v, t]}
-			plain_literal(v, t)		{#fmt["\"%s\"@%s", v, t]}
+			{value: v, kind: "xsd:anyURI", lang: ""}		{v}
+			{value: v, kind: "xsd:boolean", lang: ""}		{v}
+			{value: v, kind: "xsd:string", lang: ""}		{#fmt["\"%s\"", v]}
+			{value: v, kind: "xsd:string", lang: lang}	{#fmt["\"%s\"@%s", v, lang]}
+			{value: v, kind: kind, lang: ""}				{#fmt["\"%s\"^^%s", v, kind]}
+			{value: v, kind: kind, lang: lang}				{#fmt["\"%s\"^^%s@%s", v, kind, lang]}	// not sure this case makes sense
 		}
 	}
 }
@@ -232,18 +235,9 @@ fn make_iobject(store: store, object: object) -> iobject
 {
 	alt object
 	{
-		reference(value)
-		{
-			ireference(make_qname(store, value))
-		}
-		typed_literal(value, kind)
-		{
-			ityped(value, make_qname(store, kind))
-		}
-		plain_literal(value, lang)
-		{
-			iplain(value, lang)
-		}
+		{value: v, kind: "xsd:anyURI", lang: ""}		{ireference(make_qname(store, v))}
+		{value: v, kind: kind, lang: ""}				{ityped(v, make_qname(store, kind))}
+		{value: v, kind: kind, lang: lang}				{istring(v, make_qname(store, kind), lang)}
 	}
 }
 
@@ -253,15 +247,15 @@ fn make_object(store: store, io: iobject) -> object
 	{
 		ireference(value)
 		{
-			reference(get_friendly_name(store, value))
+			{value: get_friendly_name(store, value), kind: "xsd:anyURI", lang: ""}
 		}
 		ityped(value, kind)
 		{
-			typed_literal(value, get_friendly_name(store, kind))
+			{value: value, kind: get_friendly_name(store, kind), lang: ""}
 		}
-		iplain(value, lang)
+		istring(value, kind, lang)
 		{
-			plain_literal(value, lang)
+			{value: value, kind: get_friendly_name(store, kind), lang: lang}
 		}
 	}
 }
