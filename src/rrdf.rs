@@ -87,14 +87,17 @@ impl of to_str for store
 
 #[doc = "Initializes a store object.
 
-Note that the xsd namespace is automatically added."]
+Note that the xsd, rdf, and rdfs namespaces are automatically added."]
 fn create_store(namespaces: [namespace]) -> store
 {
 	{
 		namespaces: [
 			{prefix: "", path: ""},
 			{prefix: "_", path: "_"},
-			{prefix: "xsd", path: "http://www.w3.org/2001/XMLSchema#"}] + namespaces,
+			{prefix: "xsd", path: "http://www.w3.org/2001/XMLSchema#"},
+			{prefix: "rdf", path: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
+			{prefix: "rdfs", path: "http://www.w3.org/2000/01/rdf-schema#"}
+		] + namespaces,
 		subjects: hashmap(hash_qn, eq_qn),
 		mut next_blank: 0u
 	}

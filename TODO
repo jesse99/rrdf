@@ -10,11 +10,7 @@ enum expr_type
 }
 
 
-* Can we use the following?
-	- type object = {value: str, kind: str, lang: str};
-	- xml would go to rdf:XMLLiteral
 * Need subject and entry matchers so we can avoid entry iteration.
-* Add rdf and rdfs to default namespaces
 * May want to drop the n from index.
 * make_qname is going to screw up with real URLs.
 * Move the test_store helpers into test_helpers.

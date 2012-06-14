@@ -129,14 +129,14 @@ fn references()
 	assert check_triples(actual, expected);
 	
 	// But internally references are stored as qrefs.
-	assert store.namespaces[3u] == {prefix: "got", path: "http://awoiaf.westeros.org/index.php/"};
-	assert store.namespaces[5u] == {prefix: "foo", path: "http://www.whatever.org/"};
-	let entries = store.subjects.get({nindex: 3u, name: "Eddard_Stark"});
+	assert store.namespaces[5u] == {prefix: "got", path: "http://awoiaf.westeros.org/index.php/"};
+	assert store.namespaces[7u] == {prefix: "foo", path: "http://www.whatever.org/"};
+	let entries = store.subjects.get({nindex: 5u, name: "Eddard_Stark"});
 	
 	let entry = entries.data[2u];
 	//io::println(#fmt["entry = %?", entry]);
-	assert entry.predicate == {nindex: 5u, name: "child"};
-	assert entry.object == ireference({nindex: 3u, name: "Jon_Snow"});
+	assert entry.predicate == {nindex: 7u, name: "child"};
+	assert entry.object == ireference({nindex: 5u, name: "Jon_Snow"});
 }
 
 #[test]
