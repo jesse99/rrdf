@@ -10,7 +10,7 @@ fn trivial()
 		ref_uri_str("got:Eddard_Stark", "v:nickname", "Ned")
 	]};
 	
-	assert check_ok(triples, expr, expected);
+	assert check_solution(triples, expr, expected);
 }
 
 #[test]
@@ -23,7 +23,7 @@ fn out_of_order()
 		str_ref_uri("Ned", "got:Eddard_Stark", "v:nickname")
 	]};
 	
-	assert check_ok(triples, expr, expected);
+	assert check_solution(triples, expr, expected);
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn long_names()
 		ref_uri_str("got:Eddard_Stark", "v:nickname", "Ned")
 	]};
 	
-	assert check_ok(triples, expr, expected);
+	assert check_solution(triples, expr, expected);
 }
 
 #[test]
@@ -49,7 +49,7 @@ fn keyword_case()
 		ref_uri_str("got:Eddard_Stark", "v:nickname", "Ned")
 	]};
 	
-	assert check_ok(triples, expr, expected);
+	assert check_solution(triples, expr, expected);
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn duplicate_select_variables()
 	let expr = "SELECT ?s ?s ?o WHERE {?s ?p ?o}";
 	let triples = test_data::got_cast1();
 	
-	assert check_err(triples, expr, "Select clause has duplicates: s");
+	assert check_solution_err(triples, expr, "Select clause has duplicates: s");
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn duplicate_where_variables()
 	let expr = "SELECT ?s ?p ?o WHERE {?s ?s ?o}";
 	let triples = test_data::got_cast1();
 	
-	assert check_err(triples, expr, "Binding s was set more than once.");
+	assert check_solution_err(triples, expr, "Binding s was set more than once.");
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn unbound_variable()
 		ref_uri_none("got:Eddard_Stark", "v:nickname")
 	]};
 	
-	assert check_ok(triples, expr, expected);
+	assert check_solution(triples, expr, expected);
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn string_match()
 		ref_uri("got:Eddard_Stark", "v:nickname")
 	]};
 	
-	assert check_ok(triples, expr, expected);
+	assert check_solution(triples, expr, expected);
 }
 
 fn fancy_types() -> store
@@ -118,7 +118,7 @@ fn language_tags()
 		[option::some({value: "x:Jones", kind: "xsd:anyURI", lang: ""})]
 	]};
 	
-	assert check_ok(store, expr, expected);
+	assert check_solution(store, expr, expected);
 }
 
 // TODO:

@@ -1,7 +1,7 @@
 import io;
 import io::writer_util;
 
-export ref_uri, ref_uri_none, ref_uri_str, str_ref_uri, check_ok, check_err;
+export ref_uri, ref_uri_none, ref_uri_str, str_ref_uri, check_strs, check_triples, check_solution, check_solution_err;
 
 fn ref_uri(r: str, u: str) -> [option<object>]
 {
@@ -23,7 +23,67 @@ fn str_ref_uri(s: str, r: str, u: str) -> [option<object>]
 	[option::some({value: s, kind: "xsd:string", lang: ""}), option::some({value: r, kind: "xsd:anyURI", lang: ""}), option::some({value: u, kind: "xsd:anyURI", lang: ""})]
 }
 
-fn check_ok(store: store, expr: str, expected: solution) -> bool
+fn check_strs(actual: str, expected: str) -> bool
+{
+	if actual != expected
+	{
+		io::stderr().write_line(#fmt["Found '%s', but expected '%s'", actual, expected]);
+		ret false;
+	}
+	ret true;
+}
+
+fn check_triples(actual: [triple], expected: [triple]) -> bool
+{
+	fn dump_triples(actual: [triple])
+	{
+		io::stderr().write_line("Actual triples:");
+		for vec::each(actual)
+		{|triple|
+			io::stderr().write_line(#fmt["   %s", triple.to_str()]);
+		};
+	}
+	
+	let actual = std::sort::merge_sort({|x, y| x.subject <= y.subject}, actual);
+	let expected = std::sort::merge_sort({|x, y| x.subject <= y.subject}, expected);
+	
+	if vec::len(actual) != vec::len(expected)
+	{
+		io::stderr().write_line(#fmt["Actual length is %?, but expected %?", vec::len(actual), vec::len(expected)]);
+		dump_triples(actual);
+		ret false;
+	}
+	
+	for vec::eachi(actual)
+	{|i, atriple|
+		let etriple = expected[i];
+		
+		if atriple.subject != etriple.subject
+		{
+			io::stderr().write_line(#fmt["Subject #%? is %?, but expected %?", i, atriple.subject, etriple.subject]);
+			dump_triples(actual);
+			ret false;
+		}
+		
+		if atriple.predicate != etriple.predicate
+		{
+			io::stderr().write_line(#fmt["Predicate #%? is %?, but expected %?", i, atriple.predicate, etriple.predicate]);
+			dump_triples(actual);
+			ret false;
+		}
+		
+		if atriple.object != etriple.object
+		{
+			io::stderr().write_line(#fmt["Object #%? is %?, but expected %?", i, atriple.object.to_str(), etriple.object.to_str()]);
+			dump_triples(actual);
+			ret false;
+		}
+	}
+	
+	ret true;
+}
+
+fn check_solution(store: store, expr: str, expected: solution) -> bool
 {
 	#info["----------------------------------------------------"];
 	alt compile(expr)
@@ -93,7 +153,7 @@ fn check_ok(store: store, expr: str, expected: solution) -> bool
 	}
 }
 
-fn check_err(store: store, expr: str, expected: str) -> bool
+fn check_solution_err(store: store, expr: str, expected: str) -> bool
 {
 	#info["----------------------------------------------------"];
 	alt compile(expr)
