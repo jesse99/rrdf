@@ -18,48 +18,6 @@ fn find_dupes(names: [str]) -> [str]
 	ret dupes;
 }
 
-fn match_string_body_char(input: [char], i: uint, quote: char) -> uint
-{ 
-	let ch = input[i] as char;
-	
-	if ch == '\\' && option::is_some(str::find_char("tbnrf\"'", input[i+1u] as char))	// input ends with EOT so we don't need a range check here
-	{
-		// [150] ECHAR ::= '\' [tbnrf"']
-		2u
-	}
-	else if ch != quote && ch != '\\' && ch != '\r' && ch != '\n' && ch != EOT
-	{
-		// [^#x22#x5C#xA#xD] or [^#x27#x5C#xA#xD]
-		1u
-	}
-	else
-	{
-		0u
-	}
-}
-
-fn match_string_body(quote: char) -> parser<str>
-{
-	{|input: state|
-		let mut i = input.index;
-		loop
-		{
-			let delta = match_string_body_char(input.text, i, quote);
-			if delta > 0u
-			{
-				i += delta;
-			}
-			else
-			{
-				break;
-			}
-		}
-		
-		let text = str::from_chars(vec::slice(input.text, input.index, i));
-		log_ok("match_string_body", input, {new_state: {index: i with input}, value: text})
-	}
-}
-
 pure fn is_langtag_prefix(ch: char) -> bool
 {
 	ret is_alpha(ch);
@@ -82,6 +40,64 @@ fn langtag() -> parser<str>
 		{|_l, p, s| result::ok(p + str::connect(s, ""))}
 }
 
+// [150] ECHAR ::= '\' [tbnrf"']
+fn is_escape_char(ch: char) -> bool
+{
+	option::is_some(str::find_char("tbnrf\"'", ch))	// input ends with EOT so we don't need a range check here
+}
+
+// [^x\\\n\r]) | ECHAR	where x is ' or "
+fn short_char(x: char, chars: [char], i:uint) -> uint
+{
+	let ch = chars[i];
+	if ch != x && ch != '\\' && ch != '\n' && ch != '\r'
+	{
+		1u
+	}
+	else if ch == '\\' && is_escape_char(chars[i + 1u])
+	{
+		2u
+	}
+	else
+	{
+		0u
+	}
+}
+
+// ( "x" | "xx" )? ( [^x\] | ECHAR )	where x is ' or "
+fn long_char(x: char, chars: [char], i:uint) -> uint
+{
+	let delta = if chars[i] == x
+	{
+		if chars[i+1u] == x
+		{
+			2u
+		}
+		else
+		{
+			1u
+		}
+	}
+	else
+	{
+		0u
+	};
+	
+	let ch = chars[i + delta];
+	if ch != x && ch != '\\'
+	{
+		delta + 1u
+	}
+	else if ch == '\\' && is_escape_char(chars[i + delta + 1u])
+	{
+		delta + 2u
+	}
+	else
+	{
+		0u
+	}
+}
+
 //fn prefixed_name() -> parser<str>
 //{
 	// [163] PN_LOCAL_ESC ::=  '\' ( '_' | '~' | '.' | '-' | '!' | '$' | '&' | "'" | '(' | ')' | '*' | '+' | ',' | ';' | '=' | ':' | '/' | '?' | '#' | '@' | '%' )
@@ -100,11 +116,17 @@ fn langtag() -> parser<str>
 
 fn graph_term() -> parser<pattern>
 {
-	// [147] STRING_LITERAL2 ::= '"' ( ([^#x22#x5C#xA#xD]) | ECHAR )* '"'
-	let STRING_LITERAL2 = seq3_ret1("\"".lit(), match_string_body('"'), "\"".lit());
+	// [149] STRING_LITERAL_LONG2 ::= '"""' ( ( '"' | '""' )? ( [^"\] | ECHAR ) )* '"""'
+	let STRING_LITERAL_LONG2 = seq3_ret1("\"\"\"".lit(), scan0(bind long_char('"', _, _)), "\"\"\"".lit());
 	
-	// [146] STRING_LITERAL1 ::= "'" ( ([^#x27#x5C#xA#xD]) | ECHAR )* "'"
-	let STRING_LITERAL1 = seq3_ret1("'".lit(), match_string_body('\''), "'".lit());
+	// [148] STRING_LITERAL_LONG1 ::= "'''" ( ( "'" | "''" )? ( [^'\] | ECHAR ) )* "'''"
+	let STRING_LITERAL_LONG1 = seq3_ret1("'''".lit(), scan0(bind long_char('\'', _, _)), "'''".lit());
+	
+	// [147] STRING_LITERAL2 ::= '"' ( ([^"\\\n\r]) | ECHAR )* '"'
+	let STRING_LITERAL2 = seq3_ret1("\"".lit(), scan0(bind short_char('"', _, _)), "\"".lit());
+	
+	// [146] STRING_LITERAL1 ::= "'" ( ([^'\\\n\r]) | ECHAR )* "'"
+	let STRING_LITERAL1 = seq3_ret1("'".lit(), scan0(bind short_char('\'', _, _)), "'".lit());
 		
 	// [135] LANGTAG ::= '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
 	let LANGTAG = langtag();
@@ -114,7 +136,7 @@ fn graph_term() -> parser<pattern>
 	//let IRIref = IRI_REF;
 		
 	// [125] String ::= STRING_LITERAL1 | STRING_LITERAL2 | STRING_LITERAL_LONG1 | STRING_LITERAL_LONG2
-	let String = STRING_LITERAL1.or(STRING_LITERAL2);
+	let String = or_v([STRING_LITERAL_LONG1, STRING_LITERAL_LONG2, STRING_LITERAL1, STRING_LITERAL2]);
 	
 	// [119] RDFLiteral ::= String ( LANGTAG | ( '^^' IRIref ) )?
 	let RDFLiteral1 = String.thene({|v| return(constant(ityped(v, {nindex: 2u, name: "string"})))});
