@@ -298,6 +298,25 @@ fn match_object(pattern: pattern) -> object_matcher
 	}
 }
 
+fn io_rows_to_orows(store: store, rows: [[option<iobject>]]) -> [[option<object>]]
+{
+	vec::map(rows, {|r| 
+		vec::map(r,
+		{|s|
+			alt s
+			{
+				option::some(io)
+				{
+					option::some(make_object(store, io))
+				}
+				option::none
+				{
+					option::none
+				}
+			}
+		})})
+}
+
 fn eval_match(names: [str], row: [mut option<iobject>], match: match) -> result::result<bool, str>
 {
 	alt match
@@ -341,23 +360,13 @@ fn eval_match(names: [str], row: [mut option<iobject>], match: match) -> result:
 	}
 }
 
-fn match_entry(store: store, names: [str], row: [mut option<iobject>], subject: qname, entry: entry, matcher: triple_matcher) -> result::result<bool, str>
+fn match_entry(store: store, names: [str], row: [mut option<iobject>], entry: entry, matcher: triple_matcher) -> result::result<bool, str>
 {
-	eval_match(names, row, matcher.smatch(store, subject)).chain
+	eval_match(names, row, matcher.pmatch(store, entry.predicate)).chain
 	{|matched|
 		if matched
 		{
-			eval_match(names, row, matcher.pmatch(store, entry.predicate)).chain
-			{|matched|
-				if matched
-				{
-					eval_match(names, row, matcher.omatch(store, entry.object))
-				}
-				else
-				{
-					result::ok(false)
-				}
-			}
+			eval_match(names, row, matcher.omatch(store, entry.object))
 		}
 		else
 		{
@@ -375,43 +384,44 @@ fn select(names: [str], matcher: triple_matcher) -> selector
 		
 		for store.subjects.each()
 		{|subject, entries|
-			for (*entries).each()
-			{|entry|
-				let row: [mut option<iobject>] = vec::to_mut(vec::from_elem(vec::len(names), option::none));
-				
-				alt match_entry(store, names, row, subject, entry, matcher)
+			let initial: [mut option<iobject>] = vec::to_mut(vec::from_elem(vec::len(names), option::none));
+			
+			alt eval_match(names, initial, matcher.smatch(store, subject))
+			{
+				result::ok(true)
 				{
-					result::ok(true)
-					{
-						vec::push(rows, vec::from_mut(row));	// TODO: may be able to speed up the vector conversions using unsafe functions
+					for (*entries).each()
+					{|entry|
+						let row: [mut option<iobject>] = copy(initial);
+						alt match_entry(store, names, row, entry, matcher)
+						{
+							result::ok(true)
+							{
+								vec::push(rows, vec::from_mut(row));	// TODO: may be able to speed up the vector conversions using unsafe functions
+							}
+							result::ok(false)
+							{
+								// match failed: try the next entry
+							}
+							result::err(mesg)
+							{
+								ret result::err(mesg);
+							}
+						}
 					}
-					result::ok(false)
-					{
-						// match failed: try the next entry
-					}
-					result::err(mesg)
-					{
-						ret result::err(mesg);
-					}
+				}
+				result::ok(false)
+				{
+					// match failed: try next subject
+				}
+				result::err(mesg)
+				{
+					ret result::err(mesg);
 				}
 			}
 		};
 		
-		let rs = vec::map(rows, {|r| 
-			vec::map(r,
-			{|s|
-				alt s
-				{
-					option::some(io)
-					{
-						option::some(make_object(store, io))
-					}
-					option::none
-					{
-						option::none
-					}
-				}
-			})});
-		result::ok({names: names, rows: rs})
+		result::ok({names: names, rows: io_rows_to_orows(store, rows)})
 	}
 }
+
