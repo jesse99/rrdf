@@ -3,7 +3,7 @@
 import std::map::hashmap;
 import result::extensions;
 
-type binding = {name: str, value: option<iobject>};
+type binding = {name: str, value: iobject};
 type match = either::either<binding, bool>;					// match succeeded if bindings or true
 
 type qname_matcher = fn@ (store, qname) -> match;
@@ -250,7 +250,7 @@ fn match_subject(pattern: pattern) -> qname_matcher
 		{
 			variable(name)
 			{
-				let b = {name: name, value: some(ireference(subject))};
+				let b = {name: name, value: ireference(subject)};
 				core::either::left(b)
 			}
 			constant(rhs)
@@ -269,7 +269,7 @@ fn match_predicate(pattern: pattern) -> qname_matcher
 			variable(name)
 			{
 				let p = get_friendly_name(store, predicate);
-				let b = {name: name, value: some(ityped(p, {nindex: 2u, name: "anyURI"}))};
+				let b = {name: name, value: ityped(p, {nindex: 2u, name: "anyURI"})};
 				core::either::left(b)
 			}
 			constant(rhs)
@@ -287,7 +287,7 @@ fn match_object(pattern: pattern) -> object_matcher
 		{
 			variable(name)
 			{
-				let b = {name: name, value: some(object)};
+				let b = {name: name, value: object};
 				either::left(b)
 			}
 			constant(rhs)
@@ -317,62 +317,80 @@ fn io_rows_to_orows(store: store, rows: [[option<iobject>]]) -> [[option<object>
 		})})
 }
 
-fn eval_match(names: [str], row: [mut option<iobject>], match: match) -> result::result<bool, str>
+fn iterate_matches(store: store, smatch: qname_matcher, callback: fn (option<binding>, @dvec<entry>) -> bool)
+{
+	for store.subjects.each()
+	{|subject, entries|
+		alt smatch(store, subject)
+		{
+			either::left(binding)
+			{
+				if !callback(option::some(binding), entries)
+				{
+					ret;
+				}
+			}
+			either::right(true)
+			{
+				if !callback(option::none, entries)
+				{
+					ret;
+				}
+			}
+			either::right(false)
+			{
+				// match failed: try the next subject
+			}
+		}
+	};
+}
+
+fn eval_match(context: hashmap<str, iobject>, match: match) -> result::result<bool, str>
 {
 	alt match
 	{
-		core::either::left(binding)
+		either::left(binding)
 		{
-			alt vec::position_elem(names, binding.name)
+			let new_key = context.insert(binding.name, binding.value);
+			if new_key
 			{
-				option::some(index)
-				{
-					if row[index] == option::none
-					{
-						row[index] = binding.value;
-					}
-					else
-					{
-						// Spec isn't clear what the semantics of this should be, but it seems
-						// likely to be, at best, confusing and normally a bug so we'll call it
-						// an error for now.
-						ret result::err(#fmt["Binding %s was set more than once.", binding.name]);
-					}
-				}
-				option::none
-				{
-					// Matcher created a binding, but it's not one the user wanted returned
-					// (TODO: though it could be used by other matchers which we'll need to handle).
-				}
+				result::ok(true)
 			}
+			else
+			{
+				ret result::err(#fmt["Binding %s was set more than once.", binding.name]);
+			}
+		}
+		either::right(true)
+		{
 			result::ok(true)
 		}
-		core::either::right(true)
+		either::right(false)
 		{
-			// Match succeeded but didn't set a binding.
-			result::ok(true)
-		}
-		core::either::right(false)
-		{
-			// Match failed.
 			result::ok(false)
 		}
 	}
 }
 
-fn match_entry(store: store, names: [str], row: [mut option<iobject>], entry: entry, matcher: triple_matcher) -> result::result<bool, str>
+fn context_to_row(names: [str], context: hashmap<str, iobject>) -> [option<iobject>]
 {
-	eval_match(names, row, matcher.pmatch(store, entry.predicate)).chain
-	{|matched|
-		if matched
+	let row: [mut option<iobject>] = vec::to_mut(vec::from_elem(vec::len(names), option::none));
+	
+	for context.each
+	{|name, value|
+		alt vec::position_elem(names, name)
 		{
-			eval_match(names, row, matcher.omatch(store, entry.object))
+			option::some(index)
+			{
+				row[index] = option::some(value);
+			}
+			option::none
+			{
+			}
 		}
-		else
-		{
-			result::ok(false)
-		}
-	}
+	};
+	
+	ret vec::from_mut(row);	// TODO: may be able to speed up the vector conversions using unsafe functions
 }
 
 // Returns the named bindings. Binding values for names not 
@@ -382,41 +400,46 @@ fn select(names: [str], matcher: triple_matcher) -> selector
 	{|store: store|
 		let mut rows: [[option<iobject>]] = [];
 		
-		for store.subjects.each()
-		{|subject, entries|
-			let initial: [mut option<iobject>] = vec::to_mut(vec::from_elem(vec::len(names), option::none));
-			
-			alt eval_match(names, initial, matcher.smatch(store, subject))
-			{
-				result::ok(true)
+		// Iterate over the matching subjects,
+		for iterate_matches(store, matcher.smatch)
+		{|sbinding, entries|
+			for (*entries).each()
+			{|entry|
+				// initialize context,
+				let context = std::map::str_hash();
+				if option::is_some(sbinding)
 				{
-					for (*entries).each()
-					{|entry|
-						let row: [mut option<iobject>] = copy(initial);
-						alt match_entry(store, names, row, entry, matcher)
-						{
-							result::ok(true)
-							{
-								vec::push(rows, vec::from_mut(row));	// TODO: may be able to speed up the vector conversions using unsafe functions
-							}
-							result::ok(false)
-							{
-								// match failed: try the next entry
-							}
-							result::err(mesg)
-							{
-								ret result::err(mesg);
-							}
-						}
+					context.insert(option::get(sbinding).name, option::get(sbinding).value);
+				}
+				
+				// match an entry,
+				let result = eval_match(context, matcher.pmatch(store, entry.predicate)).chain
+				{|matched|
+					if matched
+					{
+						eval_match(context, matcher.omatch(store, entry.object))
 					}
-				}
-				result::ok(false)
+					else
+					{
+						result::ok(false)
+					}
+				};
+				
+				// handle the results of matching the triple.
+				alt result
 				{
-					// match failed: try next subject
-				}
-				result::err(mesg)
-				{
-					ret result::err(mesg);
+					result::ok(true)
+					{
+						vec::push(rows, context_to_row(names, context));
+					}
+					result::ok(false)
+					{
+						// match failed: try next entry
+					}
+					result::err(mesg)
+					{
+						ret result::err(mesg)
+					}
 				}
 			}
 		};
