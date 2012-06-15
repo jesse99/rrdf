@@ -1,10 +1,14 @@
 // The sparql parser operates by building a sequence of matcher functions and
 // then creating a selector function using the select function.
 import std::map::hashmap;
+import result::extensions;
 
 type binding = {name: str, value: option<iobject>};
-type match = either::either<[binding], bool>;					// match succeeded if bindings or true
-type matcher = fn@ (store, qname, entry) -> match;
+type match = either::either<binding, bool>;					// match succeeded if bindings or true
+
+type qname_matcher = fn@ (store, qname) -> match;
+type object_matcher = fn@ (store, iobject) -> match;
+type triple_matcher = {smatch: qname_matcher, pmatch: qname_matcher, omatch: object_matcher};
 
 enum pattern
 {
@@ -239,15 +243,15 @@ fn match_literal(store: store, lhs: iobject, rhs: iobject) -> match
 	}
 }
 
-fn match_subject(pattern: pattern) -> matcher
+fn match_subject(pattern: pattern) -> qname_matcher
 {
-	{|store: store, subject: qname, _entry: entry|
+	{|store: store, subject: qname|
 		alt pattern
 		{
 			variable(name)
 			{
 				let b = {name: name, value: some(ireference(subject))};
-				core::either::left([b])
+				core::either::left(b)
 			}
 			constant(rhs)
 			{
@@ -257,46 +261,114 @@ fn match_subject(pattern: pattern) -> matcher
 	}
 }
 
-fn match_predicate(pattern: pattern) -> matcher
+fn match_predicate(pattern: pattern) -> qname_matcher
 {
-	{|store: store, _subject: qname, entry: entry|
+	{|store: store, predicate: qname|
 		alt pattern
 		{
 			variable(name)
 			{
-				let p = get_friendly_name(store, entry.predicate);
+				let p = get_friendly_name(store, predicate);
 				let b = {name: name, value: some(ityped(p, {nindex: 2u, name: "anyURI"}))};
-				core::either::left([b])
+				core::either::left(b)
 			}
 			constant(rhs)
 			{
-				match_literal(store, ireference(entry.predicate), rhs)
+				match_literal(store, ireference(predicate), rhs)
 			}
 		}
 	}
 }
 
-fn match_object(pattern: pattern) -> matcher
+fn match_object(pattern: pattern) -> object_matcher
 {
-	{|store: store, _subject: qname, entry: entry|
+	{|store: store, object: iobject|
 		alt pattern
 		{
 			variable(name)
 			{
-				let b = {name: name, value: some(entry.object)};
-				either::left([b])
+				let b = {name: name, value: some(object)};
+				either::left(b)
 			}
 			constant(rhs)
 			{
-				match_literal(store, entry.object, rhs)
+				match_literal(store, object, rhs)
 			}
+		}
+	}
+}
+
+fn eval_match(names: [str], row: [mut option<iobject>], match: match) -> result::result<bool, str>
+{
+	alt match
+	{
+		core::either::left(binding)
+		{
+			alt vec::position_elem(names, binding.name)
+			{
+				option::some(index)
+				{
+					if row[index] == option::none
+					{
+						row[index] = binding.value;
+					}
+					else
+					{
+						// Spec isn't clear what the semantics of this should be, but it seems
+						// likely to be, at best, confusing and normally a bug so we'll call it
+						// an error for now.
+						ret result::err(#fmt["Binding %s was set more than once.", binding.name]);
+					}
+				}
+				option::none
+				{
+					// Matcher created a binding, but it's not one the user wanted returned
+					// (TODO: though it could be used by other matchers which we'll need to handle).
+				}
+			}
+			result::ok(true)
+		}
+		core::either::right(true)
+		{
+			// Match succeeded but didn't set a binding.
+			result::ok(true)
+		}
+		core::either::right(false)
+		{
+			// Match failed.
+			result::ok(false)
+		}
+	}
+}
+
+fn match_entry(store: store, names: [str], row: [mut option<iobject>], subject: qname, entry: entry, matcher: triple_matcher) -> result::result<bool, str>
+{
+	eval_match(names, row, matcher.smatch(store, subject)).chain
+	{|matched|
+		if matched
+		{
+			eval_match(names, row, matcher.pmatch(store, entry.predicate)).chain
+			{|matched|
+				if matched
+				{
+					eval_match(names, row, matcher.omatch(store, entry.object))
+				}
+				else
+				{
+					result::ok(false)
+				}
+			}
+		}
+		else
+		{
+			result::ok(false)
 		}
 	}
 }
 
 // Returns the named bindings. Binding values for names not 
-// returned by the matchers are set to none.
-fn select(names: [str], matchers: [matcher]) -> selector
+// returned by the matcher are set to none. TODO: is that right?
+fn select(names: [str], matcher: triple_matcher) -> selector
 {
 	{|store: store|
 		let mut rows: [[option<iobject>]] = [];
@@ -306,57 +378,21 @@ fn select(names: [str], matchers: [matcher]) -> selector
 			for (*entries).each()
 			{|entry|
 				let row: [mut option<iobject>] = vec::to_mut(vec::from_elem(vec::len(names), option::none));
-				let mut matched = true;
 				
-				for vec::each(matchers)
-				{|matcher|
-					alt matcher(store, subject, entry)
-					{
-						core::either::left(bindings)
-						{
-							for vec::each(bindings)
-							{|binding|
-								alt vec::position_elem(names, binding.name)
-								{
-									option::some(index)
-									{
-										if row[index] == option::none
-										{
-											row[index] = binding.value;
-										}
-										else
-										{
-											// Spec isn't clear what the semantics of this should be, but it seems
-											// likely to be, at best, confusing and normally a bug so we'll call it
-											// an error for now.
-											ret result::err(#fmt["Binding %s was set more than once.", binding.name]);
-										}
-									}
-									option::none
-									{
-										// Matcher created a binding, but it's not one the user wanted returned
-										// (though it could be used by other matchers).
-									}
-								}
-							};
-						}
-						core::either::right(true)
-						{
-							// We matched the triple so we can keep going, but this
-							// matcher doesn't have any bindings so there is nothing
-							// to return for it.
-						}
-						core::either::right(false)
-						{
-							matched = false;
-							break;
-						}
-					}
-				};
-				
-				if matched
+				alt match_entry(store, names, row, subject, entry, matcher)
 				{
-					vec::push(rows, vec::from_mut(row));	// TODO: may be able to speed up the vector conversions using unsafe functions
+					result::ok(true)
+					{
+						vec::push(rows, vec::from_mut(row));	// TODO: may be able to speed up the vector conversions using unsafe functions
+					}
+					result::ok(false)
+					{
+						// match failed: try the next entry
+					}
+					result::err(mesg)
+					{
+						ret result::err(mesg);
+					}
 				}
 			}
 		};

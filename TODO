@@ -10,7 +10,6 @@ enum expr_type
 }
 
 
-* Move the test_store helpers into test_helpers.
 * Need subject and entry matchers so we can avoid entry iteration.
 * May want to drop the n from index.
 * make_qname is going to screw up with real URLs.

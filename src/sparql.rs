@@ -160,11 +160,11 @@ fn make_parser() -> parser<selector>
 	
 	// [78] PropertyListNotEmptyPath	::= (VerbPath | VerbSimple) ObjectList ( ';' ( ( VerbPath | VerbSimple ) ObjectList )? )*
 	let PropertyListNotEmptyPath= seq2(VerbSimple, ObjectList)
-		{|prop, object| result::ok([match_predicate(prop), match_object(object)])};
+		{|prop, object| result::ok((match_predicate(prop), match_object(object)))};
 		
 	// [77] TriplesSameSubjectPath ::= VarOrTerm PropertyListNotEmptyPath | TriplesNode PropertyListPath 
 	let TriplesSameSubjectPath = seq2(VarOrTerm, PropertyListNotEmptyPath)
-		{|subject, plist| result::ok([match_subject(subject), plist[0], plist[1]])};
+		{|subject, e| result::ok({smatch: match_subject(subject), pmatch: tuple::first(e), omatch: tuple::second(e)})};
 		
 	// [56] TriplesBlock ::= TriplesSameSubjectPath ( '.' TriplesBlock? )?
 	let TriplesBlock = TriplesSameSubjectPath;
