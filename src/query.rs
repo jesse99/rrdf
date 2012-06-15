@@ -6,15 +6,12 @@ import result::extensions;
 type binding = {name: str, value: iobject};
 type match = either::either<binding, bool>;					// match succeeded if bindings or true
 
-type qname_matcher = fn@ (store, qname) -> match;
-type object_matcher = fn@ (store, iobject) -> match;
-type triple_matcher = {smatch: qname_matcher, pmatch: qname_matcher, omatch: object_matcher};
-
 enum pattern
 {
 	variable(str),
 	constant(iobject)
 }
+type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 
 fn get_match_type(object: iobject) -> str
 {
@@ -226,73 +223,28 @@ fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
 	}
 }
 
-fn match_literal(store: store, lhs: iobject, rhs: iobject) -> match
+fn match_pattern(store: store, lhs: iobject, pattern: pattern) -> match
 {
-	let type1 = get_match_type(lhs);
-	let type2 = get_match_type(rhs);
-	if type1 == type2
+	alt pattern
 	{
-		let matched = match_values(store, lhs, rhs);
-		#debug["Values %? (%s) and %? (%s) %s", lhs.to_str(), type1, rhs.to_str(), type2, ["don't match", "match"][matched as uint]];
-		either::right(matched)
-	}
-	else
-	{
-		#debug["Types '%s' and '%s' do not match", type1, type2];
-		either::right(false)
-	}
-}
-
-fn match_subject(pattern: pattern) -> qname_matcher
-{
-	{|store: store, subject: qname|
-		alt pattern
+		variable(name)
 		{
-			variable(name)
-			{
-				let b = {name: name, value: ireference(subject)};
-				core::either::left(b)
-			}
-			constant(rhs)
-			{
-				match_literal(store, ireference(subject), rhs)
-			}
+			either::left({name: name, value: lhs})
 		}
-	}
-}
-
-fn match_predicate(pattern: pattern) -> qname_matcher
-{
-	{|store: store, predicate: qname|
-		alt pattern
+		constant(rhs)
 		{
-			variable(name)
+			let type1 = get_match_type(lhs);
+			let type2 = get_match_type(rhs);
+			if type1 == type2
 			{
-				let p = get_friendly_name(store, predicate);
-				let b = {name: name, value: ityped(p, {nindex: 2u, name: "anyURI"})};
-				core::either::left(b)
+				let matched = match_values(store, lhs, rhs);
+				#debug["Values %? (%s) and %? (%s) %s", lhs.to_str(), type1, rhs.to_str(), type2, ["don't match", "match"][matched as uint]];
+				either::right(matched)
 			}
-			constant(rhs)
+			else
 			{
-				match_literal(store, ireference(predicate), rhs)
-			}
-		}
-	}
-}
-
-fn match_object(pattern: pattern) -> object_matcher
-{
-	{|store: store, object: iobject|
-		alt pattern
-		{
-			variable(name)
-			{
-				let b = {name: name, value: object};
-				either::left(b)
-			}
-			constant(rhs)
-			{
-				match_literal(store, object, rhs)
+				#debug["Types '%s' and '%s' do not match", type1, type2];
+				either::right(false)
 			}
 		}
 	}
@@ -315,34 +267,6 @@ fn io_rows_to_orows(store: store, rows: [[option<iobject>]]) -> [[option<object>
 				}
 			}
 		})})
-}
-
-fn iterate_matches(store: store, smatch: qname_matcher, callback: fn (option<binding>, @dvec<entry>) -> bool)
-{
-	for store.subjects.each()
-	{|subject, entries|
-		alt smatch(store, subject)
-		{
-			either::left(binding)
-			{
-				if !callback(option::some(binding), entries)
-				{
-					ret;
-				}
-			}
-			either::right(true)
-			{
-				if !callback(option::none, entries)
-				{
-					ret;
-				}
-			}
-			either::right(false)
-			{
-				// match failed: try the next subject
-			}
-		}
-	};
 }
 
 fn eval_match(context: hashmap<str, iobject>, match: match) -> result::result<bool, str>
@@ -393,15 +317,78 @@ fn context_to_row(names: [str], context: hashmap<str, iobject>) -> [option<iobje
 	ret vec::from_mut(row);	// TODO: may be able to speed up the vector conversions using unsafe functions
 }
 
+fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding>, @dvec<entry>) -> bool)
+{
+	fn invoke(store: store, subject: qname, pattern: pattern, entries: @dvec<entry>, callback: fn (option<binding>, @dvec<entry>) -> bool) -> bool
+	{
+		alt match_pattern(store, ireference(subject), pattern)
+		{
+			either::left(binding)
+			{
+				callback(option::some(binding), entries)
+			}
+			either::right(true)
+			{
+				callback(option::none, entries)
+			}
+			either::right(false)
+			{
+				false
+			}
+		}
+	}
+	
+	alt spattern
+	{
+		constant(ireference(subject))
+		{
+			// Optimization for a common case where we are attempting to match a specific subject.
+			let candidate = store.subjects.find(subject);
+			if option::is_some(candidate)
+			{
+				let entries = option::get(candidate);
+				if !invoke(store, subject, spattern, entries, callback)
+				{
+					ret;
+				}
+			}
+		}
+		constant(ityped(name, {nindex: 2u, name: "anyURI"}))
+		{
+			// Same as above (though we should seldom hit this version).
+			let subject = make_qname(store, name);
+			let candidate = store.subjects.find(subject);
+			if option::is_some(candidate)
+			{
+				let entries = option::get(candidate);
+				if !invoke(store, subject, spattern, entries, callback)
+				{
+					ret;
+				}
+			}
+		}
+		_
+		{
+			for store.subjects.each()
+			{|subject, entries|
+				if !invoke(store, subject, spattern, entries, callback)
+				{
+					ret;
+				}
+			};
+		}
+	}
+}
+
 // Returns the named bindings. Binding values for names not 
 // returned by the matcher are set to none. TODO: is that right?
-fn select(names: [str], matcher: triple_matcher) -> selector
+fn select(names: [str], matcher: triple_pattern) -> selector
 {
 	{|store: store|
 		let mut rows: [[option<iobject>]] = [];
 		
 		// Iterate over the matching subjects,
-		for iterate_matches(store, matcher.smatch)
+		for iterate_matches(store, matcher.subject)
 		{|sbinding, entries|
 			for (*entries).each()
 			{|entry|
@@ -413,11 +400,11 @@ fn select(names: [str], matcher: triple_matcher) -> selector
 				}
 				
 				// match an entry,
-				let result = eval_match(context, matcher.pmatch(store, entry.predicate)).chain
+				let result = eval_match(context, match_pattern(store, ireference(entry.predicate), matcher.predicate)).chain
 				{|matched|
 					if matched
 					{
-						eval_match(context, matcher.omatch(store, entry.object))
+						eval_match(context, match_pattern(store, entry.object, matcher.object))
 					}
 					else
 					{
