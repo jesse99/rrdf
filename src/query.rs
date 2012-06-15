@@ -2,6 +2,7 @@
 // then creating a selector function using the select function.
 import std::map::hashmap;
 import result::extensions;
+import sparql::*;
 
 type binding = {name: str, value: iobject};
 type match = either::either<binding, bool>;					// match succeeded if bindings or true
@@ -11,7 +12,6 @@ enum pattern
 	variable(str),
 	constant(iobject)
 }
-type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 
 fn get_match_type(object: iobject) -> str
 {
@@ -380,15 +380,42 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 	}
 }
 
+fn executable_pattern(store: store, cp: compiled_pattern) -> pattern
+{
+	alt cp
+	{
+		variable_binding(name)
+		{
+			variable(name)
+		}
+		string_literal(value, "")
+		{
+			constant(ityped(value, {nindex: 2u, name: "string"}))
+		}
+		string_literal(value, lang)
+		{
+			constant(istring(value, {nindex: 2u, name: "string"}, lang))
+		}
+		iri_literal(value)
+		{
+			constant(ireference(make_qname(store, value)))
+		}
+	}
+}
+
 // Returns the named bindings. Binding values for names not 
 // returned by the matcher are set to none. TODO: is that right?
-fn select(names: [str], matcher: triple_pattern) -> selector
+fn select(names: [str], matcher: compiled_triple_pattern) -> selector
 {
 	{|store: store|
 		let mut rows: [[option<iobject>]] = [];
 		
+		let spattern = executable_pattern(store, matcher.subject);
+		let ppattern = executable_pattern(store, matcher.predicate);
+		let opattern = executable_pattern(store, matcher.object);
+		
 		// Iterate over the matching subjects,
-		for iterate_matches(store, matcher.subject)
+		for iterate_matches(store, spattern)
 		{|sbinding, entries|
 			for (*entries).each()
 			{|entry|
@@ -400,11 +427,11 @@ fn select(names: [str], matcher: triple_pattern) -> selector
 				}
 				
 				// match an entry,
-				let result = eval_match(context, match_pattern(store, ireference(entry.predicate), matcher.predicate)).chain
+				let result = eval_match(context, match_pattern(store, ireference(entry.predicate), ppattern)).chain
 				{|matched|
 					if matched
 					{
-						eval_match(context, match_pattern(store, entry.object, matcher.object))
+						eval_match(context, match_pattern(store, entry.object, opattern))
 					}
 					else
 					{

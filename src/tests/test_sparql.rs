@@ -175,11 +175,41 @@ fn language_tags()
 	assert check_solution(store, expr, expected);
 }
 
+#[test]
+fn iri_match()
+{
+	let expr = "SELECT ?s WHERE {?s <http://www.w3.org/2006/vcard/ns#nickname> ?z}";
+	let store = test_data::got_cast3();
+	let expected = {names: ["s"], rows: [
+		[option::some({value: "got:Eddard_Stark", kind: "xsd:anyURI", lang: ""})],
+		[option::some({value: "got:Jon_Snow", kind: "xsd:anyURI", lang: ""})],
+		[option::some({value: "got:Sandor_Clegane", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
+// This represents a special case in iterate_matches.
+#[test]
+fn subject_match()
+{
+	let expr = "SELECT ?p WHERE {<http://awoiaf.westeros.org/index.php/Sandor_Clegane> ?p ?z}";
+	let store = test_data::got_cast3();
+	let expected = {names: ["p"], rows: [
+		[option::some({value: "v:fn", kind: "xsd:anyURI", lang: ""})],
+		[option::some({value: "v:nickname", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
 // TODO:
-// iri literals
-// matching specific subject
+// prefixed names
+// make sure string does not match subject
+// typed string
 // int literal
 // float literal
+// mixed numbers (including typed literals)
 // boolean literal
 // NIL literal
 // maybe datetime literals

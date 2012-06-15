@@ -92,8 +92,8 @@ fn create_store(namespaces: [namespace]) -> store
 {
 	{
 		namespaces: [
-			{prefix: "", path: ""},
-			{prefix: "_", path: "_"},
+			{prefix: "", path: ""},		// used for names that are not actually prefixed
+			{prefix: "_", path: "_"},	// used for blank nodes
 			{prefix: "xsd", path: "http://www.w3.org/2001/XMLSchema#"},
 			{prefix: "rdf", path: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
 			{prefix: "rdfs", path: "http://www.w3.org/2000/01/rdf-schema#"}
@@ -208,28 +208,40 @@ fn get_full_name(store: store, qn: qname) -> str
 
 fn make_qname(store: store, name: str) -> qname
 {
-	let (ns, suffix) =
-		alt str::find_char(name, ':')
-		{
-			option::some(index)
-			{
-				(str::slice(name, 0u, index), str::slice(name, index + 1u, str::len(name)))
-			}
-			option::none
-			{
-				("", name)
-			}
-		};
-		
-	alt vec::position(store.namespaces, {|e| e.prefix == ns})
+	alt vec::position(store.namespaces, {|e| str::len(e.path) > 1u && name.starts_with(e.path)})
 	{
-		option::some(index)
+		option::some(i)
 		{
-			{nindex: index, name: suffix}
+			// name is an URL and it matches a path from namespaces
+			{nindex: i, name: str::slice(name, str::len(store.namespaces[i].path), str::len(name))}
 		}
 		option::none
 		{
-			fail(#fmt["%s is not a valid namespace", ns])
+			let (ns, suffix) =
+				alt str::find_char(name, ':')
+				{
+					option::some(index)
+					{
+						(str::slice(name, 0u, index), str::slice(name, index + 1u, str::len(name)))
+					}
+					option::none
+					{
+						fail(#fmt["%s doesn't match a path in namespaces and isn't a prefixed name", name])
+					}
+				};
+				
+			alt vec::position(store.namespaces, {|e| str::is_not_empty(e.path) && e.prefix == ns})
+			{
+				option::some(index)
+				{
+					// name seems to be a prefixed name and it matches a prefix from namespaces
+					{nindex: index, name: suffix}
+				}
+				option::none
+				{
+					fail(#fmt["%s doesn't match a namespace from the store's namespaces", name])
+				}
+			}
 		}
 	}
 }
