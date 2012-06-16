@@ -410,6 +410,9 @@ fn make_parser() -> parser<selector>
 	// [125] String ::= STRING_LITERAL1 | STRING_LITERAL2 | STRING_LITERAL_LONG1 | STRING_LITERAL_LONG2
 	let String = or_v([STRING_LITERAL_LONG1, STRING_LITERAL_LONG2, STRING_LITERAL1, STRING_LITERAL2]);
 	
+	// [124] BooleanLiteral	::= 'true' | 'false'
+	let BooleanLiteral = ("true".lit()).or("false".lit()).thene({|v| return(typed_literal(v, "xsd:boolean"))}).s0();
+	
 	// [121] NumericLiteralUnsigned ::= INTEGER | DECIMAL | DOUBLE
 	let NumericLiteralUnsigned = or_v([DOUBLE, DECIMAL, INTEGER]);
 	
@@ -437,7 +440,8 @@ fn make_parser() -> parser<selector>
 	let GraphTerm = or_v([
 		RDFLiteral.annotate("RDFLiteral"),
 		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))}),
-		NumericLiteral
+		NumericLiteral,
+		BooleanLiteral
 	]);
 	
 	// [156] VARNAME ::= ( PN_CHARS_U | [0-9] ) ( PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040] )*

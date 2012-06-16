@@ -248,11 +248,19 @@ fn double_literal()
 	assert check_solution(store, expr, expected);
 }
 
-// TODO:
-// might want a test_literals.rs file
-// mixed numbers (including typed literals)
-// boolean literal
-// NIL literal
-// maybe datetime literals
-// would it make sense to use NIL instead of option::none?
-// check error reporting for some common cases (and add tags as appropriate)
+#[test]
+fn boolean_literal()
+{
+	let expr = "SELECT ?s WHERE {?s ?p false}";
+	let store = test_data::got_cast1();
+	add_triples(store, [
+		{subject: "got:Some_Guy", predicate: "v:male", object: {value: "true", kind: "xsd:boolean", lang: ""}},
+		{subject: "got:A_Woman", predicate: "v:male", object: {value: "false", kind: "xsd:boolean", lang: ""}}
+		]);
+	
+	let expected = {names: ["s"], rows: [
+		[option::some({value: "got:A_Woman", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}

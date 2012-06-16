@@ -12,8 +12,8 @@ enum expr_type
 
 * Need subject and entry matchers so we can avoid entry iteration.
 * May want to drop the n from index.
-* make_qname is going to screw up with real URLs.
-* Do a push.
+* Check some common parse errors and add tag as needed.
+* Do we need to be able to match collections?
 * Add a unit test demonstrating that solutions can be sent across tasks.
 * Add a unit test showing that add_triples args can be sent across threads.
 * Add support for sequences, bags, and alternatives.
