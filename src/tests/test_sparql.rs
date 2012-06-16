@@ -203,9 +203,45 @@ fn subject_match()
 	assert check_solution(store, expr, expected);
 }
 
+
+#[test]
+fn prefix_name_match()
+{
+	let expr = "SELECT ?s WHERE {?s v:nickname ?z}";
+	let store = test_data::got_cast3();
+	let expected = {names: ["s"], rows: [
+		[option::some({value: "got:Eddard_Stark", kind: "xsd:anyURI", lang: ""})],
+		[option::some({value: "got:Jon_Snow", kind: "xsd:anyURI", lang: ""})],
+		[option::some({value: "got:Sandor_Clegane", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn prefix_subject_match()
+{
+	let expr = "SELECT ?p WHERE {got:Sandor_Clegane ?p ?z}";
+	let store = test_data::got_cast3();
+	let expected = {names: ["p"], rows: [
+		[option::some({value: "v:fn", kind: "xsd:anyURI", lang: ""})],
+		[option::some({value: "v:nickname", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn strings_dont_match_uris()
+{
+	let expr = "SELECT ?p WHERE {\"got:Sandor_Clegane\" ?p ?z}";
+	let store = test_data::got_cast3();
+	let expected = {names: ["p"], rows: []};
+	
+	assert check_solution(store, expr, expected);
+}
+
 // TODO:
-// prefixed names
-// make sure string does not match subject
 // typed string
 // int literal
 // float literal
@@ -215,3 +251,4 @@ fn subject_match()
 // maybe datetime literals
 // would it make sense to use NIL instead of option::none?
 // might want a test_literals.rs file
+// check error reporting for some common cases (and add tags as appropriate)

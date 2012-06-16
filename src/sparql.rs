@@ -9,7 +9,8 @@ enum compiled_pattern
 {
 	variable_binding(str),
 	string_literal(str, str),		// value + lang (which may be empty)
-	iri_literal(str)
+	iri_literal(str),
+	prefixed_name(str)
 }
 
 type compiled_triple_pattern = {subject: compiled_pattern, predicate: compiled_pattern, object: compiled_pattern};
@@ -29,6 +30,11 @@ fn find_dupes(names: [str]) -> [str]
 	};
 	
 	ret dupes;
+}
+
+pure fn is_hex(ch: char) -> bool
+{
+	ret (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
 }
 
 pure fn is_langtag_prefix(ch: char) -> bool
@@ -124,23 +130,221 @@ fn long_char(x: char, chars: [char], i:uint) -> uint
 	}
 }
 
-//fn prefixed_name() -> parser<str>
-//{
-	// [163] PN_LOCAL_ESC ::=  '\' ( '_' | '~' | '.' | '-' | '!' | '$' | '&' | "'" | '(' | ')' | '*' | '+' | ',' | ';' | '=' | ':' | '/' | '?' | '#' | '@' | '%' )
-	// [162] HEX ::= [0-9] | [A-F] | [a-f]
+// [154] PN_CHARS_BASE	::= [A-Z] | [a-z] | [#x00C0-#x00D6] | [#x00D8-#x00F6] | [#x00F8-#x02FF] | [#x0370-#x037D] | [#x037F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
+fn pn_chars_base(chars: [char], i: uint) -> uint
+{
+	if chars[i] >= 'A' && chars[i] <= 'Z'
+	{
+		1u
+	}
+	else if chars[i] >= 'a' && chars[i] <= 'z'
+	{
+		1u
+	}
+	else if chars[i] >= (0x00C0 as char) && chars[i] <= (0x00D6 as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x00D8 as char) && chars[i] <= (0x00F6 as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x00F8 as char) && chars[i] <= (0x02FF as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x0370 as char) && chars[i] <= (0x037D as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x037F as char) && chars[i] <= (0x1FFF as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x200C as char) && chars[i] <= (0x200D as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x2070 as char) && chars[i] <= (0x218F as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x2C00 as char) && chars[i] <= (0x2FEF as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x3001 as char) && chars[i] <= (0xD7FF as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0xF900 as char) && chars[i] <= (0xFDCF as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0xFDF0 as char) && chars[i] <= (0xFFFD as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x10000 as char) && chars[i] <= (0xEFFFF as char)
+	{
+		1u
+	}
+	else
+	{
+		0u
+	}
+}
+
+// [155] PN_CHARS_U ::= PN_CHARS_BASE | '_'
+fn pn_chars_u(chars: [char], i: uint) -> uint
+{
+	let count = pn_chars_base(chars, i);
+	if count > 0u
+	{
+		count
+	}
+	else if chars[i] == '_'
+	{
+		1u
+	}
+	else
+	{
+		0u
+	}
+}
+
+// [157] PN_CHARS	::= PN_CHARS_U | '-' | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040]
+fn pn_chars(chars: [char], i: uint) -> uint
+{
+	let count = pn_chars_u(chars, i);
+	if count > 0u
+	{
+		count
+	}
+	else if chars[i] == '-'
+	{
+		1u
+	}
+	else if chars[i] >= '0' && chars[i] <= '9'
+	{
+		1u
+	}
+	else if chars[i] == (0xB7 as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x300 as char) && chars[i] <= (0x36F as char)
+	{
+		1u
+	}
+	else if chars[i] >= (0x203F as char) && chars[i] <= (0x2040 as char)
+	{
+		1u
+	}
+	else
+	{
+		0u
+	}
+}
+
+fn pn_chars_or_dot(chars: [char], index: uint) -> uint
+{
+	alt pn_chars(chars, index)
+	{
+		0u
+		{
+			if chars[index] == '.'
+			{
+				1u
+			}
+			else
+			{
+				0u
+			}
+		}
+		count
+		{
+			count
+		}
+	}
+}
+
+// [160] PLX ::= PERCENT | PN_LOCAL_ESC
+fn plx(chars: [char], i: uint) -> uint
+{
 	// [161] PERCENT ::= '%' HEX HEX
-	// [160] PLX ::= PERCENT | PN_LOCAL_ESC
-	// [159] PN_LOCAL ::= (PN_CHARS_U | [0-9] | PLX ) ( ( PN_CHARS | '.' | PLX )* ( PN_CHARS | PLX ) ) ? >
-	// [158] PN_PREFIX	::= PN_CHARS_BASE ((PN_CHARS|'.')* PN_CHARS)?
-	// [157] PN_CHARS	::= PN_CHARS_U | '-' | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040]
-	// [155] PN_CHARS_U ::= PN_CHARS_BASE | '_'
-	// [154] PN_CHARS_BASE	::= [A-Z] | [a-z] | [#x00C0-#x00D6] | [#x00D8-#x00F6] | [#x00F8-#x02FF] | [#x0370-#x037D] | [#x037F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
-	// [131] PNAME_LN	::= PNAME_NS PN_LOCAL
+	if chars[i] == '%' && is_hex(chars[i+1u]) && is_hex(chars[i+2u])
+	{
+		3u
+	}
+	// [163] PN_LOCAL_ESC ::=  '\' ( '_' | '~' | '.' | '-' | '!' | '$' | '&' | "'" | '(' | ')' | '*' | '+' | ',' | ';' | '=' | ':' | '/' | '?' | '#' | '@' | '%' )
+	else if chars[i] == '\\' && option::is_some(str::find_char("_~.-!$&'\"()*+,;=:/?#@%", chars[i+1u]))
+	{
+		2u
+	}
+	else
+	{
+		0u
+	}
+}
+
+// PN_CHARS | '.' | PLX
+fn pn_chars_or_dot_or_plx(chars: [char], i: uint) -> uint
+{
+	alt pn_chars(chars, i)
+	{
+		0u
+		{
+			if chars[i] == '.'
+			{
+				1u
+			}
+			else
+			{
+				plx(chars, i)
+			}
+		}
+		count
+		{
+			count
+		}
+	}
+}
+
+fn prefixedname() -> parser<str>
+{
+	// [159] PN_LOCAL ::= (PN_CHARS_U | [0-9] | PLX)  ((PN_CHARS | '.' | PLX)* (PN_CHARS | PLX))? 		note that w3c had an error here (a stray > character at the end of the production)
+	let pn_local_prefix = or_v([
+		scan(pn_chars_u),
+		"0123456789".anyc().thene({|c| return(str::from_char(c))}),
+		scan(plx)
+	]);
+	let pn_local_suffix = seq2(scan0(pn_chars_or_dot_or_plx), scan(pn_chars).or(scan(plx)))
+		{|l, r| result::ok(l + r)};
+	let PN_LOCAL = seq2(pn_local_prefix, optional_str(pn_local_suffix))
+		{|l, r| result::ok(l + r)};
+	
+	// [158] PN_PREFIX	::= PN_CHARS_BASE ((PN_CHARS | '.')* PN_CHARS)?
+	let pname_ns_suffix = seq2(scan(pn_chars_or_dot), scan(pn_chars))
+		{|l, r| result::ok(l + r)};
+	
+	let PN_PREFIX = seq2(scan(pn_chars_base), optional_str(pname_ns_suffix))
+		{|l, r| result::ok(l + r)};
+	
 	// [130] PNAME_NS	::= PN_PREFIX? ':'
+	let PNAME_NS = seq2(optional_str(PN_PREFIX), ":".lit())
+		{|l, r| result::ok(l + r)};
+	
+	// [131] PNAME_LN	::= PNAME_NS PN_LOCAL
+	let PNAME_LN = seq2(PNAME_NS, PN_LOCAL)
+		{|l, r| result::ok(l + r)};
+	
 	// [127] PrefixedName ::= PNAME_LN | PNAME_NS
-//}
+	(PNAME_LN.or(PNAME_NS)).s0()
+}
 
 // http://www.w3.org/TR/sparql11-query/#grammar
+// TODO: remove annotate calls
 fn make_parser() -> parser<selector>
 {
 	// [149] STRING_LITERAL_LONG2 ::= '"""' ( ( '"' | '""' )? ( [^"\] | ECHAR ) )* '"""'
@@ -159,10 +363,10 @@ fn make_parser() -> parser<selector>
 	let LANGTAG = langtag();
 	
 	// [129] IRI_REF	 ::= '<' ([^<>"{}|^`\]-[#x00-#x20])* '>'
-	let IRI_REF = seq3_ret1("<".lit(), match0(iri_char), ">".lit().s0());
+	let IRI_REF = seq3_ret1("<".lit(), match0(iri_char), ">".lit().s0()).annotate("IRI_REF");
 	
 	// [126] IRIref ::= IRI_REF | PrefixedName
-	let IRIref = IRI_REF;
+	let IRIref = IRI_REF.or(prefixedname().annotate("prefixedname"));
 	
 	// [125] String ::= STRING_LITERAL1 | STRING_LITERAL2 | STRING_LITERAL_LONG1 | STRING_LITERAL_LONG2
 	let String = or_v([STRING_LITERAL_LONG1, STRING_LITERAL_LONG2, STRING_LITERAL1, STRING_LITERAL2]);
@@ -177,8 +381,8 @@ fn make_parser() -> parser<selector>
 	
 	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral |	BooleanLiteral |	BlankNode |	NIL
 	let GraphTerm = or_v([
-		RDFLiteral,
-		IRIref.thene({|v| return(iri_literal(v))})
+		RDFLiteral.annotate("RDFLiteral"),
+		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))})
 	]);
 	
 	// [156] VARNAME ::= ( PN_CHARS_U | [0-9] ) ( PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040] )*

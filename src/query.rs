@@ -400,6 +400,10 @@ fn executable_pattern(store: store, cp: compiled_pattern) -> pattern
 		{
 			constant(ireference(make_qname(store, value)))
 		}
+		prefixed_name(name)
+		{
+			constant(ireference(make_qname(store, name)))
+		}
 	}
 }
 
