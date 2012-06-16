@@ -10,7 +10,8 @@ enum compiled_pattern
 	variable_binding(str),
 	string_literal(str, str),		// value + lang (which may be empty)
 	iri_literal(str),
-	prefixed_name(str)
+	prefixed_name(str),
+	typed_literal(str, str)
 }
 
 type compiled_triple_pattern = {subject: compiled_pattern, predicate: compiled_pattern, object: compiled_pattern};
@@ -359,6 +360,44 @@ fn make_parser() -> parser<selector>
 	// [146] STRING_LITERAL1 ::= "'" ( ([^'\\\n\r]) | ECHAR )* "'"
 	let STRING_LITERAL1 = seq3_ret1("'".lit(), scan0(bind short_char('\'', _, _)), "'".lit().s0());
 	
+	// [136] INTEGER ::= [0-9]+
+	let INTEGER = match1(is_digit).thene({|v| return(typed_literal(v, "xsd:integer"))}).s0();
+	
+	// [142] INTEGER_NEGATIVE ::= '-' INTEGER
+	let INTEGER_NEGATIVE = seq2_ret_str("-".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "xsd:integer"))}).s0();
+	
+	// [139] INTEGER_POSITIVE ::= '+' INTEGER
+	let INTEGER_POSITIVE = seq2_ret1("+".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "xsd:integer"))}).s0();
+	
+	// [137] DECIMAL ::= [0-9]* '.' [0-9]+
+	let decimal_root = seq3_ret_str(match0(is_digit), ".".lit(), match1(is_digit)).s0();
+	let DECIMAL = decimal_root.thene({|v| return(typed_literal(v, "xsd:double"))});
+	
+	// [143] DECIMAL_NEGATIVE ::= '-' DECIMAL
+	let DECIMAL_NEGATIVE = seq2_ret_str("-".lit(), decimal_root).thene({|v| return(typed_literal(v, "xsd:double"))});
+		
+	// [140] DECIMAL_POSITIVE ::= '+' DECIMAL
+	let DECIMAL_POSITIVE = seq2_ret1("+".lit(), decimal_root).thene({|v| return(typed_literal(v, "xsd:double"))});
+	
+	// [145] EXPONENT ::= [eE] [+-]? [0-9]+
+	let EXPONENT = seq3_ret_str("e".liti(), optional_str((("+".lit()).or("-".lit()))), match1(is_digit));
+	
+	// [138] DOUBLE ::= [0-9]+ '.' [0-9]* EXPONENT | 
+	//                           '.' ([0-9])+ EXPONENT | 
+	//                           ([0-9])+ EXPONENT
+	let double1 = seq4_ret_str(match1(is_digit), ".".lit(), match0(is_digit), EXPONENT);
+	let double2 = seq3_ret_str(".".lit(), match1(is_digit), EXPONENT);
+	let double3 = seq2_ret_str(match1(is_digit), EXPONENT);
+	
+	let double_root = or_v([double1, double2, double3]).s0();
+	let DOUBLE = double_root.thene({|v| return(typed_literal(v, "xsd:double"))});
+	
+	// [144] DOUBLE_NEGATIVE ::= '-' DOUBLE
+	let DOUBLE_NEGATIVE = seq2_ret_str("-".lit(), double_root).thene({|v| return(typed_literal(v, "xsd:double"))});
+	
+	// [141] DOUBLE_POSITIVE ::= '+' DOUBLE
+	let DOUBLE_POSITIVE = seq2_ret1("+".lit(), double_root).thene({|v| return(typed_literal(v, "xsd:double"))});
+	
 	// [135] LANGTAG ::= '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
 	let LANGTAG = langtag();
 	
@@ -371,18 +410,34 @@ fn make_parser() -> parser<selector>
 	// [125] String ::= STRING_LITERAL1 | STRING_LITERAL2 | STRING_LITERAL_LONG1 | STRING_LITERAL_LONG2
 	let String = or_v([STRING_LITERAL_LONG1, STRING_LITERAL_LONG2, STRING_LITERAL1, STRING_LITERAL2]);
 	
+	// [121] NumericLiteralUnsigned ::= INTEGER | DECIMAL | DOUBLE
+	let NumericLiteralUnsigned = or_v([DOUBLE, DECIMAL, INTEGER]);
+	
+	// [122] NumericLiteralPositive ::= INTEGER_POSITIVE |	DECIMAL_POSITIVE |	DOUBLE_POSITIVE
+	let NumericLiteralPositive = or_v([DOUBLE_POSITIVE, DECIMAL_POSITIVE, INTEGER_POSITIVE]);
+
+	// [123] NumericLiteralNegative ::= INTEGER_NEGATIVE |	DECIMAL_NEGATIVE |	DOUBLE_NEGATIVE
+	let NumericLiteralNegative = or_v([DOUBLE_NEGATIVE, DECIMAL_NEGATIVE, INTEGER_NEGATIVE]);
+	
+	// [120] NumericLiteral	::= NumericLiteralUnsigned | NumericLiteralPositive | NumericLiteralNegative
+	let NumericLiteral = or_v([NumericLiteralPositive, NumericLiteralNegative, NumericLiteralUnsigned]);
+	
 	// [119] RDFLiteral ::= String ( LANGTAG | ( '^^' IRIref ) )?
 	let RDFLiteral1 = String.thene({|v| return(string_literal(v, ""))});
 	
 	let RDFLiteral2 = seq2(String, LANGTAG)
 		{|v, l| result::ok(string_literal(v, l))};
 	
-	let RDFLiteral = or_v([RDFLiteral2, RDFLiteral1]);
+	let RDFLiteral3 = seq3(String, "^^".lit(), IRIref)
+		{|v, _m, t| result::ok(typed_literal(v, t))};
 	
-	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral |	BooleanLiteral |	BlankNode |	NIL
+	let RDFLiteral = or_v([RDFLiteral3, RDFLiteral2, RDFLiteral1]);
+	
+	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral | BooleanLiteral |	BlankNode |	NIL
 	let GraphTerm = or_v([
 		RDFLiteral.annotate("RDFLiteral"),
-		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))})
+		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))}),
+		NumericLiteral
 	]);
 	
 	// [156] VARNAME ::= ( PN_CHARS_U | [0-9] ) ( PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040] )*

@@ -241,14 +241,112 @@ fn strings_dont_match_uris()
 	assert check_solution(store, expr, expected);
 }
 
+
+#[test]
+fn typed_literal_match()
+{
+	let expr = "SELECT ?s ?p WHERE {?s ?p \"Ned\"^^xsd:string}";
+	let store = test_data::got_cast1();
+	let expected = {names: ["s", "p"], rows: [
+		ref_uri("got:Eddard_Stark", "v:nickname")
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn int_literal()
+{
+	let expr = "SELECT ?s WHERE {?s ?p 23}";
+	let store = test_data::got_cast1();
+	add_triples(store, [
+		{subject: "got:Some_Guy", predicate: "v:age", object: {value: "23", kind: "xsd:integer", lang: ""}},
+		{subject: "got:Another_Guy", predicate: "v:age", object: {value: "23", kind: "xsd:long", lang: ""}}
+		]);
+	
+	let expected = {names: ["s"], rows: [
+		[option::some({value: "got:Another_Guy", kind: "xsd:anyURI", lang: ""})],
+		[option::some({value: "got:Some_Guy", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn signed_int_literal()
+{
+	let expr = "SELECT ?s WHERE {?s ?p -23}";
+	let store = test_data::got_cast1();
+	add_triples(store, [
+		{subject: "got:Some_Guy", predicate: "v:age", object: {value: "23", kind: "xsd:integer", lang: ""}},
+		{subject: "got:Another_Guy", predicate: "v:age", object: {value: "-23", kind: "xsd:long", lang: ""}}
+		]);
+	
+	let expected = {names: ["s"], rows: [
+		[option::some({value: "got:Another_Guy", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn decimal_literal()
+{
+	let expr = "SELECT ?s WHERE {?s ?p 3.14}";
+	let store = test_data::got_cast1();
+	add_triples(store, [
+		{subject: "got:Some_Guy", predicate: "v:age", object: {value: "3.14", kind: "xsd:float", lang: ""}},
+		{subject: "got:Another_Guy", predicate: "v:age", object: {value: "3.14", kind: "xsd:double", lang: ""}}
+		]);
+	
+	let expected = {names: ["s"], rows: [
+		[option::some({value: "got:Another_Guy", kind: "xsd:anyURI", lang: ""})],
+		[option::some({value: "got:Some_Guy", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn signed_decimal_literal()
+{
+	let expr = "SELECT ?s WHERE {?s ?p -3.14}";
+	let store = test_data::got_cast1();
+	add_triples(store, [
+		{subject: "got:Some_Guy", predicate: "v:age", object: {value: "3.14", kind: "xsd:float", lang: ""}},
+		{subject: "got:Another_Guy", predicate: "v:age", object: {value: "-3.14", kind: "xsd:double", lang: ""}}
+		]);
+	
+	let expected = {names: ["s"], rows: [
+		[option::some({value: "got:Another_Guy", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn double_literal()
+{
+	let expr = "SELECT ?s WHERE {?s ?p 314e-2}";
+	let store = test_data::got_cast1();
+	add_triples(store, [
+		{subject: "got:Some_Guy", predicate: "v:age", object: {value: "3.14", kind: "xsd:float", lang: ""}},
+		{subject: "got:Another_Guy", predicate: "v:age", object: {value: "3.14", kind: "xsd:double", lang: ""}}
+		]);
+	
+	let expected = {names: ["s"], rows: [
+		[option::some({value: "got:Another_Guy", kind: "xsd:anyURI", lang: ""})],
+		[option::some({value: "got:Some_Guy", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
+
 // TODO:
-// typed string
-// int literal
-// float literal
+// might want a test_literals.rs file
 // mixed numbers (including typed literals)
 // boolean literal
 // NIL literal
 // maybe datetime literals
 // would it make sense to use NIL instead of option::none?
-// might want a test_literals.rs file
 // check error reporting for some common cases (and add tags as appropriate)

@@ -13,25 +13,6 @@ enum pattern
 	constant(iobject)
 }
 
-fn get_match_type(object: iobject) -> str
-{
-	alt object
-	{
-		ireference(_subject)
-		{
-			"2:anyURI"
-		}
-		ityped(_value, kind)
-		{
-			#fmt["%?:%s", kind.nindex, kind.name] 
-		}
-		istring(_value, _kind, lang)
-		{
-			"@" + lang
-		}
-	}
-}
-
 fn match_float(lhs: str, rhs: str) -> bool
 {
 	str::as_c_str(lhs)
@@ -45,13 +26,13 @@ fn match_float(lhs: str, rhs: str) -> bool
 	}
 }
 
-fn match_typed_literal(lvalue: str, ltype: str, rvalue: str, rtype: str) -> bool
+fn match_typed_literal(actual_val: str, actual_type: str, expected_val: str, expected_type: str) -> bool
 {
-	alt ltype
+	alt actual_type
 	{
 		"xsd:float" | "xsd:double"
 		{
-			alt rtype
+			alt expected_type
 			{
 				"xsd:float" | "xsd:double" | "xsd:decimal" |
 				"xsd:integer" | "xsd:nonPositiveInteger" | "xsd:long" | "xsd:negativeInteger" | "xsd:int" | "xsd:short" | "xsd:byte" |
@@ -59,7 +40,7 @@ fn match_typed_literal(lvalue: str, ltype: str, rvalue: str, rtype: str) -> bool
 				{
 					// The same float can appear in different formats (eg 10 and 1e10) so
 					// we need to compare them as floats.
-					match_float(lvalue, rvalue)
+					match_float(actual_val, expected_val)
 				}
 				_
 				{
@@ -71,18 +52,18 @@ fn match_typed_literal(lvalue: str, ltype: str, rvalue: str, rtype: str) -> bool
 		{
 			// sparql doesn't have any int conversion operators so we need to be prepared to match
 			// different types.
-			alt rtype
+			alt expected_type
 			{
 				"xsd:float" | "xsd:double" | "xsd:decimal"
 				{
-					match_float(lvalue, rvalue)
+					match_float(actual_val, expected_val)
 				}
 				"xsd:integer" | "xsd:nonPositiveInteger" | "xsd:long" | "xsd:negativeInteger" | "xsd:int" | "xsd:short" | "xsd:byte" |
 				"xsd:nonNegativeInteger" | "xsd:unsignedLong" | "xsd:unsignedInt" | "xsd:unsignedShort" | "xsd:unsignedByte" | "xsd:positiveInteger"
 				{
 					// Barring silliness like 099 decimal integers can only be written one
 					// way so comparing using strings should be OK.
-					lvalue == rvalue
+					actual_val == expected_val
 				}
 				_
 				{
@@ -92,16 +73,16 @@ fn match_typed_literal(lvalue: str, ltype: str, rvalue: str, rtype: str) -> bool
 		}
 		"xsd:nonNegativeInteger" | "xsd:unsignedLong" | "xsd:unsignedInt" | "xsd:unsignedShort" | "xsd:unsignedByte" | "xsd:positiveInteger"
 		{
-			alt rtype
+			alt expected_type
 			{
 				"xsd:float" | "xsd:double" | "xsd:decimal"
 				{
-					match_float(lvalue, rvalue)
+					match_float(actual_val, expected_val)
 				}
 				"xsd:integer" | "xsd:nonPositiveInteger" | "xsd:long" | "xsd:negativeInteger" | "xsd:int" | "xsd:short" | "xsd:byte" |
 				"xsd:nonNegativeInteger" | "xsd:unsignedLong" | "xsd:unsignedInt" | "xsd:unsignedShort" | "xsd:unsignedByte" | "xsd:positiveInteger"
 				{
-					lvalue == rvalue
+					actual_val == expected_val
 				}
 				_
 				{
@@ -111,26 +92,26 @@ fn match_typed_literal(lvalue: str, ltype: str, rvalue: str, rtype: str) -> bool
 		}
 		_
 		{
-			ltype == rtype && lvalue == rvalue
+			actual_type == expected_type && actual_val == expected_val
 		}
 	}
 }
 
-fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
+fn match_values(store: store, actual: iobject, expected: iobject) -> bool
 {
-	alt lhs
+	alt actual
 	{
-		ireference(lvalue)
+		ireference(actual_val)
 		{
-			alt rhs
+			alt expected
 			{
-				ireference(rvalue)
+				ireference(expected_val)
 				{
-					lvalue == rvalue		// TODO: may need to do some sort of special URI equality test here (and for anyURI)
+					actual_val == expected_val		// TODO: may need to do some sort of special URI equality test here (and for anyURI)
 				}
-				ityped(rvalue, {nindex: 2u, name: "anyURI"})
+				ityped(expected_val, {nindex: 2u, name: "anyURI"})
 				{
-					get_full_name(store, lvalue) == rvalue
+					get_full_name(store, actual_val) == expected_val
 				}
 				_
 				{
@@ -138,17 +119,17 @@ fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
 				}
 			}
 		}
-		ityped(lvalue, {nindex: 2u, name: "anyURI"})
+		ityped(actual_val, {nindex: 2u, name: "anyURI"})
 		{
-			alt rhs
+			alt expected
 			{
-				ireference(rvalue)
+				ireference(expected_val)
 				{
-					lvalue == get_full_name(store, rvalue)
+					actual_val == get_full_name(store, expected_val)
 				}
-				ityped(rvalue, {nindex: 2u, name: "anyURI"})
+				ityped(expected_val, {nindex: 2u, name: "anyURI"})
 				{
-					lvalue == rvalue
+					actual_val == expected_val
 				}
 				_
 				{
@@ -156,17 +137,17 @@ fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
 				}
 			}
 		}
-		ityped(lvalue, {nindex: 2u, name: "string"})
+		ityped(actual_val, {nindex: 2u, name: "string"})
 		{
-			alt rhs
+			alt expected
 			{
-				ityped(rvalue, {nindex: 2u, name: "string"})
+				ityped(expected_val, {nindex: 2u, name: "string"})
 				{
-					lvalue == rvalue
+					actual_val == expected_val
 				}
-				istring(rvalue, _, "")
+				istring(expected_val, _, "")
 				{
-					lvalue == rvalue
+					actual_val == expected_val
 				}
 				_
 				{
@@ -174,13 +155,13 @@ fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
 				}
 			}
 		}
-		ityped(lvalue, lkind)
+		ityped(actual_val, lkind)
 		{
-			alt rhs
+			alt expected
 			{
-				ityped(rvalue, rkind)
+				ityped(expected_val, rkind)
 				{
-					match_typed_literal(lvalue, get_friendly_name(store, lkind), rvalue, get_friendly_name(store, rkind))
+					match_typed_literal(actual_val, get_friendly_name(store, lkind), expected_val, get_friendly_name(store, rkind))
 				}
 				_
 				{
@@ -188,17 +169,17 @@ fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
 				}
 			}
 		}
-		istring(lvalue, _, "")
+		istring(actual_val, _, "")
 		{
-			alt rhs
+			alt expected
 			{
-				istring(rvalue, _, "")
+				istring(expected_val, _, "")
 				{
-					lvalue == rvalue
+					actual_val == expected_val
 				}
-				ityped(rvalue, {nindex: 2u, name: "string"})
+				ityped(expected_val, {nindex: 2u, name: "string"})
 				{
-					lvalue == rvalue
+					actual_val == expected_val
 				}
 				_
 				{
@@ -206,13 +187,13 @@ fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
 				}
 			}
 		}
-		istring(lvalue, _, llang)
+		istring(actual_val, _, llang)
 		{
-			alt rhs
+			alt expected
 			{
-				istring(rvalue, _, rlang)
+				istring(expected_val, _, rlang)
 				{
-					llang == rlang && lvalue == rvalue
+					llang == rlang && actual_val == expected_val
 				}
 				_
 				{
@@ -223,29 +204,19 @@ fn match_values(store: store, lhs: iobject, rhs: iobject) -> bool
 	}
 }
 
-fn match_pattern(store: store, lhs: iobject, pattern: pattern) -> match
+fn match_pattern(store: store, actual: iobject, pattern: pattern) -> match
 {
 	alt pattern
 	{
 		variable(name)
 		{
-			either::left({name: name, value: lhs})
+			either::left({name: name, value: actual})
 		}
-		constant(rhs)
+		constant(expected)
 		{
-			let type1 = get_match_type(lhs);
-			let type2 = get_match_type(rhs);
-			if type1 == type2
-			{
-				let matched = match_values(store, lhs, rhs);
-				#debug["Values %? (%s) and %? (%s) %s", lhs.to_str(), type1, rhs.to_str(), type2, ["don't match", "match"][matched as uint]];
-				either::right(matched)
-			}
-			else
-			{
-				#debug["Types '%s' and '%s' do not match", type1, type2];
-				either::right(false)
-			}
+			let matched = match_values(store, actual, expected);
+			#debug["Actual %? %s %?", actual.to_str(), ["did not match", "matched"][matched as uint], expected.to_str()];
+			either::right(matched)
 		}
 	}
 }
@@ -346,6 +317,7 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 			let candidate = store.subjects.find(subject);
 			if option::is_some(candidate)
 			{
+				#debug["--- matched subject %?", subject];
 				let entries = option::get(candidate);
 				if !invoke(store, subject, spattern, entries, callback)
 				{
@@ -360,6 +332,7 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 			let candidate = store.subjects.find(subject);
 			if option::is_some(candidate)
 			{
+				#debug["--- matched subject %?", subject];
 				let entries = option::get(candidate);
 				if !invoke(store, subject, spattern, entries, callback)
 				{
@@ -371,6 +344,7 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 		{
 			for store.subjects.each()
 			{|subject, entries|
+				#debug["--- matched subject %?", subject];
 				if !invoke(store, subject, spattern, entries, callback)
 				{
 					ret;
@@ -403,6 +377,10 @@ fn executable_pattern(store: store, cp: compiled_pattern) -> pattern
 		prefixed_name(name)
 		{
 			constant(ireference(make_qname(store, name)))
+		}
+		typed_literal(value, kind)
+		{
+			constant(ityped(value, make_qname(store, kind)))
 		}
 	}
 }
