@@ -2,6 +2,7 @@
 // then creating a selector function using the select function.
 import std::map::hashmap;
 import result::extensions;
+import std::time::tm;
 import sparql::*;
 
 type binding = {name: str, value: iobject};
@@ -23,6 +24,46 @@ fn match_float(lhs: str, rhs: str) -> bool
 			let rhs = libc::strtod(rptr, ptr::null());
 			lhs == rhs
 		}
+	}
+}
+
+fn parse_dateTime(literal: str) -> option<std::time::timespec>
+{
+	// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
+	alt std::time::strptime(literal, "%FT%T%z").chain_err
+		{|_err1|
+			// Time zone expressed as a name, e.g. EST (technically only Z is supposed to be allowed).
+			std::time::strptime(literal, "%FT%T%Z").chain_err
+			{|_err2|
+				// No time zone (so the time will be considered to be in the local time zone).
+				std::time::strptime(literal, "%FT%T")
+			}}
+	{
+		result::ok(time)
+		{
+			option::some(time.to_timespec())
+		}
+		result::err(_)
+		{
+			#error["'%s' is not an ISO 8601 dateTime", literal];
+			option::none
+		}
+	}
+}
+
+fn match_dateTime(lhs: str, rhs: str) -> bool
+{
+	let lt = parse_dateTime(lhs);
+	let rt = parse_dateTime(rhs); 
+	if option::is_some(lt) && option::is_some(rt)
+	{
+		#info["left:  %?", lt];
+		#info["right: %?", rt];
+		option::get(lt) == option::get(rt)
+	}
+	else
+	{
+		false
 	}
 }
 
@@ -83,6 +124,22 @@ fn match_typed_literal(actual_val: str, actual_type: str, expected_val: str, exp
 				"xsd:nonNegativeInteger" | "xsd:unsignedLong" | "xsd:unsignedInt" | "xsd:unsignedShort" | "xsd:unsignedByte" | "xsd:positiveInteger"
 				{
 					actual_val == expected_val
+				}
+				_
+				{
+					false
+				}
+			}
+		}
+		"xsd:dateTime"
+		{
+			alt expected_type
+			{
+				"xsd:dateTime"
+				{
+					// dateTime literals may represent the same date but appear differently
+					// (e.g. if they use different time zones).
+					match_dateTime(actual_val, expected_val)
 				}
 				_
 				{

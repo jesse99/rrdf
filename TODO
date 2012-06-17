@@ -2,10 +2,6 @@ http://www.w3.org/TR/sparql11-query/
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
-* Support comments:
-	- they are # style line comments
-	- don't have a production
-	- probably need a ws parser
 * Support dateTime:
 	- need to be able to match these using typed literals
 * Work on more complex matching:

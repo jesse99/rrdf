@@ -264,3 +264,23 @@ fn boolean_literal()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn datetime()
+{
+	// TODO: enable the second case once bug #2637 is fixed
+	let expr = "SELECT ?s WHERE {?s ?p \"1999-05-31T13:10:00-05:00\"^^xsd:dateTime}";
+	let store = test_data::got_cast1();
+	add_triples(store, [
+		{subject: "got:Some_Guy", predicate: "v:born", object: {value: "1999-05-31T13:10:00-05:00", kind: "xsd:dateTime", lang: ""}},
+		//{subject: "got:A_Woman", predicate: "v:born", object: {value: "1999-05-31T14:10:00-04:00", kind: "xsd:dateTime", lang: ""}},
+		{subject: "got:A_Dude", predicate: "v:born", object: {value: "1999-05-31T13:22:00-05:00", kind: "xsd:dateTime", lang: ""}}
+		]);
+	
+	let expected = {names: ["s"], rows: [
+		//[option::some({value: "got:A_Woman", kind: "xsd:anyURI", lang: ""})]
+		[option::some({value: "got:Some_Guy", kind: "xsd:anyURI", lang: ""})]
+	]};
+	
+	assert check_solution(store, expr, expected);
+}
