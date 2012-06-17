@@ -93,3 +93,16 @@ fn no_match()
 	assert check_solution(store, expr, expected);
 }
 
+#[test]
+fn comment()
+{
+	let expr = "SELECT ?s ?p #yourr comment here
+	WHERE {	# yet another comment
+		?s ?p \"Peter Pan\"
+	}";
+	let store = test_data::got_cast1();
+	let expected = {names: ["s", "p"], rows: []};
+	
+	assert check_solution(store, expr, expected);
+}
+

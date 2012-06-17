@@ -312,6 +312,62 @@ fn pn_chars_or_dot_or_plx(chars: [char], i: uint) -> uint
 	}
 }
 
+fn ws<T: copy>(parser: parser<T>) -> parser<T>
+{
+	// It would be simpler to write this with scan0, but scan0 is relatively inefficient
+	// and ws is typically called a lot.
+	{|input: state|
+		result::chain(parser(input))
+		{|pass|
+			let mut i = pass.new_state.index;
+			let mut line = pass.new_state.line;
+			loop
+			{
+				if input.text[i] == '\r' && input.text[i+1u] == '\n'
+				{
+					i += 2u;
+					line += 1;
+				}
+				else if input.text[i] == '\n'
+				{
+					i += 1u;
+					line += 1;
+				}
+				else if input.text[i] == '\r'
+				{
+					i += 1u;
+					line += 1;
+				}
+				else if input.text[i] == '#'
+				{
+					while input.text[i] != '\r' && input.text[i] != '\n' && input.text[i] != '\x00'
+					{
+						i += 1u;
+					}
+				}
+				else if input.text[i] == ' ' || input.text[i] == '\t'
+				{
+					i += 1u;
+				}
+				else
+				{
+					break;
+				}
+			}
+			
+			log_ok("ws", input, {new_state: {index: i, line: line with pass.new_state}, value: pass.value})
+		}
+	}
+}
+
+impl my_parser_methods<T: copy> for parser<T>
+{
+	fn ws() -> parser<T>
+	{
+		ws(self)
+	}
+}
+
 fn prefixedname() -> parser<str>
 {
 	// [159] PN_LOCAL ::= (PN_CHARS_U | [0-9] | PLX)  ((PN_CHARS | '.' | PLX)* (PN_CHARS | PLX))? 		note that w3c had an error here (a stray > character at the end of the production)
@@ -341,7 +397,7 @@ fn prefixedname() -> parser<str>
 		{|l, r| result::ok(l + r)};
 	
 	// [127] PrefixedName ::= PNAME_LN | PNAME_NS
-	(PNAME_LN.or(PNAME_NS)).s0()
+	(PNAME_LN.or(PNAME_NS)).ws()
 }
 
 // http://www.w3.org/TR/sparql11-query/#grammar
@@ -349,28 +405,28 @@ fn prefixedname() -> parser<str>
 fn make_parser() -> parser<selector>
 {
 	// [149] STRING_LITERAL_LONG2 ::= '"""' ( ( '"' | '""' )? ( [^"\] | ECHAR ) )* '"""'
-	let STRING_LITERAL_LONG2 = seq3_ret1("\"\"\"".lit(), scan0(bind long_char('"', _, _)), "\"\"\"".lit().s0());
+	let STRING_LITERAL_LONG2 = seq3_ret1("\"\"\"".lit(), scan0(bind long_char('"', _, _)), "\"\"\"".lit().ws());
 	
 	// [148] STRING_LITERAL_LONG1 ::= "'''" ( ( "'" | "''" )? ( [^'\] | ECHAR ) )* "'''"
-	let STRING_LITERAL_LONG1 = seq3_ret1("'''".lit(), scan0(bind long_char('\'', _, _)), "'''".lit().s0());
+	let STRING_LITERAL_LONG1 = seq3_ret1("'''".lit(), scan0(bind long_char('\'', _, _)), "'''".lit().ws());
 	
 	// [147] STRING_LITERAL2 ::= '"' ( ([^"\\\n\r]) | ECHAR )* '"'
-	let STRING_LITERAL2 = seq3_ret1("\"".lit(), scan0(bind short_char('"', _, _)), "\"".lit().s0());
+	let STRING_LITERAL2 = seq3_ret1("\"".lit(), scan0(bind short_char('"', _, _)), "\"".lit().ws());
 	
 	// [146] STRING_LITERAL1 ::= "'" ( ([^'\\\n\r]) | ECHAR )* "'"
-	let STRING_LITERAL1 = seq3_ret1("'".lit(), scan0(bind short_char('\'', _, _)), "'".lit().s0());
+	let STRING_LITERAL1 = seq3_ret1("'".lit(), scan0(bind short_char('\'', _, _)), "'".lit().ws());
 	
 	// [136] INTEGER ::= [0-9]+
-	let INTEGER = match1(is_digit).thene({|v| return(typed_literal(v, "xsd:integer"))}).s0();
+	let INTEGER = match1(is_digit).thene({|v| return(typed_literal(v, "xsd:integer"))}).ws();
 	
 	// [142] INTEGER_NEGATIVE ::= '-' INTEGER
-	let INTEGER_NEGATIVE = seq2_ret_str("-".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "xsd:integer"))}).s0();
+	let INTEGER_NEGATIVE = seq2_ret_str("-".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "xsd:integer"))}).ws();
 	
 	// [139] INTEGER_POSITIVE ::= '+' INTEGER
-	let INTEGER_POSITIVE = seq2_ret1("+".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "xsd:integer"))}).s0();
+	let INTEGER_POSITIVE = seq2_ret1("+".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "xsd:integer"))}).ws();
 	
 	// [137] DECIMAL ::= [0-9]* '.' [0-9]+
-	let decimal_root = seq3_ret_str(match0(is_digit), ".".lit(), match1(is_digit)).s0();
+	let decimal_root = seq3_ret_str(match0(is_digit), ".".lit(), match1(is_digit)).ws();
 	let DECIMAL = decimal_root.thene({|v| return(typed_literal(v, "xsd:double"))});
 	
 	// [143] DECIMAL_NEGATIVE ::= '-' DECIMAL
@@ -389,7 +445,7 @@ fn make_parser() -> parser<selector>
 	let double2 = seq3_ret_str(".".lit(), match1(is_digit), EXPONENT);
 	let double3 = seq2_ret_str(match1(is_digit), EXPONENT);
 	
-	let double_root = or_v([double1, double2, double3]).s0();
+	let double_root = or_v([double1, double2, double3]).ws();
 	let DOUBLE = double_root.thene({|v| return(typed_literal(v, "xsd:double"))});
 	
 	// [144] DOUBLE_NEGATIVE ::= '-' DOUBLE
@@ -402,7 +458,7 @@ fn make_parser() -> parser<selector>
 	let LANGTAG = langtag();
 	
 	// [129] IRI_REF	 ::= '<' ([^<>"{}|^`\]-[#x00-#x20])* '>'
-	let IRI_REF = seq3_ret1("<".lit(), match0(iri_char), ">".lit().s0()).annotate("IRI_REF");
+	let IRI_REF = seq3_ret1("<".lit(), match0(iri_char), ">".lit().ws()).annotate("IRI_REF");
 	
 	// [126] IRIref ::= IRI_REF | PrefixedName
 	let IRIref = IRI_REF.or(prefixedname().annotate("prefixedname"));
@@ -411,7 +467,7 @@ fn make_parser() -> parser<selector>
 	let String = or_v([STRING_LITERAL_LONG1, STRING_LITERAL_LONG2, STRING_LITERAL1, STRING_LITERAL2]);
 	
 	// [124] BooleanLiteral	::= 'true' | 'false'
-	let BooleanLiteral = ("true".lit()).or("false".lit()).thene({|v| return(typed_literal(v, "xsd:boolean"))}).s0();
+	let BooleanLiteral = ("true".lit()).or("false".lit()).thene({|v| return(typed_literal(v, "xsd:boolean"))}).ws();
 	
 	// [121] NumericLiteralUnsigned ::= INTEGER | DECIMAL | DOUBLE
 	let NumericLiteralUnsigned = or_v([DOUBLE, DECIMAL, INTEGER]);
@@ -445,10 +501,10 @@ fn make_parser() -> parser<selector>
 	]);
 	
 	// [156] VARNAME ::= ( PN_CHARS_U | [0-9] ) ( PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040] )*
-	let VARNAME = identifier().s0();
+	let VARNAME = identifier().ws();
 	
 	// [133] VAR1 ::= '?' VARNAME
-	let VAR1 = seq2_ret1("?".lit().s0(), VARNAME).thene({|v| return(variable_binding((v)))});
+	let VAR1 = seq2_ret1("?".lit().ws(), VARNAME).thene({|v| return(variable_binding((v)))});
 	
 	// [98] Var ::= VAR1 | VAR2
 	let Var = VAR1;
@@ -504,13 +560,13 @@ fn make_parser() -> parser<selector>
 	let GroupGraphPatternSub = TriplesBlock;
 		
 	// [54] GroupGraphPattern ::= '{' ( SubSelect | GroupGraphPatternSub ) '}'
-	let GroupGraphPattern = seq3_ret1("{".lit().s0(), GroupGraphPatternSub, "}".lit().s0());
+	let GroupGraphPattern = seq3_ret1("{".lit().ws(), GroupGraphPatternSub, "}".lit().ws());
 	
 	// [17] WhereClause ::= 'WHERE'? GroupGraphPattern
-	let WhereClause = seq2_ret1(("WHERE".liti().s0()).optional(), GroupGraphPattern);
+	let WhereClause = seq2_ret1(("WHERE".liti().ws()).optional(), GroupGraphPattern);
 	
 	// [9] SelectClause ::= 'SELECT' ( 'DISTINCT' | 'REDUCED' )? ( ( Var | ( '(' Expression 'AS' Var ')' ) )+ | '*' )
-	let SelectClause = seq2_ret1("SELECT".liti().s0(), Var.r1());
+	let SelectClause = seq2_ret1("SELECT".liti().ws(), Var.r1());
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = seq2(SelectClause, WhereClause)

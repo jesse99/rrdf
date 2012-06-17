@@ -2,15 +2,19 @@ http://www.w3.org/TR/sparql11-query/
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
-enum expr_type 
-{
-	string_type,
-	unsupported_type(str),		// an object type with no operators/functions
-	incompatible_type(str)		// an operator/function which was invoked with incompatible arguments
-}
-
-
-* Need subject and entry matchers so we can avoid entry iteration.
+* Support comments:
+	- they are # style line comments
+	- don't have a production
+	- probably need a ws parser
+* Support dateTime:
+	- need to be able to match these using typed literals
+* Work on more complex matching:
+	- support multiple patterns
+	- support optional
+	- support some simple date filters (i.e. date is no more than 24 hours ago)
+		` support comparisons
+		` no support for subtracting dateTimes so user would have to do it
+	- might want to support optional
 * May want to drop the n from index.
 * Check some common parse errors and add tag as needed.
 * Do we need to be able to match collections?
