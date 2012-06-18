@@ -46,6 +46,7 @@ type selector = fn@ (store) -> result::result<solution, str>;
 #[doc = "Names appear in the same order as the variables in the SELECT clause.
 
 Each returned row will name (len(names) columns. Subjects are returned as
-reference objects. Predicates as typed_literal with type xsd:anyURI."]
+reference objects. Predicates as typed_literal with type xsd:anyURI. Note that
+option::none is returned only for queries that use OPTIONAL or UNION."]
 type solution = {names: [str], rows: [[option<object>]]};
 

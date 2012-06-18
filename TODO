@@ -2,15 +2,22 @@ http://www.w3.org/TR/sparql11-query/
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
-* Support dateTime:
-	- need to be able to match these using typed literals
+* Support multiple patterns:
+	- add parser support for pattern groups
+	- query needs to support matching groups
+	- query needs to use unification function to unify groups
 * Work on more complex matching:
-	- support multiple patterns
-	- support optional
+	- support optional, use section 18 to figure out the algebra
 	- support some simple date filters (i.e. date is no more than 24 hours ago)
 		` support comparisons
 		` no support for subtracting dateTimes so user would have to do it
-	- might want to support optional
+	- support filter inside of optional
+	- may want to support union
+* Select components can be strings?
+	- if not why does triple pattern allow literals?
+* 6.5.1 has a simpler version of literal equality.
+	- use rdf_term_equal
+	- see http://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-literal
 * May want to drop the n from index.
 * Check some common parse errors and add tag as needed.
 * Do we need to be able to match collections?

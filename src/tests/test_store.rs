@@ -110,3 +110,191 @@ fn blank_nodes()
 		];
 	assert check_triples(actual, expected);
 }
+
+#[test]
+fn trivial_bgp() 
+{
+	let store = create_store([]);
+	let group1 = [];
+	let group2 = [
+		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+	];
+	let expected = group2;
+	
+	assert check_algebra(store, [group1, group2], expected);
+	assert check_algebra(store, [group2, group1], expected);
+}
+
+#[test]
+fn identical_bgp() 
+{
+	let store = create_store([]);
+	let group1 = [
+		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+	];
+	let group2 = [
+		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+	];
+	let expected = group2;
+	
+	assert check_algebra(store, [group1, group2], expected);
+	assert check_algebra(store, [group2, group1], expected);
+}
+
+#[test]
+fn disjoint1_bgp() 
+{
+	let store = create_store([]);
+	let group1 = [
+		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+	];
+	let group2 = [
+		[{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+	];
+	let expected = [
+		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+	];
+	
+	assert check_algebra(store, [group1, group2], expected);
+	assert check_algebra(store, [group2, group1], expected);
+}
+
+#[test]
+fn disjoint2_bgp() 
+{
+	let store = create_store([]);
+	let group1 = [
+		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}, {name: "job", value: ityped("cowboy", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "job", value: ityped("muckraker", {nindex: 2u, name: "string"})}]
+	];
+	let group2 = [
+		[{name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+	];
+	let expected = [
+		[
+			{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})},
+			{name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})},
+			{name: "job", value: ityped("muckraker", {nindex: 2u, name: "string"})},
+			{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}
+		],
+		[
+			{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})},
+			{name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})},
+			{name: "job", value: ityped("muckraker", {nindex: 2u, name: "string"})},
+			{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}
+		],
+		[
+			{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})},
+			{name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})},
+			{name: "job", value: ityped("cowboy", {nindex: 2u, name: "string"})},
+			{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}
+		],
+		[
+			{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})},
+			{name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})},
+			{name: "job", value: ityped("cowboy", {nindex: 2u, name: "string"})},
+			{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}
+		]
+	];
+	
+	assert check_algebra(store, [group1, group2], expected);
+	assert check_algebra(store, [group2, group1], expected);
+}
+
+#[test]
+fn asymmetric_bgp() 
+{
+	let store = create_store([]);
+	let group1 = [
+		[{name: "age", value: ityped("33", {nindex: 2u, name: "integer"})}],
+		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+	];
+	let group2 = [
+		[{name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+	];
+	let expected = [
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+	];
+	
+	assert check_algebra(store, [group1, group2], expected);
+	assert check_algebra(store, [group2, group1], expected);
+}
+
+#[test]
+fn symmetric_bgp() 
+{
+	let store = create_store([]);
+	let group1 = [
+		[{name: "age", value: ityped("33", {nindex: 2u, name: "integer"})}],
+		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+	];
+	let group2 = [
+		[{name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+	];
+	let expected = [
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+	];
+	
+	assert check_algebra(store, [group1, group2], expected);
+	assert check_algebra(store, [group2, group1], expected);
+}
+
+#[test]
+fn path_bgp() 
+{
+	let store = create_store([]);
+	let group1 = [
+		[{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}],
+		[{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}],
+		[{name: "name", value: ityped("George", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("ggg", {nindex: 2u, name: "string"})}]
+	];
+	let group2 = [
+		[{name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}],
+		[{name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}],
+		[{name: "id", value: ityped("zzz", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("38", {nindex: 2u, name: "integer"})}]
+	];
+	let expected = [
+		[{name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}, {name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
+		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+	];
+	
+	assert check_algebra(store, [group1, group2], expected);
+	assert check_algebra(store, [group2, group1], expected);
+}
+
+#[test]
+fn incompatible_bgp() 
+{
+	let store = create_store([]);
+	let group1 = [
+		[{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}],
+		[{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}],
+		[{name: "name", value: ityped("George", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("ggg", {nindex: 2u, name: "string"})}]
+	];
+	let group2 = [
+		[{name: "id", value: ityped("tyt", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}],
+		[{name: "id", value: ityped("bxb", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}],
+		[{name: "id", value: ityped("zzz", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("38", {nindex: 2u, name: "integer"})}]
+	];
+	let expected = [];
+	
+	assert check_algebra(store, [group1, group2], expected);
+	assert check_algebra(store, [group2, group1], expected);
+}

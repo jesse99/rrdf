@@ -1,7 +1,8 @@
 import io;
 import io::writer_util;
+import query::*;
 
-export ref_uri, ref_uri_none, ref_uri_str, str_ref_uri, check_strs, check_triples, check_solution, check_solution_err;
+export ref_uri, ref_uri_none, ref_uri_str, str_ref_uri, check_algebra, check_strs, check_triples, check_solution, check_solution_err;
 
 fn ref_uri(r: str, u: str) -> [option<object>]
 {
@@ -30,6 +31,58 @@ fn check_strs(actual: str, expected: str) -> bool
 		io::stderr().write_line(#fmt["Found '%s', but expected '%s'", actual, expected]);
 		ret false;
 	}
+	ret true;
+}
+
+fn check_algebra(store: store, groups: solution_groups, expected: solution_group) -> bool
+{
+	fn convert_bindings(group: solution_group) -> [str]
+	{
+		vec::map(group)
+		{|row|
+			let row = std::sort::merge_sort({|x, y| x.name <= y.name}, row);
+			let entries = vec::map(row, {|b| #fmt["%s=%?", b.name, b.value]});
+			str::connect(entries, ", ")
+		}
+	}
+	
+	fn dump_bindings(actual: [str])
+	{
+		io::stderr().write_line("Actual bindings:");
+		for vec::each(actual)
+		{|bindings|
+			io::stderr().write_line(#fmt["   %s", bindings]);
+		};
+	}
+	
+	let actual = eval_bgp(store, groups);
+	
+	// Form this point forward we are dealing with [str] instead of [[binding]].
+	let actual = convert_bindings(actual);
+	let expected = convert_bindings(expected);
+	
+	let actual = std::sort::merge_sort({|x, y| x <= y}, actual);
+	let expected = std::sort::merge_sort({|x, y| x <= y}, expected);
+	
+	if vec::len(actual) != vec::len(expected)
+	{
+		io::stderr().write_line(#fmt["Actual length is %?, but expected %?", vec::len(actual), vec::len(expected)]);
+		dump_bindings(actual);
+		ret false;
+	}
+	
+	for vec::eachi(actual)
+	{|i, arow|
+		let erow = expected[i];
+		
+		if arow != erow
+		{
+			io::stderr().write_line(#fmt["Row #%? is %s, but expected %s", i, arow, erow]);
+			dump_bindings(actual);
+			ret false;
+		}
+	}
+	
 	ret true;
 }
 

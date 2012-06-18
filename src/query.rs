@@ -14,6 +14,208 @@ enum pattern
 	constant(iobject)
 }
 
+type solution_row = [binding];				// result of a single triple pattern match against one triple (a potential row in a solution)
+type solution_group = [solution_row];		// result of a single triple pattern against a store (a potential solution)
+type solution_groups = [solution_group];	// result of one or more triple patterns against the store (potential solutions that must be unified)
+
+// Conceptually treats solution_row as a set where each set value consists of both
+// the name and the value. Takes the cross product of entries from each pair
+// of groups and adds compatible results to the result.
+//
+// Where a cross product is compatible if, for every identical name, the values
+// are also identical.
+fn eval_bgp(store: store, groups: solution_groups) -> solution_group		// TODO: need to use a vector pointer or a slice or something
+{
+	fn compatible_binding(store: store, b1: binding, rhs: solution_row) -> bool
+	{
+		alt vec::find(rhs, {|b2| b1.name == b2.name})
+		{
+			option::some(v2)
+			{
+				rdf_term_equal(store, b1.value, v2.value)
+			}
+			option::none()
+			{
+				true
+			}
+		}
+	}
+	
+	fn compatible_row(store: store, row: solution_row, rhs: solution_row) -> bool
+	{
+		for vec::each(row)
+		{|binding|
+			if !compatible_binding(store, binding, rhs)
+			{
+				ret false;
+			}
+		}
+		ret true;
+	}
+	
+	fn union_rows(lhs: solution_row, rhs: solution_row) -> solution_row
+	{
+		let mut result = copy(lhs);
+		
+		for vec::each(rhs)
+		{|binding2|
+			alt vec::find(lhs, {|binding1| binding1.name == binding2.name})
+			{
+				option::some(_)
+				{
+					// Binding2 should be compatible with lhs so nothing to do here.
+				}
+				option::none()
+				{
+					// This is a binding in rhs but not lhs, so we need to add it to the result.
+					vec::push(result, binding2);
+				}
+			}
+		}
+		
+		ret result;
+	}
+	
+	fn unify(store: store, group1: solution_group, group2: solution_group) -> solution_group
+	{
+		let mut result = [];
+		
+		if vec::is_not_empty(group1) && vec::is_not_empty(group2)
+		{
+			for vec::each(group1)
+			{|lhs|
+				for vec::each(group2)
+				{|rhs|
+					#debug["testing %? and %?", lhs, rhs];
+					if compatible_row(store, lhs, rhs)
+					{
+						#debug["   adding %? to result", union_rows(lhs, rhs)];
+						vec::push(result, union_rows(lhs, rhs));
+					}
+					else
+					{
+						#debug["   not compatible"];
+					}
+				}
+			}
+		}
+		else if vec::is_not_empty(group1)
+		{
+			result = group1;
+		}
+		else if vec::is_not_empty(group2)
+		{
+			result = group2;
+		}
+		
+		ret result;
+	}
+	
+	let mut result = [];
+	
+	#debug["------ evaluating %? ------", groups];
+	for vec::each(groups)
+	{|group|
+		result = unify(store, result, group);
+	}
+	
+	ret result;
+}
+
+// See 17.4.1.7 
+fn rdf_term_equal(store: store, actual: iobject, expected: iobject) -> bool
+{
+	alt actual
+	{
+		ireference(actual_val)
+		{
+			alt expected
+			{
+				ireference(expected_val)
+				{
+					actual_val == expected_val		// TODO: need to % escape bogus characters (after converting to utf-8)
+				}
+				ityped(expected_val, {nindex: 2u, name: "anyURI"})
+				{
+					get_full_name(store, actual_val) == expected_val
+				}
+				_
+				{
+					false
+				}
+			}
+		}
+		ityped(actual_val, {nindex: 2u, name: "anyURI"})
+		{
+			alt expected
+			{
+				ireference(expected_val)
+				{
+					actual_val == get_full_name(store, expected_val)
+				}
+				ityped(expected_val, {nindex: 2u, name: "anyURI"})
+				{
+					actual_val == expected_val
+				}
+				_
+				{
+					false
+				}
+			}
+		}
+		ityped(actual_val, actual_kind)
+		{
+			alt expected
+			{
+				ityped(expected_val, expected_kind)
+				{
+					actual_kind == expected_kind && actual_val == expected_val
+				}
+				istring(expected_val, expected_kind, "")
+				{
+					actual_kind == expected_kind && actual_val == expected_val
+				}
+				_
+				{
+					false
+				}
+			}
+		}
+		istring(actual_val, actual_kind, "")
+		{
+			alt expected
+			{
+				istring(expected_val, expected_kind, "")
+				{
+					actual_kind == expected_kind && actual_val == expected_val
+				}
+				ityped(expected_val, expected_kind)
+				{
+					actual_kind == expected_kind && actual_val == expected_val
+				}
+				_
+				{
+					false
+				}
+			}
+		}
+		istring(actual_val, actual_kind, actual_lang)
+		{
+			alt expected
+			{
+				istring(expected_val, expected_kind, expected_lang)
+				{
+					actual_lang == expected_lang && actual_kind == expected_kind && actual_val == expected_val
+				}
+				_
+				{
+					false
+				}
+			}
+		}
+	}
+}
+
 fn match_float(lhs: str, rhs: str) -> bool
 {
 	str::as_c_str(lhs)
@@ -27,6 +229,7 @@ fn match_float(lhs: str, rhs: str) -> bool
 	}
 }
 
+// Note that the inverse is apparently the rfc3339 method.
 fn parse_dateTime(literal: str) -> option<std::time::timespec>
 {
 	// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
