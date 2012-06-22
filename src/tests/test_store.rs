@@ -6,295 +6,261 @@ import test_helpers::*;
 #[test]
 fn to_strs()
 {
-	let obj = {value: "some long url", kind: "xsd:anyURI", lang: ""};
+	let obj = {value: "some long url", kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""};
 	assert check_strs(obj.to_str(), "some long url");
 	
-	let obj = {value: "12", kind: "xsd:integer", lang: ""};
-	assert check_strs(obj.to_str(), "\"12\"^^xsd:integer");
+	let obj = {value: "12", kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""};
+	assert check_strs(obj.to_str(), "\"12\"^^http://www.w3.org/2001/XMLSchema#integer");
 	
-	let obj = {value: "12", kind: "xsd:string", lang: "en"};
+	let obj = {value: "12", kind: "http://www.w3.org/2001/XMLSchema#string", lang: "en"};
 	assert check_strs(obj.to_str(), "\"12\"@en");
 	
-	let obj = {value: "12", kind: "xsd:string", lang: ""};
+	let obj = {value: "12", kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""};
 	assert check_strs(obj.to_str(), "\"12\"");
 }
 
 #[test]
-fn iteration() 
+fn iteration()
 {
 	let store = got_cast1();
-	let mut actual = [];
 	
+	let mut actual = [];
 	for each_triple(store)
 	{|triple|
 		vec::push(actual, triple);
 	};
 	
 	let expected = [
-		{subject: "got:Eddard_Stark", predicate: "v:fn", object: {value: "Eddard Stark", kind: "xsd:string", lang: ""}},
-		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: {value: "Ned", kind: "xsd:string", lang: ""}}
-		];
+		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
+		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned")
+	];
 	assert check_triples(actual, expected);
 }
 
 #[test]
-fn references() 
+fn references()
 {
 	let store = create_store([
 		{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"},
 		{prefix: "v", path: "http://www.w3.org/2006/vcard/ns#"},
 		{prefix: "foo", path: "http://www.whatever.org/"}
 		]);
-	
-	add_triples(store, [
-		{subject: "got:Eddard_Stark", predicate: "v:fn", object: {value: "Eddard Stark", kind: "xsd:string", lang: ""}},
-		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: {value: "Ned", kind: "xsd:string", lang: ""}},
-		{subject: "got:Eddard_Stark", predicate: "foo:child", object: {value: "got:Jon_Snow", kind: "xsd:anyURI", lang: ""}},
-		{subject: "got:Jon_Snow", predicate: "v:fn", object: {value: "Jon Snow", kind: "xsd:string", lang: ""}}
-		]);
+		
+	store.add("got:Eddard_Stark", [
+		make_str("v:fn", "Eddard Stark"),
+		make_str("v:nickname", "Ned"),
+		make_uri("foo:child", "got:Jon_Snow")
+	]);
+	store.add("got:Jon_Snow", [
+		make_str("v:fn", "Jon Snow")
+	]);
 	
 	let mut actual = [];
-	
 	for each_triple(store)
 	{|triple|
 		vec::push(actual, triple);
 	};
 	
-	// When we round-trip we should wind up with references again.
+	// The store will have full URIs (make_triple_* does the expansion as well).
 	let expected = [
-		{subject: "got:Eddard_Stark", predicate: "v:fn", object: {value: "Eddard Stark", kind: "xsd:string", lang: ""}},
-		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: {value: "Ned", kind: "xsd:string", lang: ""}},
-		{subject: "got:Eddard_Stark", predicate: "foo:child", object: {value: "got:Jon_Snow", kind: "xsd:anyURI", lang: ""}},
-		{subject: "got:Jon_Snow", predicate: "v:fn", object: {value: "Jon Snow", kind: "xsd:string", lang: ""}}
-		];
+		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
+		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned"),
+		make_triple_uri(store, "got:Eddard_Stark", "foo:child", "got:Jon_Snow"),
+		make_triple_str(store, "got:Jon_Snow", "v:fn", "Jon Snow")
+	];
+	
 	assert check_triples(actual, expected);
-	
-	// But internally references are stored as qrefs.
-	assert store.namespaces[5u] == {prefix: "got", path: "http://awoiaf.westeros.org/index.php/"};
-	assert store.namespaces[7u] == {prefix: "foo", path: "http://www.whatever.org/"};
-	let entries = store.subjects.get({nindex: 5u, name: "Eddard_Stark"});
-	
-	let entry = entries.data[2u];
-	//io::println(#fmt["entry = %?", entry]);
-	assert entry.predicate == {nindex: 7u, name: "child"};
-	assert entry.object == ireference({nindex: 5u, name: "Jon_Snow"});
 }
 
 #[test]
 fn blank_nodes() 
 {
 	let store = got_cast3();
-	let mut actual = [];
 	
+	let mut actual = [];
 	for each_triple(store)
 	{|triple|
 		vec::push(actual, triple);
 	};
 	
 	let expected = [
-		{subject: "got:Eddard_Stark", predicate: "v:fn", object: {value: "Eddard Stark", kind: "xsd:string", lang: ""}},
-		{subject: "got:Eddard_Stark", predicate: "v:nickname", object: {value: "Ned", kind: "xsd:string", lang: ""}},
-		{subject: "got:Eddard_Stark", predicate: "v:honorific-prefix", object: {value: "Lord", kind: "xsd:string", lang: ""}},
-		{subject: "got:Eddard_Stark", predicate: "v:org", object: {value: "_:ned-org", kind: "xsd:anyURI", lang: ""}},
-		{subject: "_:ned-org", predicate: "v:organisation-name", object: {value: "Small Council", kind: "xsd:string", lang: ""}},
-		{subject: "_:ned-org", predicate: "v:organisation-unit", object: {value: "Hand", kind: "xsd:string", lang: ""}},
+		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
+		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned"),
+		make_triple_str(store, "got:Eddard_Stark", "v:honorific-prefix", "Lord"),
+		make_triple_blank(store, "got:Eddard_Stark", "v:org", "ned-org-0"),
 		
-		{subject: "got:Jon_Snow", predicate: "v:fn", object: {value: "Jon Snow", kind: "xsd:string", lang: ""}},
-		{subject: "got:Jon_Snow", predicate: "v:nickname", object: {value: "Lord Snow", kind: "xsd:string", lang: ""}},
-		{subject: "got:Jon_Snow", predicate: "v:org", object: {value: "_:jon-org", kind: "xsd:anyURI", lang: ""}},
-		{subject: "_:jon-org", predicate: "v:organisation-name", object: {value: "Night's Watch", kind: "xsd:string", lang: ""}},
-		{subject: "_:jon-org", predicate: "v:organisation-unit", object: {value: "Stewards", kind: "xsd:string", lang: ""}},
+		make_triple_str(store, "got:Jon_Snow", "v:fn", "Jon Snow"),
+		make_triple_str(store, "got:Jon_Snow", "v:nickname", "Lord Snow"),
+		make_triple_blank(store, "got:Jon_Snow", "v:org", "jon-org-1"),
 		
-		{subject: "got:Sandor_Clegane", predicate: "v:fn", object: {value: "Sandor Clegane", kind: "xsd:string", lang: ""}},
-		{subject: "got:Sandor_Clegane", predicate: "v:nickname", object: {value: "The Hound", kind: "xsd:string", lang: ""}}
-		];
+		make_triple_str(store, "got:Sandor_Clegane", "v:fn", "Sandor Clegane"),
+		make_triple_str(store, "got:Sandor_Clegane", "v:nickname", "The Hound"),
+
+		make_triple_str(store, "{jon-org-1}", "v:organisation-name", "Night's Watch"),
+		make_triple_str(store, "{jon-org-1}", "v:organisation-unit", "Stewards"),
+		make_triple_str(store, "{ned-org-0}", "v:organisation-name", "Small Council"),
+		make_triple_str(store, "{ned-org-0}", "v:organisation-unit", "Hand")
+	];
+	
 	assert check_triples(actual, expected);
 }
 
 #[test]
 fn trivial_bgp() 
 {
-	let store = create_store([]);
 	let group1 = [];
 	let group2 = [
-		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+		[bind_int("age", 25)],
+		[bind_int("age", 18)]
 	];
 	let expected = group2;
 	
-	assert check_algebra(store, [group1, group2], expected);
-	assert check_algebra(store, [group2, group1], expected);
+	assert check_bgp([group1, group2], expected);
+	assert check_bgp([group2, group1], expected);
 }
 
 #[test]
 fn identical_bgp() 
 {
-	let store = create_store([]);
 	let group1 = [
-		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+		[bind_int("age", 25)],
+		[bind_int("age", 18)]
 	];
 	let group2 = [
-		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+		[bind_int("age", 25)],
+		[bind_int("age", 18)]
 	];
 	let expected = group2;
 	
-	assert check_algebra(store, [group1, group2], expected);
-	assert check_algebra(store, [group2, group1], expected);
+	assert check_bgp([group1, group2], expected);
+	assert check_bgp([group2, group1], expected);
 }
 
 #[test]
 fn disjoint1_bgp() 
 {
-	let store = create_store([]);
 	let group1 = [
-		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+		[bind_int("age", 25)],
+		[bind_int("age", 18)]
 	];
 	let group2 = [
-		[{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+		[bind_str("name", "Bob")],
+		[bind_str("name", "Ted")]
 	];
 	let expected = [
-		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+		[bind_int("age", 18), bind_str("name", "Bob")],
+		[bind_int("age", 18), bind_str("name", "Ted")],
+		[bind_int("age", 25), bind_str("name", "Bob")],
+		[bind_int("age", 25), bind_str("name", "Ted")]
 	];
 	
-	assert check_algebra(store, [group1, group2], expected);
-	assert check_algebra(store, [group2, group1], expected);
+	assert check_bgp([group1, group2], expected);
+	assert check_bgp([group2, group1], expected);
 }
 
 #[test]
 fn disjoint2_bgp() 
 {
-	let store = create_store([]);
 	let group1 = [
-		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}, {name: "job", value: ityped("cowboy", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "job", value: ityped("muckraker", {nindex: 2u, name: "string"})}]
+		[bind_int("age", 25), bind_str("job", "cowboy")],
+		[bind_int("age", 18), bind_str("job", "muckraker")]
 	];
 	let group2 = [
-		[{name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+		[bind_str("id", "bbb"), bind_str("name", "Bob")],
+		[bind_str("id", "ttt"), bind_str("name", "Ted")]
 	];
 	let expected = [
-		[
-			{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})},
-			{name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})},
-			{name: "job", value: ityped("muckraker", {nindex: 2u, name: "string"})},
-			{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}
-		],
-		[
-			{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})},
-			{name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})},
-			{name: "job", value: ityped("muckraker", {nindex: 2u, name: "string"})},
-			{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}
-		],
-		[
-			{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})},
-			{name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})},
-			{name: "job", value: ityped("cowboy", {nindex: 2u, name: "string"})},
-			{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}
-		],
-		[
-			{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})},
-			{name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})},
-			{name: "job", value: ityped("cowboy", {nindex: 2u, name: "string"})},
-			{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}
-		]
+		[bind_int("age", 18), bind_str("id", "bbb"), bind_str("job", "muckraker"), bind_str("name", "Bob")],
+		[bind_int("age", 18), bind_str("id", "ttt"), bind_str("job", "muckraker"), bind_str("name", "Ted")],
+		[bind_int("age", 25), bind_str("id", "bbb"), bind_str("job", "cowboy"), bind_str("name", "Bob")],
+		[bind_int("age", 25), bind_str("id", "ttt"), bind_str("job", "cowboy"), bind_str("name", "Ted")]
 	];
 	
-	assert check_algebra(store, [group1, group2], expected);
-	assert check_algebra(store, [group2, group1], expected);
+	assert check_bgp([group1, group2], expected);
+	assert check_bgp([group2, group1], expected);
 }
 
 #[test]
 fn asymmetric_bgp() 
 {
-	let store = create_store([]);
 	let group1 = [
-		[{name: "age", value: ityped("33", {nindex: 2u, name: "integer"})}],
-		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+		[bind_int("age", 33)],
+		[bind_int("age", 25)],
+		[bind_int("age", 18)]
 	];
 	let group2 = [
-		[{name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+		[bind_int("age", 88), bind_str("name", "Bob")],
+		[bind_int("age", 18), bind_str("name", "Bob")],
+		[bind_int("age", 18), bind_str("name", "Ted")]
 	];
 	let expected = [
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+		[bind_int("age", 18), bind_str("name", "Bob")],
+		[bind_int("age", 18), bind_str("name", "Ted")]
 	];
 	
-	assert check_algebra(store, [group1, group2], expected);
-	assert check_algebra(store, [group2, group1], expected);
+	assert check_bgp([group1, group2], expected);
+	assert check_bgp([group2, group1], expected);
 }
 
 #[test]
 fn symmetric_bgp() 
 {
-	let store = create_store([]);
 	let group1 = [
-		[{name: "age", value: ityped("33", {nindex: 2u, name: "integer"})}],
-		[{name: "age", value: ityped("25", {nindex: 2u, name: "integer"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}]
+		[bind_int("age", 33)],
+		[bind_int("age", 25)],
+		[bind_int("age", 18)]
 	];
 	let group2 = [
-		[{name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+		[bind_int("age", 88), bind_str("name", "Bob")],
+		[bind_int("age", 18), bind_str("name", "Bob")],
+		[bind_int("age", 18), bind_str("name", "Ted")]
 	];
 	let expected = [
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+		[bind_int("age", 18), bind_str("name", "Bob")],
+		[bind_int("age", 18), bind_str("name", "Ted")]
 	];
 	
-	assert check_algebra(store, [group1, group2], expected);
-	assert check_algebra(store, [group2, group1], expected);
+	assert check_bgp([group1, group2], expected);
+	assert check_bgp([group2, group1], expected);
 }
 
 #[test]
 fn path_bgp() 
 {
-	let store = create_store([]);
 	let group1 = [
-		[{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}],
-		[{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}],
-		[{name: "name", value: ityped("George", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("ggg", {nindex: 2u, name: "string"})}]
+		[bind_str("name", "Bob"), bind_str("id", "bbb")],
+		[bind_str("name", "Ted"), bind_str("id", "ttt")],
+		[bind_str("name", "George"), bind_str("id", "ggg")]
 	];
 	let group2 = [
-		[{name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}],
-		[{name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}],
-		[{name: "id", value: ityped("zzz", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("38", {nindex: 2u, name: "integer"})}]
+		[bind_str("id", "ttt"), bind_int("age", 18)],
+		[bind_str("id", "bbb"), bind_int("age", 88)],
+		[bind_str("id", "zzz"), bind_int("age", 38)]
 	];
 	let expected = [
-		[{name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}, {name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}, {name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}],
-		[{name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}, {name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}, {name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}]
+		[bind_int("age", 88), bind_str("id", "bbb"), bind_str("name", "Bob")],
+		[bind_int("age", 18), bind_str("id", "ttt"), bind_str("name", "Ted")]
 	];
 	
-	assert check_algebra(store, [group1, group2], expected);
-	assert check_algebra(store, [group2, group1], expected);
+	assert check_bgp([group1, group2], expected);
+	assert check_bgp([group2, group1], expected);
 }
 
 #[test]
 fn incompatible_bgp() 
 {
-	let store = create_store([]);
 	let group1 = [
-		[{name: "name", value: ityped("Bob", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("bbb", {nindex: 2u, name: "string"})}],
-		[{name: "name", value: ityped("Ted", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("ttt", {nindex: 2u, name: "string"})}],
-		[{name: "name", value: ityped("George", {nindex: 2u, name: "string"})}, {name: "id", value: ityped("ggg", {nindex: 2u, name: "string"})}]
+		[bind_str("name", "Bob"), bind_str("id", "bbb")],
+		[bind_str("name", "Ted"), bind_str("id", "ttt")],
+		[bind_str("name", "George"), bind_str("id", "ggg")]
 	];
 	let group2 = [
-		[{name: "id", value: ityped("tyt", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("18", {nindex: 2u, name: "integer"})}],
-		[{name: "id", value: ityped("bxb", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("88", {nindex: 2u, name: "integer"})}],
-		[{name: "id", value: ityped("zzz", {nindex: 2u, name: "string"})}, {name: "age", value: ityped("38", {nindex: 2u, name: "integer"})}]
+		[bind_str("id", "tyt"), bind_int("age", 18)],
+		[bind_str("id", "bxb"), bind_int("age", 88)],
+		[bind_str("id", "zzz"), bind_int("age", 38)]
 	];
 	let expected = [];
 	
-	assert check_algebra(store, [group1, group2], expected);
-	assert check_algebra(store, [group2, group1], expected);
+	assert check_bgp([group1, group2], expected);
+	assert check_bgp([group2, group1], expected);
 }

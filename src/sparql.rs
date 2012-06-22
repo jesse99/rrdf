@@ -1,20 +1,13 @@
 import rparse::*;
 import query::*;
 
-// We want to be able to compile a query into patterns and reuse the result
-// with arbitrary stores or with stores that are changing. So we use this
-// intermediate enum which (for efficiency) we convert into a pattern when
-// the query is run against an actual store.
-enum compiled_pattern
-{
-	variable_binding(str),
-	string_literal(str, str),		// value + lang (which may be empty)
-	iri_literal(str),
-	prefixed_name(str),
-	typed_literal(str, str)
-}
+type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 
-type compiled_triple_pattern = {subject: compiled_pattern, predicate: compiled_pattern, object: compiled_pattern};
+enum algebra
+{
+	bp(triple_pattern),			// this isn't part of the spec, but it allows us to evaluate a common case more efficiently
+	bgp([triple_pattern])
+}
 
 fn find_dupes(names: [str]) -> [str]
 {
@@ -400,6 +393,16 @@ fn prefixedname() -> parser<str>
 	(PNAME_LN.or(PNAME_NS)).ws()
 }
 
+fn typed_literal(value: str, kind: str) -> pattern
+{
+	constant({value: value, kind: kind, lang: ""})
+}
+
+fn string_literal(value: str, lang: str) -> pattern
+{
+	constant({value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang})
+}
+
 // http://www.w3.org/TR/sparql11-query/#grammar
 // TODO: remove annotate calls
 fn make_parser() -> parser<selector>
@@ -417,23 +420,23 @@ fn make_parser() -> parser<selector>
 	let STRING_LITERAL1 = seq3_ret1("'".lit(), scan0(bind short_char('\'', _, _)), "'".lit().ws());
 	
 	// [136] INTEGER ::= [0-9]+
-	let INTEGER = match1(is_digit).thene({|v| return(typed_literal(v, "xsd:integer"))}).ws();
+	let INTEGER = match1(is_digit).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#integer"))}).ws();
 	
 	// [142] INTEGER_NEGATIVE ::= '-' INTEGER
-	let INTEGER_NEGATIVE = seq2_ret_str("-".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "xsd:integer"))}).ws();
+	let INTEGER_NEGATIVE = seq2_ret_str("-".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#integer"))}).ws();
 	
 	// [139] INTEGER_POSITIVE ::= '+' INTEGER
-	let INTEGER_POSITIVE = seq2_ret1("+".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "xsd:integer"))}).ws();
+	let INTEGER_POSITIVE = seq2_ret1("+".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#integer"))}).ws();
 	
 	// [137] DECIMAL ::= [0-9]* '.' [0-9]+
 	let decimal_root = seq3_ret_str(match0(is_digit), ".".lit(), match1(is_digit)).ws();
-	let DECIMAL = decimal_root.thene({|v| return(typed_literal(v, "xsd:double"))});
+	let DECIMAL = decimal_root.thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
 	
 	// [143] DECIMAL_NEGATIVE ::= '-' DECIMAL
-	let DECIMAL_NEGATIVE = seq2_ret_str("-".lit(), decimal_root).thene({|v| return(typed_literal(v, "xsd:double"))});
+	let DECIMAL_NEGATIVE = seq2_ret_str("-".lit(), decimal_root).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
 		
 	// [140] DECIMAL_POSITIVE ::= '+' DECIMAL
-	let DECIMAL_POSITIVE = seq2_ret1("+".lit(), decimal_root).thene({|v| return(typed_literal(v, "xsd:double"))});
+	let DECIMAL_POSITIVE = seq2_ret1("+".lit(), decimal_root).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
 	
 	// [145] EXPONENT ::= [eE] [+-]? [0-9]+
 	let EXPONENT = seq3_ret_str("e".liti(), optional_str((("+".lit()).or("-".lit()))), match1(is_digit));
@@ -446,13 +449,13 @@ fn make_parser() -> parser<selector>
 	let double3 = seq2_ret_str(match1(is_digit), EXPONENT);
 	
 	let double_root = or_v([double1, double2, double3]).ws();
-	let DOUBLE = double_root.thene({|v| return(typed_literal(v, "xsd:double"))});
+	let DOUBLE = double_root.thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
 	
 	// [144] DOUBLE_NEGATIVE ::= '-' DOUBLE
-	let DOUBLE_NEGATIVE = seq2_ret_str("-".lit(), double_root).thene({|v| return(typed_literal(v, "xsd:double"))});
+	let DOUBLE_NEGATIVE = seq2_ret_str("-".lit(), double_root).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
 	
 	// [141] DOUBLE_POSITIVE ::= '+' DOUBLE
-	let DOUBLE_POSITIVE = seq2_ret1("+".lit(), double_root).thene({|v| return(typed_literal(v, "xsd:double"))});
+	let DOUBLE_POSITIVE = seq2_ret1("+".lit(), double_root).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
 	
 	// [135] LANGTAG ::= '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
 	let LANGTAG = langtag();
@@ -467,7 +470,7 @@ fn make_parser() -> parser<selector>
 	let String = or_v([STRING_LITERAL_LONG1, STRING_LITERAL_LONG2, STRING_LITERAL1, STRING_LITERAL2]);
 	
 	// [124] BooleanLiteral	::= 'true' | 'false'
-	let BooleanLiteral = ("true".lit()).or("false".lit()).thene({|v| return(typed_literal(v, "xsd:boolean"))}).ws();
+	let BooleanLiteral = ("true".lit()).or("false".lit()).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#boolean"))}).ws();
 	
 	// [121] NumericLiteralUnsigned ::= INTEGER | DECIMAL | DOUBLE
 	let NumericLiteralUnsigned = or_v([DOUBLE, DECIMAL, INTEGER]);
@@ -495,7 +498,7 @@ fn make_parser() -> parser<selector>
 	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral | BooleanLiteral |	BlankNode |	NIL
 	let GraphTerm = or_v([
 		RDFLiteral.annotate("RDFLiteral"),
-		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))}),
+		IRIref.annotate("IRIref").thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#anyURI"))}),
 		NumericLiteral,
 		BooleanLiteral
 	]);
@@ -504,7 +507,7 @@ fn make_parser() -> parser<selector>
 	let VARNAME = identifier().ws();
 	
 	// [133] VAR1 ::= '?' VARNAME
-	let VAR1 = seq2_ret1("?".lit().ws(), VARNAME).thene({|v| return(variable_binding((v)))});
+	let VAR1 = seq2_ret1("?".lit().ws(), VARNAME).thene({|v| return(variable((v)))});
 	
 	// [98] Var ::= VAR1 | VAR2
 	let Var = VAR1;
@@ -516,7 +519,7 @@ fn make_parser() -> parser<selector>
 	let GraphNode = VarOrTerm;
 	
 	// [88] PathPrimary ::= IRIref | 'a' | '!' PathNegatedPropertySet | '(' Path ')'
-	let PathPrimary = IRIref.thene({|v| return(iri_literal(v))});
+	let PathPrimary = IRIref.thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#anyURI"))});
 	
 	// [85] PathElt ::= PathPrimary PathMod?
 	let PathElt = PathPrimary;
@@ -554,7 +557,17 @@ fn make_parser() -> parser<selector>
 		{|subject, e| result::ok({subject: subject, predicate: e[0], object: e[1]})};
 		
 	// [56] TriplesBlock ::= TriplesSameSubjectPath ( '.' TriplesBlock? )?
-	let TriplesBlock = TriplesSameSubjectPath;
+	let TriplesBlock = seq2(list(TriplesSameSubjectPath, ".".lit().ws()), ".".lit().ws().optional())
+		{|patterns, _r|
+			if vec::len(patterns) == 1u
+			{
+				result::ok(bp(patterns[0]))
+			}
+			else
+			{
+				result::ok(bgp(patterns))
+			}
+		};
 	
 	// [55] GroupGraphPatternSub ::= TriplesBlock? ( GraphPatternNotTriples '.'? TriplesBlock? )*
 	let GroupGraphPatternSub = TriplesBlock;
@@ -571,13 +584,13 @@ fn make_parser() -> parser<selector>
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = seq2(SelectClause, WhereClause)
 		{|names, matchers|
-			let variables = vec::filter(names) {|p| alt p {variable_binding(_l) {true} _ {false}}};
-			let names = vec::map(variables) {|p| alt p {variable_binding(n) {n} _ {fail}}};
+			let variables = vec::filter(names) {|p| alt p {variable(_l) {true} _ {false}}};
+			let names = vec::map(variables) {|p| alt p {variable(n) {n} _ {fail}}};
 			
 			let dupes = find_dupes(names);
 			if vec::is_empty(dupes)
 			{
-				result::ok(select(names, matchers))
+				result::ok(eval(names, matchers))
 			}
 			else
 			{

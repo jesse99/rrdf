@@ -6,6 +6,19 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 	- add parser support for pattern groups
 	- query needs to support matching groups
 	- query needs to use unification function to unify groups
+	- would it be easier to test eval using rhe parser?
+* Store shouldn't have namespaces?
+	- add functions could take namespaces
+* Semantics rfc has a list of suitable xsd types.
+* Containers are 1 based.
+* Support SELECT * (selects all bindings).
+* rdf:list has a fixed size, other collections are open.
+* 6.5.1 has a simpler version of literal equality
+	- use rdf_term_equal
+	- see http://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-literal
+	- is there a canonical lexcal representation for floats? see 3.2.4.2 of xml schema rfc
+	- probably need stuff like add_float_value and add_typed_value (or yet another enum)
+* Support ; (goes in same place as .)
 * Work on more complex matching:
 	- support optional, use section 18 to figure out the algebra
 	- support some simple date filters (i.e. date is no more than 24 hours ago)
@@ -15,11 +28,12 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 	- may want to support union
 * Select components can be strings?
 	- if not why does triple pattern allow literals?
-* 6.5.1 has a simpler version of literal equality.
-	- use rdf_term_equal
-	- see http://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-literal
 * May want to drop the n from index.
 * Check some common parse errors and add tag as needed.
+* Document whats not supported:
+	- paths
+	- collections
+	- etc
 * Do we need to be able to match collections?
 * Add a unit test demonstrating that solutions can be sent across tasks.
 * Add a unit test showing that add_triples args can be sent across threads.
@@ -108,3 +122,29 @@ ASK				return true/false instead of matches/no matches
 STRSTARTS
 STRENDS
 CONTAINS
+
+
+fn parse_dateTime(literal: str) -> option<std::time::timespec>
+{
+	// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
+	alt std::time::strptime(literal, "%FT%T%z").chain_err
+		{|_err1|
+			// Time zone expressed as a name, e.g. EST (technically only Z is supposed to be allowed).
+			std::time::strptime(literal, "%FT%T%Z").chain_err
+			{|_err2|
+				// No time zone (so the time will be considered to be in the local time zone).
+				std::time::strptime(literal, "%FT%T")
+			}}
+	{
+		result::ok(time)
+		{
+			option::some(time.to_timespec())
+		}
+		result::err(_)
+		{
+			#error["'%s' is not an ISO 8601 dateTime", literal];
+			option::none
+		}
+	}
+}
+

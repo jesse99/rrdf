@@ -31,22 +31,27 @@ type triple = {subject: subject, predicate: predicate, object: object};
 #[doc = "Name of a namespace plus the IRI it expands to."]
 type namespace = {prefix: str, path: str};
 
+#[doc = "Predicate and object associated with a subject."]
+type entry = {predicate: str, object: object};
+
 #[doc = "Stores triples in a more or less efficient format."]
 type store = {
-	namespaces: [namespace],					// 0 == "" (no namespace), 1 == "_" (blank), 2 == "xsd"
-	subjects: hashmap<qname, @dvec<entry>>,
+	namespaces: [namespace],
+	subjects: hashmap<str, @dvec<entry>>,
 	mut next_blank: uint
 };
+
+#[doc = "Value bound to a variable in a SPARQL query (e.g. ?name)."]
+type binding = {name: str, value: object};
+
+#[doc = "Names appear in the same order as the variables in the SELECT clause."]
+type solution_row = [binding];
+
+#[doc = "Result of a SPARQL query."]
+type solution = [solution_row];
 
 #[doc = "The function returned by compile and invoked to execute a SPARQL query.
 
 Returns a solution or a 'runtime' error."]
 type selector = fn@ (store) -> result::result<solution, str>;
-
-#[doc = "Names appear in the same order as the variables in the SELECT clause.
-
-Each returned row will name (len(names) columns. Subjects are returned as
-reference objects. Predicates as typed_literal with type xsd:anyURI. Note that
-option::none is returned only for queries that use OPTIONAL or UNION."]
-type solution = {names: [str], rows: [[option<object>]]};
 

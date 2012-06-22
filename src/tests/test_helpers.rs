@@ -2,26 +2,21 @@ import io;
 import io::writer_util;
 import query::*;
 
-export ref_uri, ref_uri_none, ref_uri_str, str_ref_uri, check_algebra, check_strs, check_triples, check_solution, check_solution_err;
+export bind_int, bind_str, bind_uri, check_bgp, check_strs, check_triples, check_solution, check_solution_err;
 
-fn ref_uri(r: str, u: str) -> [option<object>]
+fn bind_int(name: str, value: int) -> binding
 {
-	[option::some({value: r, kind: "xsd:anyURI", lang: ""}), option::some({value: u, kind: "xsd:anyURI", lang: ""})]
+	{name: name, value: {value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""}}
 }
 
-fn ref_uri_none(r: str, u: str) -> [option<object>]
+fn bind_str(name: str, value: str) -> binding
 {
-	[option::some({value: r, kind: "xsd:anyURI", lang: ""}), option::some({value: u, kind: "xsd:anyURI", lang: ""}), option::none]
+	{name: name, value: {value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""}}
 }
 
-fn ref_uri_str(r: str, u: str, s: str) -> [option<object>]
+fn bind_uri(name: str, value: str) -> binding
 {
-	[option::some({value: r, kind: "xsd:anyURI", lang: ""}), option::some({value: u, kind: "xsd:anyURI", lang: ""}), option::some({value: s, kind: "xsd:string", lang: ""})]
-}
-
-fn str_ref_uri(s: str, r: str, u: str) -> [option<object>]
-{
-	[option::some({value: s, kind: "xsd:string", lang: ""}), option::some({value: r, kind: "xsd:anyURI", lang: ""}), option::some({value: u, kind: "xsd:anyURI", lang: ""})]
+	{name: name, value: {value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}}
 }
 
 fn check_strs(actual: str, expected: str) -> bool
@@ -34,9 +29,9 @@ fn check_strs(actual: str, expected: str) -> bool
 	ret true;
 }
 
-fn check_algebra(store: store, groups: solution_groups, expected: solution_group) -> bool
+fn check_bgp(groups: [solution], expected: solution) -> bool
 {
-	fn convert_bindings(group: solution_group) -> [str]
+	fn convert_bindings(group: solution) -> [str]
 	{
 		vec::map(group)
 		{|row|
@@ -49,13 +44,17 @@ fn check_algebra(store: store, groups: solution_groups, expected: solution_group
 	fn dump_bindings(actual: [str])
 	{
 		io::stderr().write_line("Actual bindings:");
-		for vec::each(actual)
-		{|bindings|
-			io::stderr().write_line(#fmt["   %s", bindings]);
+		for vec::eachi(actual)
+		{|i, bindings|
+			io::stderr().write_line(#fmt["   %?: %s", i, bindings]);
 		};
 	}
 	
-	let actual = eval_bgp(store, groups);
+	let mut actual = [];
+	for vec::each(groups)
+	{|group|
+		actual = eval_bg_pair(actual, group);
+	};
 	
 	// Form this point forward we are dealing with [str] instead of [[binding]].
 	let actual = convert_bindings(actual);
@@ -91,9 +90,9 @@ fn check_triples(actual: [triple], expected: [triple]) -> bool
 	fn dump_triples(actual: [triple])
 	{
 		io::stderr().write_line("Actual triples:");
-		for vec::each(actual)
-		{|triple|
-			io::stderr().write_line(#fmt["   %s", triple.to_str()]);
+		for vec::eachi(actual)
+		{|i, triple|
+			io::stderr().write_line(#fmt["   %?: %s", i, triple.to_str()]);
 		};
 	}
 	
@@ -125,9 +124,23 @@ fn check_triples(actual: [triple], expected: [triple]) -> bool
 			ret false;
 		}
 		
-		if atriple.object != etriple.object
+		if atriple.object.value != etriple.object.value
 		{
-			io::stderr().write_line(#fmt["Object #%? is %?, but expected %?", i, atriple.object.to_str(), etriple.object.to_str()]);
+			io::stderr().write_line(#fmt["Object #%? value is %?, but expected %?", i, atriple.object.value, etriple.object.value]);
+			dump_triples(actual);
+			ret false;
+		}
+		
+		if atriple.object.kind != etriple.object.kind
+		{
+			io::stderr().write_line(#fmt["Object #%? kind is %?, but expected %?", i, atriple.object.kind, etriple.object.kind]);
+			dump_triples(actual);
+			ret false;
+		}
+		
+		if atriple.object.lang != etriple.object.lang
+		{
+			io::stderr().write_line(#fmt["Object #%? lang is %?, but expected %?", i, atriple.object.lang, etriple.object.lang]);
 			dump_triples(actual);
 			ret false;
 		}
@@ -147,43 +160,49 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 			{
 				result::ok(actual)
 				{
-					// Both sides should have the same number of bindings.
-					if vec::len(actual.names) != vec::len(expected.names)
+					// OK if they are both empty.
+					if vec::is_empty(actual) && vec::is_empty(expected)
 					{
-						print_failure(#fmt["Actual result had %? bindings but expected %? bindings.", 
-							vec::len(actual.names), vec::len(expected.names)], actual, expected);
-						ret false;
-					}
-					
-					// Both sides should have the same binding names.
-					let names1 = str::connect(actual.names, " ");
-					let names2 = str::connect(expected.names, " ");
-					if names1 != names2
-					{
-						print_failure(#fmt["Actual binding names are '%s' but expected '%s'.", 
-							names1, names2], actual, expected);
-						ret false;
+						ret true;
 					}
 					
 					// Both sides should have the same number of rows.
-					if vec::len(actual.rows) != vec::len(expected.rows)
+					if vec::len(actual) != vec::len(expected)
 					{
-						print_failure(#fmt["Actual result had %? results but expected %? results.", 
-							vec::len(actual.rows), vec::len(expected.rows)], actual, expected);
+						print_failure(#fmt["Actual result had %? rows but expected %? rows.", 
+							vec::len(actual), vec::len(expected)], actual, expected);
 						ret false;
 					}
 					
 					// Both sides should have the same binding values.
-					for vec::eachi(actual.rows)
+					for vec::eachi(actual)
 					{|i, row1|
-						let row2 = expected.rows[i];
+						let row2 = expected[i];
 						for vec::eachi(row1)
-						{|j, value1|
-							let value2 = row2[j];
-							if value1 != value2
+						{|j, binding1|
+							let binding2 = row2[j];
+							if binding1.name != binding2.name
 							{
-								print_failure(#fmt["Row %? actual %s value was %s but expected %s.", 
-									i, actual.names[j], oo_to_str(value1), oo_to_str(value2)], actual, expected);
+								print_failure(#fmt["Row %? actual name was %s but expected %s.", 
+									i, binding1.name, binding2.name], actual, expected);
+								ret false;
+							}
+							else if binding1.value.lang != binding2.value.lang
+							{
+								print_failure(#fmt["Row %? actual %s was %s but expected lang %s.", 
+									i, binding1.name, binding1.value.to_str(), binding2.value.lang], actual, expected);
+								ret false;
+							}
+							else if binding1.value.kind != binding2.value.kind
+							{
+								print_failure(#fmt["Row %? actual %s was %s but expected kind %s.", 
+									i, binding1.name, binding1.value.to_str(), binding2.value.kind], actual, expected);
+								ret false;
+							}
+							else if binding1.value.value != binding2.value.value
+							{
+								print_failure(#fmt["Row %? actual %s was %s but expected value %s.", 
+									i, binding1.name, binding1.value.to_str(), binding2.value.value], actual, expected);
 								ret false;
 							}
 						};
@@ -250,27 +269,11 @@ fn check_solution_err(store: store, expr: str, expected: str) -> bool
 }
 
 // ---- Private Functions -----------------------------------------------------
-fn oo_to_str(value: option<object>) -> str
-{
-	alt value
-	{
-		some(v)
-		{
-			v.to_str()
-		}
-		none
-		{
-			"<none>"
-		}
-	}
-}
-
 fn print_result(value: solution)
 {
-	for vec::eachi(value.rows)
+	for vec::eachi(value)
 	{|i, row|
-		let pairs = vec::zip(value.names, vec::map(row) {|r| oo_to_str(r)});
-		let bindings = vec::map(pairs) {|p| #fmt["%s = %s", tuple::first(p), tuple::second(p)]};
+		let bindings = vec::map(row) {|b| #fmt["%s = %s", b.name, b.value.to_str()]};
 		io::stderr().write_line(#fmt["   %?: %s", i, str::connect(bindings, ", ")]);
 	}
 }
