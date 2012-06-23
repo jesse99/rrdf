@@ -1,10 +1,13 @@
+http://www.w3.org/TR/2004/REC-rdf-primer-20040210
+http://www.w3.org/TR/2011/WD-turtle-20110809
+http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830	1.1 version
+http://www.w3.org/TR/2004/REC-rdf-concepts-20040210		1.0 version
+http://www.w3.org/TR/2004/REC-rdf-mt-20040210			semantics
 http://www.w3.org/TR/sparql11-query/
+
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
-* rdf:list has a fixed size, other collections are open.
-	- probably want some add_collection methods
-	- note that the open collections are 1-based
 * Support SELECT * (selects all bindings).
 * Support ; (goes in same place as .)
 * Work on more complex matching:
@@ -25,7 +28,6 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 * Concepts doc at 307 talks about escaping urls.
 * Add a unit test demonstrating that solutions can be sent across tasks.
 * Add a unit test showing that add_triples args can be sent across threads.
-* Add support for sequences, bags, and alternatives.
 * Get more queries working:
 	- make sure that the features we have an immediate need for are all supported
 	- 1402 has a nav example
@@ -41,36 +43,20 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 	- don't need the full thing for now
 * May want to add to cargo.
 
-* Get the types setup.
-	- rename predicate relation?
 * Run the w3c tests:
 	- http://www.w3.org/2009/sparql/docs/tests/
-	- will need a turtle parser
+	- will need a turtle parser and xml and probably more
 * IRIs must be absolute (i.e. they must have a scheme name followed by a colon).
-* Language tags must be non-empty and normalized to lower case.
-* Should we have primitive or functions like get_i32_value?
 * Triple equality:
 	- http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830/#section-IRIs
 	- http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830/#section-Literal-Equality
 * Should support CURIEs
 	- http://www.w3.org/TR/2011/WD-rdf-interfaces-20110510/#terms--prefixes-and-profiles
-* Maybe want a (mutable) hashmap based tiplet store
-	- subject => [(relation, object)]
-	- http://www.w3.org/TR/2011/WD-rdf-interfaces-20110510/#graphs
 * Will need a way to merge two triple sets
 	- need to fixup blank nodes
 * Optimization:
 	- http://users.dcc.uchile.cl/~cgutierr/papers/tods09.pdf
-* Might want a graph type, possibly based on a (hidden) hashset
-* Maybe add some query methods
-	- see http://en.wikipedia.org/wiki/Resource_Description_Framework#Query_and_inference_languages
 * Add a turtle parser.
-
-http://www.w3.org/TR/2004/REC-rdf-primer-20040210
-http://www.w3.org/TR/2011/WD-turtle-20110809
-http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830	1.1 version
-http://www.w3.org/TR/2004/REC-rdf-concepts-20040210		1.0 version
-http://www.w3.org/TR/2004/REC-rdf-mt-20040210			semantics
 
 http://schemapedia.com/
 

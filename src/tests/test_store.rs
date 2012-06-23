@@ -172,6 +172,29 @@ fn list1()
 }
 
 #[test]
+fn reify() 
+{
+	let store = got_cast1();
+	store.add_reify("got:Eddard_Stark", "got:wife", create_uri("got:Caitlyn_Stark"));
+	
+	let mut actual = [];
+	for each_triple(store)
+	{|triple|
+		vec::push(actual, triple);
+	};
+	
+	let expected = [
+		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
+		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned"),
+		make_triple_uri(store, "{wife-0}", "rdf:type", "rdf:Statement"),
+		make_triple_uri(store, "{wife-0}", "rdf:subject", "got:Eddard_Stark"),
+		make_triple_uri(store, "{wife-0}", "rdf:predicate", "got:wife"),
+		make_triple_uri(store, "{wife-0}", "rdf:object", "got:Caitlyn_Stark")
+	];
+	assert check_triples(actual, expected);
+}
+
+#[test]
 fn trivial_bgp() 
 {
 	let group1 = [];

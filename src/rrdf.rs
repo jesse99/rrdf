@@ -289,6 +289,18 @@ impl store_methods for store
 		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: {value: "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil", kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}});
 	}
 	
+	#[doc = "Adds a statement about a statement.
+	
+	Often used for meta-data, e.g. a timestamp stating when a statement was added to the store."]
+	fn add_reify(subject: str, predicate: str, value: object)
+	{
+		let mut blank = get_blank_name(self, after(predicate, ':'));
+		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", object: {value: "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement", kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}});
+		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#subject", object: {value: subject, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}});
+		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate", object: {value: predicate, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}});
+		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#object", object: value});
+	}
+	
 	#[doc = "Adds statements representing an ordered set of (possibly duplicate) values."]
 	fn add_seq(subject: str, values: [object])
 	{
