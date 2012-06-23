@@ -20,7 +20,7 @@ enum pattern
 fn solution_row_to_str(row: solution_row) -> str
 {
 	let mut entries = [];
-	for row.each {|name, value| vec::push(entries, #fmt["%s: %s", name, value.to_str()])};
+	for row.each {|entry| vec::push(entries, #fmt["%s: %s", tuple::first(entry), tuple::second(entry).to_str()])};
 	str::connect(entries, ", ")
 }
 
@@ -47,7 +47,7 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 {
 	fn compatible_binding(name1: str, value1: object, rhs: solution_row) -> bool
 	{
-		alt rhs.find(name1)
+		alt rhs.search(name1)
 		{
 			option::some(value2)
 			{
@@ -63,8 +63,8 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 	fn compatible_row(row: solution_row, rhs: solution_row) -> bool
 	{
 		for row.each()
-		{|name, value|
-			if !compatible_binding(name, value, rhs)
+		{|entry|
+			if !compatible_binding(tuple::first(entry), tuple::second(entry), rhs)
 			{
 				ret false;
 			}
@@ -74,23 +74,20 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 	
 	fn union_rows(lhs: solution_row, rhs: solution_row) -> solution_row
 	{
-		let result = std::map::str_hash();
-		
-		// Copy is a shallow copy so we need to copy lhs the hard way.
-		for lhs.each() {|name2, value2| result.insert(name2, value2);}
+		let mut result = copy(lhs);
 		
 		for rhs.each()
-		{|name2, value2|
-			alt lhs.find(name2)
+		{|entry2|
+			alt lhs.search(tuple::first(entry2))
 			{
 				option::some(_)
 				{
-					// Binding2 should be compatible with lhs so nothing to do here.
+					// Binding should be compatible with lhs so nothing to do here.
 				}
 				option::none()
 				{
 					// This is a binding in rhs but not lhs, so we need to add it to the result.
-					result.insert(name2, value2);
+					vec::push(result, entry2);
 				}
 			}
 		}
@@ -213,15 +210,15 @@ fn match_object(actual: object, pattern: pattern) -> match
 	}
 }
 
-fn eval_match(context: hashmap<str, object>, match: match) -> result::result<bool, str>
+fn eval_match(&context: [(str, object)], match: match) -> result::result<bool, str>
 {
 	alt match
 	{
 		either::left(binding)
 		{
-			let new_key = context.insert(binding.name, binding.value);
-			if new_key
+			if option::is_none(context.search(binding.name))
 			{
+				vec::push(context, (binding.name, binding.value));
 				result::ok(true)
 			}
 			else
@@ -303,10 +300,10 @@ fn eval_bp(store: store, matcher: triple_pattern) -> result::result<solution, st
 		for (*entries).each()
 		{|entry|
 			// initialize row,
-			let context = std::map::str_hash();
+			let mut context = [];
 			if option::is_some(sbinding)
 			{
-				context.insert(option::get(sbinding).name, option::get(sbinding).value);
+				vec::push(context, (option::get(sbinding).name, option::get(sbinding).value));
 			}
 			
 			// match an entry,

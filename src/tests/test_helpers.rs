@@ -2,28 +2,7 @@ import io;
 import io::writer_util;
 import query::*;
 
-export add_solutions, check_bgp, check_strs, check_triples, check_solution, check_solution_err;
-
-impl add_solutions for solution_row
-{
-	fn add_int(name: str, value: int) -> solution_row
-	{
-		self.insert(name, {value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""});
-		self
-	}
-	
-	fn add_str(name: str, value: str) -> solution_row
-	{
-		self.insert(name, {value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""});
-		self
-	}
-	
-	fn add_uri(name: str, value: str) -> solution_row
-	{
-		self.insert(name, {value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""});
-		self
-	}
-}
+export check_bgp, check_strs, check_triples, check_solution, check_solution_err;
 
 fn check_strs(actual: str, expected: str) -> bool
 {
@@ -42,7 +21,7 @@ fn check_bgp(groups: [solution], expected: solution) -> bool
 		vec::map(group)
 		{|row|
 			let mut entries = [];
-			for row.each {|name, value| vec::push(entries, #fmt["%s=%?", name, value])};
+			for row.each {|e| vec::push(entries, #fmt["%s=%?", tuple::first(e), tuple::second(e)])};
 			let entries = std::sort::merge_sort({|x, y| x <= y}, entries);
 			str::connect(entries, ", ")
 		}
@@ -185,16 +164,18 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 					for vec::eachi(actual)
 					{|i, row1|
 						let row2 = expected[i];
-						if row1.size() < row2.size()
+						if vec::len(row1) < vec::len(row2)
 						{
 							print_failure(#fmt["Row %? had size %? but expected at least%?.", 
-								i, row1.size(), row2.size()], actual, expected);
+								i, vec::len(row1), vec::len(row2)], actual, expected);
 							ret false;
 						}
 						
 						for row1.each
-						{|name1, value1|
-							alt row2.find(name1)
+						{|entry1|
+							let name1 = tuple::first(entry1);
+							let value1 = tuple::second(entry1);
+							alt row2.search(name1)
 							{
 								option::some(value2)
 								{
@@ -291,7 +272,7 @@ fn print_result(value: solution)
 	for vec::eachi(value)
 	{|i, row|
 		let mut entries = [];
-		for row.each {|name, value| vec::push(entries, #fmt["%s = %s", name, value.to_str()])};
+		for row.each {|e| vec::push(entries, #fmt["%s = %s", tuple::first(e), tuple::second(e).to_str()])};
 		io::stderr().write_line(#fmt["   %?: %s", i, str::connect(entries, ", ")]);
 	};
 }

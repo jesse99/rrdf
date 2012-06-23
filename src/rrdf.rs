@@ -9,7 +9,80 @@ export subject, predicate, object, triple, namespace, solution_row, solution, se
 
 // this file
 export to_str, create_store, store_methods, each_triple, compile,
-create_bool, create_dateTime, create_double, create_int, create_lang, create_str, create_typed, create_uri;
+create_bool, create_dateTime, create_double, create_int, create_lang, create_str, create_typed, create_uri,
+solution_row_methods, solution_methods;
+
+impl solution_row_methods for solution_row
+{
+	pure fn get(name: str) -> object
+	{
+		alt vec::find(self, {|e| tuple::first(e) == name})
+		{
+			option::some(result)
+			{
+				tuple::second(result)
+			}
+			option::none
+			{
+				fail("Couldn't find " + name)
+			}
+		}
+	}
+	
+	// Named search so we don't wind up conflicting with the find vec extension.
+	pure fn search(name: str) -> option<object>
+	{
+		alt vec::find(self, {|e| tuple::first(e) == name})
+		{
+			option::some(result)
+			{
+				option::some(tuple::second(result))
+			}
+			option::none
+			{
+				option::none
+			}
+		}
+	}
+	
+	pure fn get_or_default(name: str, value: str) -> object
+	{
+		alt vec::find(self, {|e| tuple::first(e) == name})
+		{
+			option::some(result)
+			{
+				tuple::second(result)
+			}
+			option::none
+			{
+				{value: value, kind: "?", lang: ""}
+			}
+		}
+	}
+}
+
+impl solution_methods for solution
+{
+	pure fn size() -> uint
+	{
+		vec::len(self)
+	}
+	
+	pure fn get(row: uint, name: str) -> object
+	{
+		self[row].get(name)
+	}
+	
+	pure fn search(row: uint, name: str) -> option<object>
+	{
+		self[row].search(name)
+	}
+	
+	pure fn get_or_default(row: uint, name: str, value: str) -> object
+	{
+		self[row].get_or_default(name, value)
+	}
+}
 
 impl of to_str for object
 {

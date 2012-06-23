@@ -176,8 +176,8 @@ fn trivial_bgp()
 {
 	let group1 = [];
 	let group2 = [
-		str_hash().add_int("age", 25),
-		str_hash().add_int("age", 18)
+		[("age", create_int(25))],
+		[("age", create_int(18))]
 	];
 	let expected = group2;
 	
@@ -186,15 +186,15 @@ fn trivial_bgp()
 }
 
 #[test]
-fn identical_bgp() 
+fn identical_bgp()
 {
 	let group1 = [
-		str_hash().add_int("age", 25),
-		str_hash().add_int("age", 18)
+		[("age", create_int(25))],		// TODO: use some fancy regex, remember \1 is atually $1
+		[("age", create_int(18))]
 	];
 	let group2 = [
-		str_hash().add_int("age", 25),
-		str_hash().add_int("age", 18)
+		[("age", create_int(25))],
+		[("age", create_int(18))]
 	];
 	let expected = group2;
 	
@@ -203,21 +203,21 @@ fn identical_bgp()
 }
 
 #[test]
-fn disjoint1_bgp() 
+fn disjoint1_bgp()
 {
 	let group1 = [
-		str_hash().add_int("age", 25),
-		str_hash().add_int("age", 18)
+		[("age", create_int(25))],
+		[("age", create_int(18))]
 	];
 	let group2 = [
-		str_hash().add_str("name", "Bob"),
-		str_hash().add_str("name", "Ted")
+		[("name", create_str("Bob"))],
+		[("name", create_str("Ted"))]
 	];
 	let expected = [
-		str_hash().add_int("age", 18).add_str("name", "Bob"),
-		str_hash().add_int("age", 18).add_str("name", "Ted"),
-		str_hash().add_int("age", 25).add_str("name", "Bob"),
-		str_hash().add_int("age", 25).add_str("name", "Ted")
+		[("age", create_int(18)), ("name", create_str("Bob"))],
+		[("age", create_int(18)), ("name", create_str("Ted"))],
+		[("age", create_int(25)), ("name", create_str("Bob"))],
+		[("age", create_int(25)), ("name", create_str("Ted"))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -228,18 +228,18 @@ fn disjoint1_bgp()
 fn disjoint2_bgp() 
 {
 	let group1 = [
-		str_hash().add_int("age", 25).add_str("job", "cowboy"),
-		str_hash().add_int("age", 18).add_str("job", "muckraker")
+		[("age", create_int(25)), ("job", create_str("cowboy"))],
+		[("age", create_int(18)), ("job", create_str("muckraker"))]
 	];
 	let group2 = [
-		str_hash().add_str("id", "bbb").add_str("name", "Bob"),
-		str_hash().add_str("id", "ttt").add_str("name", "Ted")
+		[("id", create_str("bbb")), ("name", create_str("Bob"))],
+		[("id", create_str("ttt")), ("name", create_str("Ted"))]
 	];
 	let expected = [
-		str_hash().add_int("age", 18).add_str("id", "bbb").add_str("job", "muckraker").add_str("name", "Bob"),
-		str_hash().add_int("age", 18).add_str("id", "ttt").add_str("job", "muckraker").add_str("name", "Ted"),
-		str_hash().add_int("age", 25).add_str("id", "bbb").add_str("job", "cowboy").add_str("name", "Bob"),
-		str_hash().add_int("age", 25).add_str("id", "ttt").add_str("job", "cowboy").add_str("name", "Ted")
+		[("age", create_int(18)), ("id", create_str("bbb")), ("job", create_str("muckraker")), ("name", create_str("Bob"))],
+		[("age", create_int(18)), ("id", create_str("ttt")), ("job", create_str("muckraker")), ("name", create_str("Ted"))],
+		[("age", create_int(25)), ("id", create_str("bbb")), ("job", create_str("cowboy")), ("name", create_str("Bob"))],
+		[("age", create_int(25)), ("id", create_str("ttt")), ("job", create_str("cowboy")), ("name", create_str("Ted"))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -250,19 +250,19 @@ fn disjoint2_bgp()
 fn asymmetric_bgp() 
 {
 	let group1 = [
-		str_hash().add_int("age", 33),
-		str_hash().add_int("age", 25),
-		str_hash().add_int("age", 18)
+		[("age", create_int(33))],
+		[("age", create_int(25))],
+		[("age", create_int(18))]
 	];
 	let group2 = [
-		str_hash().add_int("age", 88).add_str("name", "Bob"),
-		str_hash().add_int("age", 18).add_str("name", "Bob"),
-		str_hash().add_int("age", 18).add_str("name", "Ted")
+		[("age", create_int(88)), ("name", create_str("Bob"))],
+		[("age", create_int(18)), ("name", create_str("Bob"))],
+		[("age", create_int(18)), ("name", create_str("Ted"))]
 	];
 	
 	let expected = [
-		str_hash().add_int("age", 18).add_str("name", "Bob"),
-		str_hash().add_int("age", 18).add_str("name", "Ted")
+		[("age", create_int(18)), ("name", create_str("Bob"))],
+		[("age", create_int(18)), ("name", create_str("Ted"))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -273,18 +273,18 @@ fn asymmetric_bgp()
 fn symmetric_bgp() 
 {
 	let group1 = [
-		str_hash().add_int("age", 33),
-		str_hash().add_int("age", 25),
-		str_hash().add_int("age", 18)
+		[("age", create_int(33))],
+		[("age", create_int(25))],
+		[("age", create_int(18))]
 	];
 	let group2 = [
-		str_hash().add_int("age", 88).add_str("name", "Bob"),
-		str_hash().add_int("age", 18).add_str("name", "Bob"),
-		str_hash().add_int("age", 18).add_str("name", "Ted")
+		[("age", create_int(88)), ("name", create_str("Bob"))],
+		[("age", create_int(18)), ("name", create_str("Bob"))],
+		[("age", create_int(18)), ("name", create_str("Ted"))]
 	];
 	let expected = [
-		str_hash().add_int("age", 18).add_str("name", "Bob"),
-		str_hash().add_int("age", 18).add_str("name", "Ted")
+		[("age", create_int(18)), ("name", create_str("Bob"))],
+		[("age", create_int(18)), ("name", create_str("Ted"))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -295,18 +295,18 @@ fn symmetric_bgp()
 fn path_bgp() 
 {
 	let group1 = [
-		str_hash().add_str("name", "Bob").add_str("id", "bbb"),
-		str_hash().add_str("name", "Ted").add_str("id", "ttt"),
-		str_hash().add_str("name", "George").add_str("id", "ggg")
+		[("name", create_str("Bob")), ("id", create_str("bbb"))],
+		[("name", create_str("Ted")), ("id", create_str("ttt"))],
+		[("name", create_str("George")), ("id", create_str("ggg"))]
 	];
 	let group2 = [
-		str_hash().add_str("id", "ttt").add_int("age", 18),
-		str_hash().add_str("id", "bbb").add_int("age", 88),
-		str_hash().add_str("id", "zzz").add_int("age", 38)
+		[("id", create_str("ttt")), ("age", create_int(18))],
+		[("id", create_str("bbb")), ("age", create_int(88))],
+		[("id", create_str("zzz")), ("age", create_int(38))]
 	];
 	let expected = [
-		str_hash().add_int("age", 88).add_str("id", "bbb").add_str("name", "Bob"),
-		str_hash().add_int("age", 18).add_str("id", "ttt").add_str("name", "Ted")
+		[("age", create_int(88)), ("id", create_str("bbb")), ("name", create_str("Bob"))],
+		[("age", create_int(18)), ("id", create_str("ttt")), ("name", create_str("Ted"))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -317,14 +317,14 @@ fn path_bgp()
 fn incompatible_bgp() 
 {
 	let group1 = [
-		str_hash().add_str("name", "Bob").add_str("id", "bbb"),
-		str_hash().add_str("name", "Ted").add_str("id", "ttt"),
-		str_hash().add_str("name", "George").add_str("id", "ggg")
+		[("name", create_str("Bob")), ("id", create_str("bbb"))],
+		[("name", create_str("Ted")), ("id", create_str("ttt"))],
+		[("name", create_str("George")), ("id", create_str("ggg"))]
 	];
 	let group2 = [
-		str_hash().add_str("id", "tyt").add_int("age", 18),
-		str_hash().add_str("id", "bxb").add_int("age", 88),
-		str_hash().add_str("id", "zzz").add_int("age", 38)
+		[("id", create_str("tyt")), ("age", create_int(18))],
+		[("id", create_str("bxb")), ("age", create_int(88))],
+		[("id", create_str("zzz")), ("age", create_int(38))]
 	];
 	let expected = [];
 	

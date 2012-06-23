@@ -42,9 +42,12 @@ type store = {
 };
 
 #[doc = "Result of matching a triple with a SPARQL query."]
-type solution_row = hashmap<str, object>;
+type solution_row = [(str, object)];
 
-#[doc = "Result of a SPARQL query."]
+#[doc = "Result of a SPARQL query.
+
+Note that the solution_methods impl provides a number of convenience methods
+to simplify result retrieval."]
 type solution = [solution_row];
 
 #[doc = "The function returned by compile and invoked to execute a SPARQL query.

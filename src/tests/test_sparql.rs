@@ -17,8 +17,8 @@ fn trivial()
 	let expr = "SELECT ?s ?p ?o WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("fn")).add_str("o", "Eddard Stark"),
-		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname")).add_str("o", "Ned")
+		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn"))), ("o", create_str("Eddard Stark"))],
+		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname"))), ("o", create_str("Ned"))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -30,8 +30,8 @@ fn out_of_order()
 	let expr = "SELECT ?o ?s ?p WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		str_hash().add_str("o", "Eddard Stark").add_uri("s", got("Eddard_Stark")).add_uri("p", v("fn")),
-		str_hash().add_str("o", "Ned").add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname"))
+		[("o", create_str("Eddard Stark")), ("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn")))],
+		[("o", create_str("Ned")), ("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -43,8 +43,8 @@ fn long_names()
 	let expr = "SELECT ?subject ?p ?obj WHERE {?subject ?p ?obj}";
 	let store = test_data::got_cast1();
 	let expected = [
-		str_hash().add_uri("subject", got("Eddard_Stark")).add_uri("p", v("fn")).add_str("obj", "Eddard Stark"),
-		str_hash().add_uri("subject", got("Eddard_Stark")).add_uri("p", v("nickname")).add_str("obj", "Ned")
+		[("subject", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn"))), ("obj", create_str("Eddard Stark"))],
+		[("subject", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname"))), ("obj", create_str("Ned"))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -56,8 +56,8 @@ fn keyword_case()
 	let expr = "SeLecT ?s ?p ?o where {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("fn")).add_str("o", "Eddard Stark"),
-		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname")).add_str("o", "Ned")
+		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn"))), ("o", create_str("Eddard Stark"))],
+		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname"))), ("o", create_str("Ned"))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -87,8 +87,8 @@ fn unbound_variable()
 	let expr = "SELECT ?s ?p ?z WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("fn")),
-		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname"))
+		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn")))],
+		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -127,7 +127,7 @@ fn simple_path()
 	}";
 	let store = test_data::got_cast3();
 	let expected = [
-		str_hash().add_str("org", "Small Council")
+		[("org", create_str("Small Council"))]
 	];
 	
 	assert check_solution(store, expr, expected);

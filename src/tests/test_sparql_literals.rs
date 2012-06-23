@@ -17,7 +17,7 @@ fn string1_match()
 	let expr = "SELECT ?s ?p WHERE {?s ?p 'Ned'}";
 	let store = test_data::got_cast1();
 	let expected = [
-		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname"))
+		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -29,7 +29,7 @@ fn string2_match()
 	let expr = "SELECT ?s ?p WHERE {?s ?p \"Ned\"}";
 	let store = test_data::got_cast1();
 	let expected = [
-		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname"))
+		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -45,7 +45,7 @@ fn long_string1_match()
 	]);
 	
 	let expected = [
-		str_hash().add_uri("s", got("Some_Guy")).add_uri("p", v("fn"))
+		[("s", create_uri(got("Some_Guy"))), ("p", create_uri(v("fn")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -61,7 +61,7 @@ fn long_string2_match()
 	]);
 	
 	let expected = [
-		str_hash().add_uri("s", got("Some_Guy")).add_uri("p", v("fn"))
+		[("s", create_uri(got("Some_Guy"))), ("p", create_uri(v("fn")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -85,7 +85,7 @@ fn language_tags()
 	let expr = "SELECT ?s WHERE {?s ?p \"guten tag\"@en-US}";
 	let store = fancy_types();
 	let expected = [
-		str_hash().add_uri("s", "http://blah#Jones")
+		[("s", create_uri("http://blah#Jones"))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -97,9 +97,9 @@ fn iri_match()
 	let expr = "SELECT ?s WHERE {?s <http://www.w3.org/2006/vcard/ns#nickname> ?z}";
 	let store = test_data::got_cast3();
 	let expected = [
-		str_hash().add_uri("s", got("Eddard_Stark")),
-		str_hash().add_uri("s", got("Jon_Snow")),
-		str_hash().add_uri("s", got("Sandor_Clegane"))
+		[("s", create_uri(got("Eddard_Stark")))],
+		[("s", create_uri(got("Jon_Snow")))],
+		[("s", create_uri(got("Sandor_Clegane")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -112,8 +112,8 @@ fn subject_match()
 	let expr = "SELECT ?p WHERE {<http://awoiaf.westeros.org/index.php/Sandor_Clegane> ?p ?z}";
 	let store = test_data::got_cast3();
 	let expected = [
-		str_hash().add_uri("p", v("fn")),
-		str_hash().add_uri("p", v("nickname"))
+		[("p", create_uri(v("fn")))],
+		[("p", create_uri(v("nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -135,7 +135,7 @@ fn typed_literal_match()
 	let expr = "SELECT ?s ?p WHERE {?s ?p \"Ned\"^^<http://www.w3.org/2001/XMLSchema#string>}";
 	let store = test_data::got_cast1();
 	let expected = [
-		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname"))
+		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -154,8 +154,8 @@ fn int_literal()
 	]);
 	
 	let expected = [
-		str_hash().add_uri("s", got("Another_Guy")),
-		str_hash().add_uri("s", got("Some_Guy"))
+		[("s", create_uri(got("Another_Guy")))],
+		[("s", create_uri(got("Some_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -186,8 +186,8 @@ fn decimal_literal()
 	store.add("got:Another_Guy", [("v:age", create_typed("3.14", "xsd:double"))]);
 	
 	let expected = [
-		str_hash().add_uri("s", got("Another_Guy"))
-		//str_hash().add_uri("s", got("Some_Guy"))
+		[("s", create_uri(got("Another_Guy")))]
+		//[("s", create_uri(got("Some_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -206,7 +206,7 @@ fn signed_decimal_literal()
 	]);
 	
 	let expected = [
-		str_hash().add_uri("s", got("Another_Guy"))
+		[("s", create_uri(got("Another_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -226,8 +226,8 @@ fn signed_decimal_literal()
 //	]);
 //	
 //	let expected = [
-//		str_hash().add_uri("s", got("Another_Guy")),
-//		str_hash().add_uri("s", got("Some_Guy"))
+//		[("s", create_uri(got("Another_Guy")))],
+//		[("s", create_uri(got("Some_Guy")))]
 //	];
 //	
 //	assert check_solution(store, expr, expected);
@@ -246,7 +246,7 @@ fn boolean_literal()
 	]);
 	
 	let expected = [
-		str_hash().add_uri("s", got("A_Woman"))
+		[("s", create_uri(got("A_Woman")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -269,8 +269,8 @@ fn datetime()
 	]);
 	
 	let expected = [
-//		str_hash().add_uri("s", got("A_Woman")),
-		str_hash().add_uri("s", got("Some_Guy"))
+//		[("s", create_uri(got("A_Woman")))],
+		[("s", create_uri(got("Some_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
