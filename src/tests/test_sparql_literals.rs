@@ -41,7 +41,7 @@ fn long_string1_match()
 	let expr = "SELECT ?s ?p WHERE {?s ?p '''Name\nTitle'''}";
 	let store = test_data::got_cast1();
 	store.add("got:Some_Guy", [
-		make_str("v:fn", "Name\nTitle")
+		("v:fn", create_str("Name\nTitle"))
 	]);
 	
 	let expected = [
@@ -57,7 +57,7 @@ fn long_string2_match()
 	let expr = "SELECT ?s ?p WHERE {?s ?p \"\"\"Bob \"Bob\n\"\"\"}";
 	let store = test_data::got_cast1();
 	store.add("got:Some_Guy", [
-		make_str("v:fn", "Bob \"Bob\n")
+		("v:fn", create_str("Bob \"Bob\n"))
 	]);
 	
 	let expected = [
@@ -74,8 +74,8 @@ fn fancy_types() -> store
 		{prefix: "x", path: "http://blah#"}
 		]);
 	
-	store.add("x:Hans", [make_lang("x:greeting", "guten tag", "de")]);
-	store.add("x:Jones", [make_lang("x:greeting", "guten tag", "en-US")]);
+	store.add("x:Hans", [("x:greeting", create_lang("guten tag", "de"))]);
+	store.add("x:Jones", [("x:greeting", create_lang("guten tag", "en-US"))]);
 	ret store;
 }
 
@@ -147,10 +147,10 @@ fn int_literal()
 	let expr = "SELECT ?s WHERE {?s ?p 23}";
 	let store = test_data::got_cast1();
 	store.add("got:Some_Guy", [
-		make_int("v:age", 23)
+		("v:age", create_int(23))
 	]);
 	store.add("got:Another_Guy", [
-		make_int("v:age", 23)
+		("v:age", create_int(23))
 	]);
 	
 	let expected = [
@@ -169,8 +169,8 @@ fn signed_int_literal()
 {
 	let expr = "SELECT ?s WHERE {?s ?p -23}";
 	let store = test_data::got_cast1();
-	store.add("got:Some_Guy", [make_int("v:age", 23)]);
-	store.add("got:Another_Guy", [make_typed("v:age", "-23", "xsd:long")]);
+	store.add("got:Some_Guy", [("v:age", create_int(23))]);
+	store.add("got:Another_Guy", [("v:age", create_typed("-23", "xsd:long"))]);
 	
 	let expected = [];
 	
@@ -182,8 +182,8 @@ fn decimal_literal()
 {
 	let expr = "SELECT ?s WHERE {?s ?p 3.14}";
 	let store = test_data::got_cast1();
-	store.add("got:Some_Guy", [make_typed("v:age", "3.14", "xsd:float")]);
-	store.add("got:Another_Guy", [make_typed("v:age", "3.14", "xsd:double")]);
+	store.add("got:Some_Guy", [("v:age", create_typed("3.14", "xsd:float"))]);
+	store.add("got:Another_Guy", [("v:age", create_typed("3.14", "xsd:double"))]);
 	
 	let expected = [
 		str_hash().add_uri("s", got("Another_Guy"))
@@ -199,10 +199,10 @@ fn signed_decimal_literal()
 	let expr = "SELECT ?s WHERE {?s ?p -3.14}";
 	let store = test_data::got_cast1();
 	store.add("got:Some_Guy", [
-		make_typed("v:age", "3.14", "xsd:double")
+		("v:age", create_typed("3.14", "xsd:double"))
 	]);
 	store.add("got:Another_Guy", [
-		make_typed("v:age", "-3.14", "xsd:double")
+		("v:age", create_typed("-3.14", "xsd:double"))
 	]);
 	
 	let expected = [
@@ -239,10 +239,10 @@ fn boolean_literal()
 	let expr = "SELECT ?s WHERE {?s ?p false}";
 	let store = test_data::got_cast1();
 	store.add("got:Some_Guy", [
-		make_bool("v:male", true)
+		("v:male", create_bool(true))
 	]);
 	store.add("got:A_Woman", [
-		make_bool("v:male", false)
+		("v:male", create_bool(false))
 	]);
 	
 	let expected = [
@@ -259,13 +259,13 @@ fn datetime()
 	let expr = "SELECT ?s WHERE {?s ?p \"1999-05-31T13:10:00-05:00\"^^<http://www.w3.org/2001/XMLSchema#dateTime>}";
 	let store = test_data::got_cast1();
 	store.add("got:Some_Guy", [
-		make_typed("v:born", "1999-05-31T13:10:00-05:00", "xsd:dateTime")
+		("v:born", create_typed("1999-05-31T13:10:00-05:00", "xsd:dateTime"))
 	]);
 //	store.add("got:A_Woman", [
-//		make_typed("v:born", "1999-05-31T14:10:00-04:00", "xsd:dateTime")
+//		("v:born", create_typed("1999-05-31T14:10:00-04:00", "xsd:dateTime"))
 //	]);
 	store.add("got:A_Dude", [
-		make_typed("v:born", "1999-05-31T13:22:00-05:00", "xsd:dateTime")
+		("v:born", create_typed("1999-05-31T13:22:00-05:00", "xsd:dateTime"))
 	]);
 	
 	let expected = [

@@ -9,8 +9,7 @@ export subject, predicate, object, triple, namespace, solution_row, solution, se
 
 // this file
 export to_str, create_store, store_methods, each_triple, compile,
-make_bool, make_dateTime, make_double, make_int, make_lang, make_str, make_typed, make_uri,
-make_triple_str, make_triple_uri;
+create_bool, create_dateTime, create_double, create_int, create_lang, create_str, create_typed, create_uri;
 
 impl of to_str for object
 {
@@ -67,90 +66,63 @@ fn create_store(namespaces: [namespace]) -> store
 	}
 }
 
-fn make_bool(predicate: str, value: bool) -> entry
+fn create_bool(value: bool) -> object
 {
 	if value
 	{
-		{predicate: predicate, object: {value: "true", kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}}
+		{value: "true", kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}
 	}
 	else
 	{
-		{predicate: predicate, object: {value: "false", kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}}
+		{value: "false", kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}
 	}
 }
 
-fn make_dateTime(predicate: str, value: tm) -> entry
+fn create_dateTime(value: tm) -> object
 {
-	{predicate: predicate, object: {value: value.rfc3339(), kind: "http://www.w3.org/2001/XMLSchema#dateTime", lang: ""}}
+	{value: value.rfc3339(), kind: "http://www.w3.org/2001/XMLSchema#dateTime", lang: ""}
 }
 
-fn make_double(predicate: str, value: f64) -> entry
+fn create_double(value: f64) -> object
 {
-	{predicate: predicate, object: {value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#double", lang: ""}}
+	{value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#double", lang: ""}
 }
 
-fn make_int(predicate: str, value: int) -> entry
+fn create_int(value: int) -> object
 {
-	{predicate: predicate, object: {value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""}}
+	{value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""}
 }
 
-fn make_lang(predicate: str, value: str, lang: str) -> entry
+fn create_lang(value: str, lang: str) -> object
 {
-	{predicate: predicate, object: {value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang}}
+	{value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang}
 }
 
-fn make_str(predicate: str, value: str) -> entry
+fn create_str(value: str) -> object
 {
-	{predicate: predicate, object: {value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""}}
+	{value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""}
 }
 
-fn make_uri(predicate: str, value: str) -> entry
+fn create_uri(value: str) -> object
 {
-	{predicate: predicate, object: {value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}}
-}
-// TODO: add date and time
-
-// These are for testing.
-fn make_triple_blank(store: store, subject: str, predicate: str, value: str) -> triple
-{
-	{
-		subject: expand_uri_or_blank(store.namespaces, subject), 
-		predicate: expand_uri(store.namespaces, predicate), 
-		object: {value: #fmt["{%s}", value], kind: "blank", lang: ""}
-	}
-}
-
-fn make_triple_str(store: store, subject: str, predicate: str, value: str) -> triple
-{
-	{
-		subject: expand_uri_or_blank(store.namespaces, subject), 
-		predicate: expand_uri(store.namespaces, predicate), 
-		object: {value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""}
-	}
-}
-
-fn make_triple_uri(store: store, subject: str, predicate: str, value: str) -> triple
-{
-	{
-		subject: expand_uri_or_blank(store.namespaces, subject), 
-		predicate: expand_uri(store.namespaces, predicate), 
-		object: {value: expand_uri(store.namespaces, value), kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}
-	}
+	{value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}
 }
 
 #[doc = "Note that some of the xsd datatypes should not be used: duration (which doesn't have a well defined
 value space), QName, ENTITY, ID, IDREF, NOTATION, IDREFS, ENTITIES, and NMTOKENS."]
-fn make_typed(predicate: str, value: str, kind: str) -> entry
+fn create_typed(value: str, kind: str) -> object
 {
-	{predicate: predicate, object: {value: value, kind: kind, lang: ""}}
+	{value: value, kind: kind, lang: ""}
 }
+
+// TODO: add date and time
 
 impl store_methods for store
 {
 	#[doc = "Efficient addition of triples to the store.
 	
-	Typically make_int, make_str, etc functions are used to create entries."]
-	fn add(subject: str, entries: [entry])
+	Typically create_int, create_str, etc functions are used to create objects."]
+	fn add(subject: str, entries: [(str, object)])
 	{
 		let subject = expand_uri_or_blank(self.namespaces, subject);
 		let entries = vec::map(entries, {|e| expand_entry(self.namespaces, e)});
@@ -196,7 +168,7 @@ impl store_methods for store
 	#[doc = "Adds a subject statement referencing a new blank node.
 	
 	Label is an arbitrary string useful for debugging."]
-	fn add_aggregate(subject: str, predicate: str, label: str, entries: [entry])
+	fn add_aggregate(subject: str, predicate: str, label: str, entries: [(str, object)])
 	{
 		let blank = get_blank_name(self, label);
 		self.add_triple([], {subject: subject, predicate: predicate, object: {value: blank, kind: "blank", lang: ""}});
@@ -307,7 +279,35 @@ fn expand_object(namespaces: [namespace], obj: object) -> object
 	{value: value, kind: kind, lang: obj.lang}
 }
 
-fn expand_entry(namespaces: [namespace], entry: entry) -> entry
+fn expand_entry(namespaces: [namespace], entry: (str, object)) -> entry
 {
-	{predicate: expand_uri(namespaces, entry.predicate), object: expand_object(namespaces, entry.object)}
+	{predicate: expand_uri(namespaces, tuple::first(entry)), object: expand_object(namespaces, tuple::second(entry))}
 }
+
+fn make_triple_blank(store: store, subject: str, predicate: str, value: str) -> triple
+{
+	{
+		subject: expand_uri_or_blank(store.namespaces, subject), 
+		predicate: expand_uri(store.namespaces, predicate), 
+		object: {value: #fmt["{%s}", value], kind: "blank", lang: ""}
+	}
+}
+
+fn make_triple_str(store: store, subject: str, predicate: str, value: str) -> triple
+{
+	{
+		subject: expand_uri_or_blank(store.namespaces, subject), 
+		predicate: expand_uri(store.namespaces, predicate), 
+		object: {value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""}
+	}
+}
+
+fn make_triple_uri(store: store, subject: str, predicate: str, value: str) -> triple
+{
+	{
+		subject: expand_uri_or_blank(store.namespaces, subject), 
+		predicate: expand_uri(store.namespaces, predicate), 
+		object: {value: expand_uri(store.namespaces, value), kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}
+	}
+}
+

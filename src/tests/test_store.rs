@@ -48,12 +48,12 @@ fn references()
 		]);
 		
 	store.add("got:Eddard_Stark", [
-		make_str("v:fn", "Eddard Stark"),
-		make_str("v:nickname", "Ned"),
-		make_uri("foo:child", "got:Jon_Snow")
+		("v:fn", create_str("Eddard Stark")),
+		("v:nickname", create_str("Ned")),
+		("foo:child", create_uri("got:Jon_Snow"))
 	]);
 	store.add("got:Jon_Snow", [
-		make_str("v:fn", "Jon Snow")
+		("v:fn", create_str("Jon Snow"))
 	]);
 	
 	let mut actual = [];

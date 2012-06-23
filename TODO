@@ -2,7 +2,6 @@ http://www.w3.org/TR/sparql11-query/
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
-* Ignore case when comparing language.
 * rdf:list has a fixed size, other collections are open.
 	- probably want some add_collection methods
 	- note that the open collections are 1-based
@@ -60,6 +59,8 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 	- http://www.w3.org/TR/2011/WD-rdf-interfaces-20110510/#graphs
 * Will need a way to merge two triple sets
 	- need to fixup blank nodes
+* Optimization:
+	- http://users.dcc.uchile.cl/~cgutierr/papers/tods09.pdf
 * Might want a graph type, possibly based on a (hidden) hashset
 * Maybe add some query methods
 	- see http://en.wikipedia.org/wiki/Resource_Description_Framework#Query_and_inference_languages
