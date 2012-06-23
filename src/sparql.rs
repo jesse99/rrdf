@@ -590,7 +590,7 @@ fn make_parser() -> parser<selector>
 			let dupes = find_dupes(names);
 			if vec::is_empty(dupes)
 			{
-				result::ok(eval(names, matchers))
+				result::ok(eval(matchers))
 			}
 			else
 			{

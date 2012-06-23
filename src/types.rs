@@ -41,11 +41,8 @@ type store = {
 	mut next_blank: uint
 };
 
-#[doc = "Value bound to a variable in a SPARQL query (e.g. ?name)."]
-type binding = {name: str, value: object};
-
-#[doc = "Names appear in the same order as the variables in the SELECT clause."]
-type solution_row = [binding];
+#[doc = "Result of matching a triple with a SPARQL query."]
+type solution_row = hashmap<str, object>;
 
 #[doc = "Result of a SPARQL query."]
 type solution = [solution_row];

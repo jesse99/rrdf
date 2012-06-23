@@ -7,6 +7,8 @@ import sparql::*;
 
 export eval_bg_pair, eval, pattern;
 
+type binding = {name: str, value: object};
+
 type match = either::either<binding, bool>;	// match succeeded if bindings or true
 
 enum pattern
@@ -15,7 +17,25 @@ enum pattern
 	constant(object)
 }
 
-//type solutions = [solution];	// result of one or more triple patterns against the store (potential solutions that must be unified)
+fn solution_row_to_str(row: solution_row) -> str
+{
+	let mut entries = [];
+	for row.each {|name, value| vec::push(entries, #fmt["%s: %s", name, value.to_str()])};
+	str::connect(entries, ", ")
+}
+
+fn solution_to_str(solution: solution) -> str
+{
+	let mut result = "";
+	
+	for vec::each(solution)
+	{|row|
+		result += solution_row_to_str(row);
+		result += "\n";
+	};
+	
+	ret result;
+}
 
 // Conceptually treats solution_row as a set where each set value consists of both
 // the name and the value. Takes the cross product of entries from each pair
@@ -25,13 +45,13 @@ enum pattern
 // are also identical.
 fn eval_bg_pair(group1: solution, group2: solution) -> solution
 {
-	fn compatible_binding(b1: binding, rhs: solution_row) -> bool
+	fn compatible_binding(name1: str, value1: object, rhs: solution_row) -> bool
 	{
-		alt vec::find(rhs, {|b2| b1.name == b2.name})
+		alt rhs.find(name1)
 		{
-			option::some(v2)
+			option::some(value2)
 			{
-				rdf_term_equal(b1.value, v2.value)
+				rdf_term_equal(value1, value2)
 			}
 			option::none()
 			{
@@ -42,9 +62,9 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 	
 	fn compatible_row(row: solution_row, rhs: solution_row) -> bool
 	{
-		for vec::each(row)
-		{|binding|
-			if !compatible_binding(binding, rhs)
+		for row.each()
+		{|name, value|
+			if !compatible_binding(name, value, rhs)
 			{
 				ret false;
 			}
@@ -54,11 +74,14 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 	
 	fn union_rows(lhs: solution_row, rhs: solution_row) -> solution_row
 	{
-		let mut result = copy(lhs);
+		let result = std::map::str_hash();
 		
-		for vec::each(rhs)
-		{|binding2|
-			alt vec::find(lhs, {|binding1| binding1.name == binding2.name})
+		// Note that copy(lhs) doesn't.
+		for lhs.each() {|name2, value2| result.insert(name2, value2);}
+		
+		for rhs.each()
+		{|name2, value2|
+			alt lhs.find(name2)
 			{
 				option::some(_)
 				{
@@ -67,7 +90,7 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 				option::none()
 				{
 					// This is a binding in rhs but not lhs, so we need to add it to the result.
-					vec::push(result, binding2);
+					result.insert(name2, value2);
 				}
 			}
 		}
@@ -76,18 +99,18 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 	}
 	
 	let mut result = [];
-	
 	if vec::is_not_empty(group1) && vec::is_not_empty(group2)
 	{
 		for vec::each(group1)
 		{|lhs|
 			for vec::each(group2)
 			{|rhs|
-				#debug["testing %? and %?", lhs, rhs];
+				#debug["testing [%s] and [%s]", solution_row_to_str(lhs), solution_row_to_str(rhs)];
 				if compatible_row(lhs, rhs)
 				{
-					#debug["   adding %? to result", union_rows(lhs, rhs)];
-					vec::push(result, union_rows(lhs, rhs));
+					let unioned = union_rows(lhs, rhs);
+					#debug["   adding [%s] to result", solution_row_to_str(unioned)];
+					vec::push(result, unioned);
 				}
 				else
 				{
@@ -268,9 +291,8 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 	}
 }
 
-// Returns the named bindings. Binding values for names not 
-// returned by the matcher are set to none. TODO: is that right?
-fn eval_bp(store: store, names: [str], matcher: triple_pattern) -> result::result<solution, str>
+// Returns the named bindings.
+fn eval_bp(store: store, matcher: triple_pattern) -> result::result<solution, str>
 {
 	let mut rows: solution = [];
 	
@@ -279,7 +301,7 @@ fn eval_bp(store: store, names: [str], matcher: triple_pattern) -> result::resul
 	{|sbinding, entries|
 		for (*entries).each()
 		{|entry|
-			// initialize context,
+			// initialize row,
 			let context = std::map::str_hash();
 			if option::is_some(sbinding)
 			{
@@ -304,8 +326,7 @@ fn eval_bp(store: store, names: [str], matcher: triple_pattern) -> result::resul
 			{
 				result::ok(true)
 				{
-					let row = vec::map(names, {|name| {name: name, value: context.get(name)}});
-					vec::push(rows, row);
+					vec::push(rows, context);
 				}
 				result::ok(false)
 				{
@@ -322,26 +343,13 @@ fn eval_bp(store: store, names: [str], matcher: triple_pattern) -> result::resul
 	result::ok(rows)
 }
 
-fn solution_to_str(solution: solution) -> str
-{
-	let mut result = "";
-	
-	for vec::each(solution)
-	{|row|
-		let bindings = vec::map(row, {|b| #fmt["%s = %s", b.name, b.value.to_str()]});
-		result += #fmt["%s\n", str::connect(bindings, ", ")];
-	};
-	
-	ret result;
-}
-
-fn eval_bgp(store: store, names: [str], patterns: [triple_pattern]) -> result::result<solution, str>
+fn eval_bgp(store: store, patterns: [triple_pattern]) -> result::result<solution, str>
 {
 	let mut result = [];
 	
 	for vec::each(patterns)
 	{|pattern|
-		alt eval_bp(store, names, pattern)
+		alt eval_bp(store, pattern)
 		{
 			result::ok(solution)
 			{
@@ -357,18 +365,18 @@ fn eval_bgp(store: store, names: [str], patterns: [triple_pattern]) -> result::r
 	ret result::ok(result);
 }
 
-fn eval(names: [str], matcher: algebra) -> selector
+fn eval(matcher: algebra) -> selector
 {
 	{|store: store|
 		alt matcher
 		{
 			bp(pattern)
 			{
-				eval_bp(store, names, pattern)
+				eval_bp(store, pattern)
 			}
 			bgp(patterns)
 			{
-				eval_bgp(store, names, patterns)
+				eval_bgp(store, patterns)
 			}
 		}
 	}

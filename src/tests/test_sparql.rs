@@ -1,3 +1,4 @@
+import std::map::*;
 import test_helpers::*;
 
 fn got(s: str) -> str
@@ -16,8 +17,8 @@ fn trivial()
 	let expr = "SELECT ?s ?p ?o WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		[bind_uri("s", got("Eddard_Stark")), bind_uri("p", v("fn")), bind_str("o", "Eddard Stark")],
-		[bind_uri("s", got("Eddard_Stark")), bind_uri("p", v("nickname")), bind_str("o", "Ned")]
+		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("fn")).add_str("o", "Eddard Stark"),
+		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname")).add_str("o", "Ned")
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -29,8 +30,8 @@ fn out_of_order()
 	let expr = "SELECT ?o ?s ?p WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		[bind_str("o", "Eddard Stark"), bind_uri("s", got("Eddard_Stark")), bind_uri("p", v("fn"))],
-		[bind_str("o", "Ned"), bind_uri("s", got("Eddard_Stark")), bind_uri("p", v("nickname"))]
+		str_hash().add_str("o", "Eddard Stark").add_uri("s", got("Eddard_Stark")).add_uri("p", v("fn")),
+		str_hash().add_str("o", "Ned").add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname"))
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -42,8 +43,8 @@ fn long_names()
 	let expr = "SELECT ?subject ?p ?obj WHERE {?subject ?p ?obj}";
 	let store = test_data::got_cast1();
 	let expected = [
-		[bind_uri("subject", got("Eddard_Stark")), bind_uri("p", v("fn")), bind_str("obj", "Eddard Stark")],
-		[bind_uri("subject", got("Eddard_Stark")), bind_uri("p", v("nickname")), bind_str("obj", "Ned")]
+		str_hash().add_uri("subject", got("Eddard_Stark")).add_uri("p", v("fn")).add_str("obj", "Eddard Stark"),
+		str_hash().add_uri("subject", got("Eddard_Stark")).add_uri("p", v("nickname")).add_str("obj", "Ned")
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -55,8 +56,8 @@ fn keyword_case()
 	let expr = "SeLecT ?s ?p ?o where {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		[bind_uri("s", got("Eddard_Stark")), bind_uri("p", v("fn")), bind_str("o", "Eddard Stark")],
-		[bind_uri("s", got("Eddard_Stark")), bind_uri("p", v("nickname")), bind_str("o", "Ned")]
+		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("fn")).add_str("o", "Eddard Stark"),
+		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname")).add_str("o", "Ned")
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -80,18 +81,18 @@ fn duplicate_where_variables()
 	assert check_solution_err(store, expr, "Binding s was set more than once.");
 }
 
-//#[test]
-//fn unbound_variable()
-//{
-//	let expr = "SELECT ?s ?p ?z WHERE {?s ?p ?o}";
-//	let store = test_data::got_cast1();
-//	let expected = [
-//		[bind_uri("s", got("Eddard_Stark")), bind_uri("p", v("fn"))],
-//		[bind_uri("s", got("Eddard_Stark")), bind_uri("p", v("nickname"))]
-//	];
-//	
-//	assert check_solution(store, expr, expected);
-//}
+#[test]
+fn unbound_variable()
+{
+	let expr = "SELECT ?s ?p ?z WHERE {?s ?p ?o}";
+	let store = test_data::got_cast1();
+	let expected = [
+		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("fn")),
+		str_hash().add_uri("s", got("Eddard_Stark")).add_uri("p", v("nickname"))
+	];
+	
+	assert check_solution(store, expr, expected);
+}
 
 #[test]
 fn no_match()
@@ -126,7 +127,7 @@ fn simple_path()
 	}";
 	let store = test_data::got_cast3();
 	let expected = [
-		[bind_str("org", "Small Council")]
+		str_hash().add_str("org", "Small Council")
 	];
 	
 	assert check_solution(store, expr, expected);

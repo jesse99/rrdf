@@ -5,7 +5,7 @@ import std::time::tm;
 import types::*;
 
 // types
-export subject, predicate, object, triple, namespace, binding, solution_row, solution, selector;
+export subject, predicate, object, triple, namespace, solution_row, solution, selector;
 
 // this file
 export to_str, create_store, store_methods, each_triple, compile,

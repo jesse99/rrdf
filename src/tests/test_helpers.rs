@@ -2,21 +2,27 @@ import io;
 import io::writer_util;
 import query::*;
 
-export bind_int, bind_str, bind_uri, check_bgp, check_strs, check_triples, check_solution, check_solution_err;
+export add_solutions, check_bgp, check_strs, check_triples, check_solution, check_solution_err;
 
-fn bind_int(name: str, value: int) -> binding
+impl add_solutions for solution_row
 {
-	{name: name, value: {value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""}}
-}
-
-fn bind_str(name: str, value: str) -> binding
-{
-	{name: name, value: {value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""}}
-}
-
-fn bind_uri(name: str, value: str) -> binding
-{
-	{name: name, value: {value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}}
+	fn add_int(name: str, value: int) -> solution_row
+	{
+		self.insert(name, {value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""});
+		self
+	}
+	
+	fn add_str(name: str, value: str) -> solution_row
+	{
+		self.insert(name, {value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""});
+		self
+	}
+	
+	fn add_uri(name: str, value: str) -> solution_row
+	{
+		self.insert(name, {value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""});
+		self
+	}
 }
 
 fn check_strs(actual: str, expected: str) -> bool
@@ -35,8 +41,9 @@ fn check_bgp(groups: [solution], expected: solution) -> bool
 	{
 		vec::map(group)
 		{|row|
-			let row = std::sort::merge_sort({|x, y| x.name <= y.name}, row);
-			let entries = vec::map(row, {|b| #fmt["%s=%?", b.name, b.value]});
+			let mut entries = [];
+			for row.each {|name, value| vec::push(entries, #fmt["%s=%?", name, value])};
+			let entries = std::sort::merge_sort({|x, y| x <= y}, entries);
 			str::connect(entries, ", ")
 		}
 	}
@@ -174,36 +181,46 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 						ret false;
 					}
 					
-					// Both sides should have the same binding values.
+					// Actual should have all the expected values.
 					for vec::eachi(actual)
 					{|i, row1|
 						let row2 = expected[i];
-						for vec::eachi(row1)
-						{|j, binding1|
-							let binding2 = row2[j];
-							if binding1.name != binding2.name
+						if row1.size() < row2.size()
+						{
+							print_failure(#fmt["Row %? had size %? but expected at least%?.", 
+								i, row1.size(), row2.size()], actual, expected);
+							ret false;
+						}
+						
+						for row1.each
+						{|name1, value1|
+							alt row2.find(name1)
 							{
-								print_failure(#fmt["Row %? actual name was %s but expected %s.", 
-									i, binding1.name, binding2.name], actual, expected);
-								ret false;
-							}
-							else if binding1.value.lang != binding2.value.lang
-							{
-								print_failure(#fmt["Row %? actual %s was %s but expected lang %s.", 
-									i, binding1.name, binding1.value.to_str(), binding2.value.lang], actual, expected);
-								ret false;
-							}
-							else if binding1.value.kind != binding2.value.kind
-							{
-								print_failure(#fmt["Row %? actual %s was %s but expected kind %s.", 
-									i, binding1.name, binding1.value.to_str(), binding2.value.kind], actual, expected);
-								ret false;
-							}
-							else if binding1.value.value != binding2.value.value
-							{
-								print_failure(#fmt["Row %? actual %s was %s but expected value %s.", 
-									i, binding1.name, binding1.value.to_str(), binding2.value.value], actual, expected);
-								ret false;
+								option::some(value2)
+								{
+									if value1.lang != value2.lang
+									{
+										print_failure(#fmt["Row %? actual %s was %s but expected lang %s.", 
+											i, name1, value1.to_str(), value2.lang], actual, expected);
+										ret false;
+									}
+									else if value1.kind != value2.kind
+									{
+										print_failure(#fmt["Row %? actual %s was %s but expected kind %s.", 
+											i, name1, value1.to_str(), value2.kind], actual, expected);
+										ret false;
+									}
+									else if value1.value != value2.value
+									{
+										print_failure(#fmt["Row %? actual %s was %s but expected value %s.", 
+											i, name1, value1.to_str(), value2.value], actual, expected);
+										ret false;
+									}
+								}
+								option::none
+								{
+									// Actual can have additional bindings.
+								}
 							}
 						};
 					};
@@ -273,9 +290,10 @@ fn print_result(value: solution)
 {
 	for vec::eachi(value)
 	{|i, row|
-		let bindings = vec::map(row) {|b| #fmt["%s = %s", b.name, b.value.to_str()]};
-		io::stderr().write_line(#fmt["   %?: %s", i, str::connect(bindings, ", ")]);
-	}
+		let mut entries = [];
+		for row.each {|name, value| vec::push(entries, #fmt["%s = %s", name, value.to_str()])};
+		io::stderr().write_line(#fmt["   %?: %s", i, str::connect(entries, ", ")]);
+	};
 }
 
 fn print_failure(mesg: str, actual: solution, expected: solution)
