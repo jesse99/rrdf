@@ -2,22 +2,11 @@ http://www.w3.org/TR/sparql11-query/
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
-* Support multiple patterns:
-	- add parser support for pattern groups
-	- query needs to support matching groups
-	- query needs to use unification function to unify groups
-	- would it be easier to test eval using rhe parser?
-* Store shouldn't have namespaces?
-	- add functions could take namespaces
-* Semantics rfc has a list of suitable xsd types.
-* Containers are 1 based.
-* Support SELECT * (selects all bindings).
+* Ignore case when comparing language.
 * rdf:list has a fixed size, other collections are open.
-* 6.5.1 has a simpler version of literal equality
-	- use rdf_term_equal
-	- see http://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-literal
-	- is there a canonical lexcal representation for floats? see 3.2.4.2 of xml schema rfc
-	- probably need stuff like add_float_value and add_typed_value (or yet another enum)
+	- probably want some add_collection methods
+	- note that the open collections are 1-based
+* Support SELECT * (selects all bindings).
 * Support ; (goes in same place as .)
 * Work on more complex matching:
 	- support optional, use section 18 to figure out the algebra
@@ -28,13 +17,13 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 	- may want to support union
 * Select components can be strings?
 	- if not why does triple pattern allow literals?
-* May want to drop the n from index.
 * Check some common parse errors and add tag as needed.
 * Document whats not supported:
 	- paths
 	- collections
 	- etc
 * Do we need to be able to match collections?
+* Concepts doc at 307 talks about escaping urls.
 * Add a unit test demonstrating that solutions can be sent across tasks.
 * Add a unit test showing that add_triples args can be sent across threads.
 * Add support for sequences, bags, and alternatives.

@@ -76,7 +76,7 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 	{
 		let result = std::map::str_hash();
 		
-		// Note that copy(lhs) doesn't.
+		// Copy is a shallow copy so we need to copy lhs the hard way.
 		for lhs.each() {|name2, value2| result.insert(name2, value2);}
 		
 		for rhs.each()
@@ -131,10 +131,11 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 	ret result;
 }
 
-// See 17.4.1.7 
+// TODO: This is the RDF notion of equality (see 17.4.1.7). Unfortunately this is not the SPARQL 
+// notion which is apparently based on the much more complex entailment goo.
 fn rdf_term_equal(actual: object, expected: object) -> bool
 {
-	actual.lang == expected.lang && actual.kind == expected.kind && actual.value == expected.value
+	actual.kind == expected.kind && actual.value == expected.value && str::to_lower(actual.lang) == str::to_lower(expected.lang)
 }
 
 fn match_subject(actual: str, pattern: pattern) -> match
