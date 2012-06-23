@@ -124,19 +124,22 @@ impl store_methods for store
 	Typically create_int, create_str, etc functions are used to create objects."]
 	fn add(subject: str, entries: [(str, object)])
 	{
-		let subject = expand_uri_or_blank(self.namespaces, subject);
-		let entries = vec::map(entries, {|e| expand_entry(self.namespaces, e)});
-		alt self.subjects.find(subject)
+		if vec::is_not_empty(entries)
 		{
-			option::some(list)
+			let subject = expand_uri_or_blank(self.namespaces, subject);
+			let entries = vec::map(entries, {|e| expand_entry(self.namespaces, e)});
+			alt self.subjects.find(subject)
 			{
-				(*list).push_all(entries);
-			}
-			option::none
-			{
-				let list = @dvec();
-				self.subjects.insert(subject, list);
-				(*list).push_all(entries);
+				option::some(list)
+				{
+					(*list).push_all(entries);
+				}
+				option::none
+				{
+					let list = @dvec();
+					self.subjects.insert(subject, list);
+					(*list).push_all(entries);
+				}
 			}
 		}
 	}
@@ -173,6 +176,50 @@ impl store_methods for store
 		let blank = get_blank_name(self, label);
 		self.add_triple([], {subject: subject, predicate: predicate, object: {value: blank, kind: "blank", lang: ""}});
 		self.add(blank, entries);
+	}
+	
+	#[doc = "Adds statements representing a choice between alternatives."]
+	fn add_alt(subject: str, values: [object])
+	{
+		self.add_container(subject, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt", values);
+	}
+	
+	#[doc = "Adds statements representing an unordered set of (possibly duplicate) values."]
+	fn add_bag(subject: str, values: [object])
+	{
+		self.add_container(subject, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag", values);
+	}
+	
+	#[doc = "Adds statements representing an arbitrary open container using 1-based integral keys."]
+	fn add_container(subject: str, kind: str, values: [object])
+	{
+		let blank = get_blank_name(self, after(subject, ':') + "-items");
+		self.add_triple([], {subject: subject, predicate: kind, object: {value: blank, kind: "blank", lang: ""}});
+		
+		let predicates = iter::map_to_vec(vec::len(values)) {|i: uint| #fmt["http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u]};
+		self.add(blank, vec::zip(predicates, values));
+	}
+	
+	#[doc = "Adds a fixed size list of (possibly duplicate) items."]
+	fn add_list(subject: str, predicate: str, values: [object])
+	{
+		let prefix = after(predicate, ':');
+		let mut blank = get_blank_name(self, prefix);
+		self.add_triple([], {subject: subject, predicate: predicate, object: {value: blank, kind: "blank", lang: ""}});
+		for vec::each(values)
+		{|value|
+			let next = get_blank_name(self, prefix);
+			self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", object: value});
+			self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: {value: next, kind: "blank", lang: ""}});
+			blank = next;
+		};
+		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: {value: "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil", kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}});
+	}
+	
+	#[doc = "Adds statements representing an ordered set of (possibly duplicate) values."]
+	fn add_seq(subject: str, values: [object])
+	{
+		self.add_container(subject, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq", values);
 	}
 }
 
@@ -311,3 +358,38 @@ fn make_triple_uri(store: store, subject: str, predicate: str, value: str) -> tr
 	}
 }
 
+impl of iter::base_iter<uint> for uint
+{
+	fn each(blk: fn(&&uint) -> bool)
+	{
+		let mut i = 0u;
+		while i < self
+		{
+			if (!blk(i))
+			{
+				ret;
+			}
+			i += 1u;
+		}
+	}
+	
+	fn size_hint() -> option<uint>
+	{
+		option::some(self)
+	}
+}
+
+fn after(text: str, ch: char) -> str
+{
+	alt str::rfind_char(text, ch)
+	{
+		option::some(i)
+		{
+			str::slice(text, i+1u, str::len(text))
+		}
+		option::none
+		{
+			text
+		}
+	}
+}

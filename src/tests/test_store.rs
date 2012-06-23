@@ -107,6 +107,71 @@ fn blank_nodes()
 }
 
 #[test]
+fn container() 
+{
+	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}]);
+	store.add_alt("got:places", [create_uri("got:The_Wall"), create_uri("got:Winterfell")]);
+	
+	let mut actual = [];
+	for each_triple(store)
+	{|triple|
+		vec::push(actual, triple);
+	};
+	
+	let expected = [
+		make_triple_blank(store, "got:places", "rdf:Alt", "places-items-0"),
+		make_triple_uri(store, "{places-items-0}", "rdf:_1", "got:The_Wall"),
+		make_triple_uri(store, "{places-items-0}", "rdf:_2", "got:Winterfell")
+	];
+	
+	assert check_triples(actual, expected);
+}
+
+#[test]
+fn list0() 
+{
+	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}]);
+	store.add_list("got:westeros", "got:cities", []);
+	
+	let mut actual = [];
+	for each_triple(store)
+	{|triple|
+		vec::push(actual, triple);
+	};
+	
+	let expected = [
+		make_triple_blank(store, "got:westeros", "got:cities", "cities-0"),
+		make_triple_uri(store, "{cities-0}", "rdf:rest", "rdf:nil")
+	];
+	
+	assert check_triples(actual, expected);
+}
+
+#[test]
+fn list1() 
+{
+	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}]);
+	store.add_list("got:westeros", "got:cities", [create_str("Lanisport")]);
+	
+	let mut actual = [];
+	for each_triple(store)
+	{|triple|
+		vec::push(actual, triple);
+	};
+	
+	let expected = [
+		make_triple_blank(store, "got:westeros", "got:cities", "cities-0"),
+		
+		make_triple_str(store, "{cities-0}", "rdf:first", "Lanisport"),
+		make_triple_blank(store, "{cities-0}", "rdf:rest", "cities-1"),
+		
+		make_triple_uri(store, "{cities-1}", "rdf:rest", "rdf:nil")
+	];
+	
+	assert check_triples(actual, expected);
+}
+
+#[test]
 fn trivial_bgp() 
 {
 	let group1 = [];
