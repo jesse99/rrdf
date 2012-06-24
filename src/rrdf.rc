@@ -10,6 +10,8 @@
 use std;
 use rparse (name = "rparse", vers = "0.4");
 
+mod operands;
+mod operators;
 mod query;
 mod sparql;
 mod types;
@@ -17,9 +19,10 @@ mod types;
 #[cfg(test)]
 mod tests
 {
-	mod test_store;
 	mod test_data;
 	mod test_helpers;
+	mod test_operators;
 	mod test_sparql;
 	mod test_sparql_literals;
+	mod test_store;
 }
