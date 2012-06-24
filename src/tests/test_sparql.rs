@@ -133,3 +133,19 @@ fn simple_path()
 	assert check_solution(store, expr, expected);
 }
 
+#[test]
+fn select_all()
+{
+	let expr = "SELECT *
+	WHERE {
+		<http://awoiaf.westeros.org/index.php/Sandor_Clegane> ?p ?o
+	}";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("p", create_uri(v("fn"))), ("o", create_str("Sandor Clegane"))],
+		[("p", create_uri(v("nickname"))), ("o", create_str("The Hound"))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+

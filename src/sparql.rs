@@ -578,8 +578,12 @@ fn make_parser() -> parser<selector>
 	// [17] WhereClause ::= 'WHERE'? GroupGraphPattern
 	let WhereClause = seq2_ret1(("WHERE".liti().ws()).optional(), GroupGraphPattern);
 	
-	// [9] SelectClause ::= 'SELECT' ( 'DISTINCT' | 'REDUCED' )? ( ( Var | ( '(' Expression 'AS' Var ')' ) )+ | '*' )
-	let SelectClause = seq2_ret1("SELECT".liti().ws(), Var.r1());
+	// [9] SelectClause ::= 'SELECT' ('DISTINCT' | 'REDUCED')? ((Var | ('(' Expression 'AS' Var ')'))+ | '*')
+	let select_suffix = or_v([
+		Var.r1(),
+		"*".lit().ws().thene({|_x| return([variable("*")])})]);
+		
+	let SelectClause = seq2_ret1("SELECT".liti().ws(), select_suffix);
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = seq2(SelectClause, WhereClause)

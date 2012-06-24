@@ -11,6 +11,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 * Support SELECT * (selects all bindings).
 * Support ; (goes in same place as .)
 * Work on more complex matching:
+	- support PREFIX
 	- support optional, use section 18 to figure out the algebra
 	- support some simple date filters (i.e. date is no more than 24 hours ago)
 		` support comparisons
