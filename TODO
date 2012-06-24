@@ -9,6 +9,28 @@ http://dbpedia.org/sparql
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
+#[test]
+fn options()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?name ?title
+	WHERE {
+		?s v:fn ?name .
+		OPTIONAL {
+			?s v:honorific-prefix ?title
+		}
+	}";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("name", create_str("Eddard Stark")), ("title", create_str("Lord"))],
+		[("name", create_str("Eddard Stark"))],
+		[("name", create_str("Eddard Stark"))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
 * Work on more complex matching:
 	- support PREFIX
 	- support optional, use section 18 to figure out the algebra
@@ -19,6 +41,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 	- may want to support union
 * Select components can be strings?
 	- if not why does triple pattern allow literals?
+* Need to make sure solutions are not being copied willy nilly.
 * Check some common parse errors and add tag as needed.
 * Document whats not supported:
 	- paths

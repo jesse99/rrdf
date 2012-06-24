@@ -43,7 +43,7 @@ fn solution_to_str(solution: solution) -> str
 //
 // Where a cross product is compatible if, for every identical name, the values
 // are also identical.
-fn eval_bg_pair(group1: solution, group2: solution) -> solution
+fn eval_bg_pair(names: [str], group1: solution, group2: solution) -> solution
 {
 	fn compatible_binding(name1: str, value1: object, rhs: solution_row) -> bool
 	{
@@ -107,7 +107,7 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 				{
 					let unioned = union_rows(lhs, rhs);
 					#debug["   adding [%s] to result", solution_row_to_str(unioned)];
-					vec::push(result, unioned);
+					vec::push(result, filter_row(names, unioned));
 				}
 				else
 				{
@@ -126,6 +126,18 @@ fn eval_bg_pair(group1: solution, group2: solution) -> solution
 	}
 	
 	ret result;
+}
+
+fn filter_row(names: [str], row: solution_row) -> solution_row
+{
+	if names == ["*"]
+	{
+		row
+	}
+	else
+	{
+		vec::filter(row) {|e| vec::contains(names, tuple::first(e))}
+	}
 }
 
 // TODO: This is the RDF notion of equality (see 17.4.1.7). Unfortunately this is not the SPARQL 
@@ -210,15 +222,15 @@ fn match_object(actual: object, pattern: pattern) -> match
 	}
 }
 
-fn eval_match(&context: [(str, object)], match: match) -> result::result<bool, str>
+fn eval_match(&bindings: [(str, object)], match: match) -> result::result<bool, str>
 {
 	alt match
 	{
 		either::left(binding)
 		{
-			if option::is_none(context.search(binding.name))
+			if option::is_none(bindings.search(binding.name))
 			{
-				vec::push(context, (binding.name, binding.value));
+				vec::push(bindings, (binding.name, binding.value));
 				result::ok(true)
 			}
 			else
@@ -290,7 +302,7 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 }
 
 // Returns the named bindings.
-fn eval_bp(store: store, matcher: triple_pattern) -> result::result<solution, str>
+fn eval_bp(store: store, names: [str], matcher: triple_pattern) -> result::result<solution, str>
 {
 	let mut rows: solution = [];
 	
@@ -300,18 +312,18 @@ fn eval_bp(store: store, matcher: triple_pattern) -> result::result<solution, st
 		for (*entries).each()
 		{|entry|
 			// initialize row,
-			let mut context = [];
+			let mut bindings = [];
 			if option::is_some(sbinding)
 			{
-				vec::push(context, (option::get(sbinding).name, option::get(sbinding).value));
+				vec::push(bindings, (option::get(sbinding).name, option::get(sbinding).value));
 			}
 			
 			// match an entry,
-			let result = eval_match(context, match_predicate(entry.predicate, matcher.predicate)).chain
+			let result = eval_match(bindings, match_predicate(entry.predicate, matcher.predicate)).chain
 			{|matched|
 				if matched
 				{
-					eval_match(context, match_object(entry.object, matcher.object))
+					eval_match(bindings, match_object(entry.object, matcher.object))
 				}
 				else
 				{
@@ -324,7 +336,7 @@ fn eval_bp(store: store, matcher: triple_pattern) -> result::result<solution, st
 			{
 				result::ok(true)
 				{
-					vec::push(rows, context);
+					vec::push(rows, filter_row(names, bindings));
 				}
 				result::ok(false)
 				{
@@ -341,17 +353,27 @@ fn eval_bp(store: store, matcher: triple_pattern) -> result::result<solution, st
 	result::ok(rows)
 }
 
-fn eval_bgp(store: store, patterns: [triple_pattern]) -> result::result<solution, str>
+fn eval_bgp(store: store, in_names: [str], patterns: [triple_pattern]) -> result::result<solution, str>
 {
 	let mut result = [];
 	
-	for vec::each(patterns)
-	{|pattern|
-		alt eval_bp(store, pattern)
+	for vec::eachi(patterns)
+	{|i, pattern|
+		alt eval_bp(store, ["*"], pattern)
 		{
 			result::ok(solution)
 			{
-				result = eval_bg_pair(result, solution);
+				// We can't filter out bindings not in names until we've finished joining bindings.
+				let names =
+					if i == vec::len(patterns) - 1u
+					{
+						in_names
+					}
+					else
+					{
+						["*"]
+					};
+				result = eval_bg_pair(names, result, solution);
 			}
 			result::err(mesg)
 			{
@@ -363,18 +385,18 @@ fn eval_bgp(store: store, patterns: [triple_pattern]) -> result::result<solution
 	ret result::ok(result);
 }
 
-fn eval(matcher: algebra) -> selector
+fn eval(names: [str], matcher: algebra) -> selector
 {
 	{|store: store|
 		alt matcher
 		{
 			bp(pattern)
 			{
-				eval_bp(store, pattern)
+				eval_bp(store, names, pattern)
 			}
 			bgp(patterns)
 			{
-				eval_bgp(store, patterns)
+				eval_bgp(store, names, patterns)
 			}
 		}
 	}

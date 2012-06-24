@@ -39,7 +39,7 @@ fn check_bgp(groups: [solution], expected: solution) -> bool
 	let mut actual = [];
 	for vec::each(groups)
 	{|group|
-		actual = eval_bg_pair(actual, group);
+		actual = eval_bg_pair(["*"], actual, group);
 	};
 	
 	// Form this point forward we are dealing with [str] instead of [[binding]].
@@ -160,13 +160,13 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 						ret false;
 					}
 					
-					// Actual should have all the expected values.
+					// Actual should have only the expected values.
 					for vec::eachi(actual)
 					{|i, row1|
 						let row2 = expected[i];
-						if vec::len(row1) < vec::len(row2)
+						if vec::len(row1) != vec::len(row2)
 						{
-							print_failure(#fmt["Row %? had size %? but expected at least%?.", 
+							print_failure(#fmt["Row %? had size %? but expected %?.", 
 								i, vec::len(row1), vec::len(row2)], actual, expected);
 							ret false;
 						}

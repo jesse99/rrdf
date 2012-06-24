@@ -651,11 +651,11 @@ fn build_parser(namespaces: [namespace], patterns: [pattern], algebra: algebra) 
 	{
 		if vec::is_not_empty(namespaces)
 		{
-			result::ok(eval(expand(namespaces, algebra)))
+			result::ok(eval(names, expand(namespaces, algebra)))
 		}
 		else
 		{
-			result::ok(eval(algebra))
+			result::ok(eval(names, algebra))
 		}
 	}
 	else
