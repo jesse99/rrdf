@@ -9,6 +9,41 @@ enum algebra
 	bgp([triple_pattern])
 }
 
+fn expand_pattern(namespaces: [namespace], pattern: pattern) -> pattern
+{
+	alt pattern
+	{
+		constant({value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""})
+		{
+			constant({value: expand_uri(namespaces, value), kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""})
+		}
+		_
+		{
+			pattern
+		}
+	}
+}
+
+fn expand_triple(namespaces: [namespace], tp: triple_pattern) -> triple_pattern
+{
+	{subject: expand_pattern(namespaces, tp.subject), predicate: expand_pattern(namespaces, tp.predicate), object: expand_pattern(namespaces, tp.object)}
+}
+
+fn expand(namespaces: [namespace], algebra: algebra) -> algebra
+{
+	alt algebra
+	{
+		bp(tp)
+		{
+			bp(expand_triple(namespaces, tp))
+		}
+		bgp(tps)
+		{
+			bgp(vec::map(tps, {|tp| expand_triple(namespaces, tp)}))
+		}
+	}
+}
+
 fn find_dupes(names: [str]) -> [str]
 {
 	let names = std::sort::merge_sort({|x, y| x <= y}, names);
@@ -361,7 +396,19 @@ impl my_parser_methods<T: copy> for parser<T>
 	}
 }
 
-fn prefixedname() -> parser<str>
+fn typed_literal(value: str, kind: str) -> pattern
+{
+	constant({value: value, kind: kind, lang: ""})
+}
+
+fn string_literal(value: str, lang: str) -> pattern
+{
+	constant({value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang})
+}
+
+// http://www.w3.org/TR/sparql11-query/#grammar
+// TODO: remove annotate calls
+fn make_parser() -> parser<selector>
 {
 	// [159] PN_LOCAL ::= (PN_CHARS_U | [0-9] | PLX)  ((PN_CHARS | '.' | PLX)* (PN_CHARS | PLX))? 		note that w3c had an error here (a stray > character at the end of the production)
 	let pn_local_prefix = or_v([
@@ -389,24 +436,6 @@ fn prefixedname() -> parser<str>
 	let PNAME_LN = seq2(PNAME_NS, PN_LOCAL)
 		{|l, r| result::ok(l + r)};
 	
-	// [127] PrefixedName ::= PNAME_LN | PNAME_NS
-	(PNAME_LN.or(PNAME_NS)).ws()
-}
-
-fn typed_literal(value: str, kind: str) -> pattern
-{
-	constant({value: value, kind: kind, lang: ""})
-}
-
-fn string_literal(value: str, lang: str) -> pattern
-{
-	constant({value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang})
-}
-
-// http://www.w3.org/TR/sparql11-query/#grammar
-// TODO: remove annotate calls
-fn make_parser() -> parser<selector>
-{
 	// [149] STRING_LITERAL_LONG2 ::= '"""' ( ( '"' | '""' )? ( [^"\] | ECHAR ) )* '"""'
 	let STRING_LITERAL_LONG2 = seq3_ret1("\"\"\"".lit(), scan0(bind long_char('"', _, _)), "\"\"\"".lit().ws());
 	
@@ -463,8 +492,11 @@ fn make_parser() -> parser<selector>
 	// [129] IRI_REF	 ::= '<' ([^<>"{}|^`\]-[#x00-#x20])* '>'
 	let IRI_REF = seq3_ret1("<".lit(), match0(iri_char), ">".lit().ws()).annotate("IRI_REF");
 	
+	// [127] PrefixedName ::= PNAME_LN | PNAME_NS
+	let PrefixedName = (PNAME_LN.or(PNAME_NS)).ws();
+	
 	// [126] IRIref ::= IRI_REF | PrefixedName
-	let IRIref = IRI_REF.or(prefixedname().annotate("prefixedname"));
+	let IRIref = IRI_REF.or(PrefixedName.annotate("prefixedname"));
 	
 	// [125] String ::= STRING_LITERAL1 | STRING_LITERAL2 | STRING_LITERAL_LONG1 | STRING_LITERAL_LONG2
 	let String = or_v([STRING_LITERAL_LONG1, STRING_LITERAL_LONG2, STRING_LITERAL1, STRING_LITERAL2]);
@@ -587,23 +619,18 @@ fn make_parser() -> parser<selector>
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = seq2(SelectClause, WhereClause)
-		{|names, matchers|
-			let variables = vec::filter(names) {|p| alt p {variable(_l) {true} _ {false}}};
-			let names = vec::map(variables) {|p| alt p {variable(n) {n} _ {fail}}};
-			
-			let dupes = find_dupes(names);
-			if vec::is_empty(dupes)
-			{
-				result::ok(eval(matchers))
-			}
-			else
-			{
-				result::err(#fmt["Select clause has duplicates: %s", str::connect(dupes, " ")])
-			}
-		};
+		{|patterns, algebra| result::ok((patterns, algebra))};
+		
+	// [6] PrefixDecl ::= 'PREFIX' PNAME_NS IRI_REF
+	let PrefixDecl = seq3("PREFIX".lit().ws(), PNAME_NS.ws(), IRI_REF)
+		{|_p, ns, ref| result::ok({prefix: str::slice(ns, 0u, str::len(ns)-1u), path: ref})};
 	
-	// [2] Query ::= Prologue ( SelectQuery | ConstructQuery | DescribeQuery | AskQuery ) BindingsClause
-	let Query = SelectQuery;
+	// [4] Prologue ::= (BaseDecl | PrefixDecl)*
+	let Prologue = PrefixDecl.r0();
+	
+	// [2] Query ::= Prologue (SelectQuery | ConstructQuery | DescribeQuery | AskQuery) BindingsClause
+	let Query = seq2(Prologue, SelectQuery)
+		{|p, s| build_parser(p, tuple::first(s), tuple::second(s))};
 	
 	// [1] QueryUnit ::= Query
 	let QueryUnit = Query;
@@ -611,3 +638,28 @@ fn make_parser() -> parser<selector>
 	ret QueryUnit;
 }
 
+// namespaces are from the PREFIX clauses
+// patterns are from the SELECT clause
+// algebra is from the WHERE clause
+fn build_parser(namespaces: [namespace], patterns: [pattern], algebra: algebra) -> result::result<selector, str>
+{
+	let variables = vec::filter(patterns) {|p| alt p {variable(_l) {true} _ {false}}};
+	let names = vec::map(variables) {|p| alt p {variable(n) {n} _ {fail}}};
+	
+	let dupes = find_dupes(names);
+	if vec::is_empty(dupes)
+	{
+		if vec::is_not_empty(namespaces)
+		{
+			result::ok(eval(expand(namespaces, algebra)))
+		}
+		else
+		{
+			result::ok(eval(algebra))
+		}
+	}
+	else
+	{
+		result::err(#fmt["Select clause has duplicates: %s", str::connect(dupes, " ")])
+	}
+}

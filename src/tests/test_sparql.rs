@@ -149,3 +149,20 @@ fn select_all()
 	assert check_solution(store, expr, expected);
 }
 
+#[test]
+fn prefixes()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?org
+	WHERE {
+		got:Eddard_Stark v:org ?z .
+		?z v:organisation-name ?org
+	}";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("org", create_str("Small Council"))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}

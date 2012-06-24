@@ -4,12 +4,11 @@ http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830	1.1 version
 http://www.w3.org/TR/2004/REC-rdf-concepts-20040210		1.0 version
 http://www.w3.org/TR/2004/REC-rdf-mt-20040210			semantics
 http://www.w3.org/TR/sparql11-query/
+http://dbpedia.org/sparql
 
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
-* Support SELECT * (selects all bindings).
-* Support ; (goes in same place as .)
 * Work on more complex matching:
 	- support PREFIX
 	- support optional, use section 18 to figure out the algebra
