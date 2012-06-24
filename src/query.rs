@@ -5,7 +5,7 @@ import result::extensions;
 import std::time::tm;
 import sparql::*;
 
-export eval_bg_pair, eval, pattern;
+export join_solutions, eval, pattern;
 
 type binding = {name: str, value: object};
 
@@ -43,7 +43,7 @@ fn solution_to_str(solution: solution) -> str
 //
 // Where a cross product is compatible if, for every identical name, the values
 // are also identical.
-fn eval_bg_pair(names: [str], group1: solution, group2: solution) -> solution
+fn join_solutions(names: [str], group1: solution, group2: solution, optional_join: bool) -> solution
 {
 	fn compatible_binding(name1: str, value1: object, rhs: solution_row) -> bool
 	{
@@ -100,6 +100,7 @@ fn eval_bg_pair(names: [str], group1: solution, group2: solution) -> solution
 	{
 		for vec::each(group1)
 		{|lhs|
+			let count = vec::len(result);
 			for vec::each(group2)
 			{|rhs|
 				#debug["testing [%s] and [%s]", solution_row_to_str(lhs), solution_row_to_str(rhs)];
@@ -113,6 +114,12 @@ fn eval_bg_pair(names: [str], group1: solution, group2: solution) -> solution
 				{
 					#debug["   not compatible"];
 				}
+			}
+			if vec::len(result) == count && optional_join
+			{
+				// With OPTIONAL we need to add the lhs row even if we failed to find
+				// any compatible rhs rows.
+				vec::push(result, filter_row(names, lhs));
 			}
 		}
 	}
@@ -302,7 +309,7 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 }
 
 // Returns the named bindings.
-fn eval_bp(store: store, names: [str], matcher: triple_pattern) -> result::result<solution, str>
+fn eval_factor(store: store, names: [str], matcher: triple_pattern) -> result::result<solution, str>
 {
 	let mut rows: solution = [];
 	
@@ -353,19 +360,19 @@ fn eval_bp(store: store, names: [str], matcher: triple_pattern) -> result::resul
 	result::ok(rows)
 }
 
-fn eval_bgp(store: store, in_names: [str], patterns: [triple_pattern]) -> result::result<solution, str>
+fn eval_group(store: store, in_names: [str], terms: [@algebra]) -> result::result<solution, str>
 {
 	let mut result = [];
 	
-	for vec::eachi(patterns)
-	{|i, pattern|
-		alt eval_bp(store, ["*"], pattern)
+	for vec::eachi(terms)
+	{|i, term|
+		alt eval_algebra(store, ["*"], *term)
 		{
 			result::ok(solution)
 			{
 				// We can't filter out bindings not in names until we've finished joining bindings.
 				let names =
-					if i == vec::len(patterns) - 1u
+					if i == vec::len(terms) - 1u
 					{
 						in_names
 					}
@@ -373,7 +380,7 @@ fn eval_bgp(store: store, in_names: [str], patterns: [triple_pattern]) -> result
 					{
 						["*"]
 					};
-				result = eval_bg_pair(names, result, solution);
+				result = join_solutions(names, result, solution, alt *term {optional(_t) {true} _ {false}});
 			}
 			result::err(mesg)
 			{
@@ -385,19 +392,44 @@ fn eval_bgp(store: store, in_names: [str], patterns: [triple_pattern]) -> result
 	ret result::ok(result);
 }
 
+fn eval_optional(store: store, names: [str], term: algebra) -> result::result<solution, str>
+{
+	alt eval_algebra(store, names, term)
+	{
+		result::ok(solution)
+		{
+			result::ok(solution)
+		}
+		result::err(_mesg)
+		{
+			result::ok([])
+		}
+	}
+}
+
+fn eval_algebra(store: store, names: [str], algebra: algebra) -> result::result<solution, str>
+{
+	alt algebra
+	{
+		factor(pattern)
+		{
+			eval_factor(store, names, pattern)
+		}
+		group(terms)
+		{
+			eval_group(store, names, terms)
+		}
+		optional(term)
+		{
+			eval_optional(store, names, *term)
+		}
+	}
+}
+
 fn eval(names: [str], matcher: algebra) -> selector
 {
 	{|store: store|
-		alt matcher
-		{
-			bp(pattern)
-			{
-				eval_bp(store, names, pattern)
-			}
-			bgp(patterns)
-			{
-				eval_bgp(store, names, patterns)
-			}
-		}
+		#debug["algebra: %?", matcher];
+		eval_algebra(store, names, matcher)
 	}
 }

@@ -92,11 +92,12 @@ fn blank_nodes()
 		
 		make_triple_str(store, "got:Jon_Snow", "v:fn", "Jon Snow"),
 		make_triple_str(store, "got:Jon_Snow", "v:nickname", "Lord Snow"),
+		make_triple_str(store, "got:Jon_Snow", "v:pet", "Ghost"),
 		make_triple_blank(store, "got:Jon_Snow", "v:org", "jon-org-1"),
 		
 		make_triple_str(store, "got:Sandor_Clegane", "v:fn", "Sandor Clegane"),
 		make_triple_str(store, "got:Sandor_Clegane", "v:nickname", "The Hound"),
-
+		
 		make_triple_str(store, "{jon-org-1}", "v:organisation-name", "Night's Watch"),
 		make_triple_str(store, "{jon-org-1}", "v:organisation-unit", "Stewards"),
 		make_triple_str(store, "{ned-org-0}", "v:organisation-name", "Small Council"),

@@ -36,7 +36,8 @@ fn got_cast3() -> store
 	
 	store.add("got:Jon_Snow", [
 		("v:fn", create_str("Jon Snow")),
-		("v:nickname", create_str("Lord Snow"))
+		("v:nickname", create_str("Lord Snow")),
+		("v:pet", create_str("Ghost"))
 	]);
 	store.add_aggregate("got:Jon_Snow", "v:org", "jon-org", [
 		("v:organisation-name", create_str("Night's Watch")),

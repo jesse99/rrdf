@@ -5,8 +5,9 @@ type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 
 enum algebra
 {
-	bp(triple_pattern),			// this isn't part of the spec, but it allows us to evaluate a common case more efficiently
-	bgp([triple_pattern])
+	factor(triple_pattern),
+	group([@algebra]),
+	optional(@algebra)
 }
 
 fn expand_pattern(namespaces: [namespace], pattern: pattern) -> pattern
@@ -33,13 +34,17 @@ fn expand(namespaces: [namespace], algebra: algebra) -> algebra
 {
 	alt algebra
 	{
-		bp(tp)
+		factor(pattern)
 		{
-			bp(expand_triple(namespaces, tp))
+			factor(expand_triple(namespaces, pattern))
 		}
-		bgp(tps)
+		group(terms)
 		{
-			bgp(vec::map(tps, {|tp| expand_triple(namespaces, tp)}))
+			group(vec::map(terms, {|term| @expand(namespaces, *term)}))
+		}
+		optional(term)
+		{
+			optional(@expand(namespaces, *term))
 		}
 	}
 }
@@ -588,24 +593,66 @@ fn make_parser() -> parser<selector>
 	let TriplesSameSubjectPath = seq2(VarOrTerm, PropertyListNotEmptyPath)
 		{|subject, e| result::ok({subject: subject, predicate: e[0], object: e[1]})};
 		
-	// [56] TriplesBlock ::= TriplesSameSubjectPath ( '.' TriplesBlock? )?
+	// [58] OptionalGraphPattern ::= 'OPTIONAL' GroupGraphPattern
+	let GroupGraphPattern_ptr = @mut return(group([]));
+	let GroupGraphPattern_ref = forward_ref(GroupGraphPattern_ptr);
+	
+	let OptionalGraphPattern = seq2("OPTIONAL".lit().ws(), GroupGraphPattern_ref)
+		{|_o, a| result::ok(optional(@a))};
+	
+	// [57] GraphPatternNotTriples ::= GroupOrUnionGraphPattern | OptionalGraphPattern | MinusGraphPattern | GraphGraphPattern | ServiceGraphPattern | Filter | Bind
+	let GraphPatternNotTriples = OptionalGraphPattern;
+	
+	// [56] TriplesBlock ::= TriplesSameSubjectPath ('.' TriplesBlock?)?
 	let TriplesBlock = seq2(list(TriplesSameSubjectPath, ".".lit().ws()), ".".lit().ws().optional())
 		{|patterns, _r|
 			if vec::len(patterns) == 1u
 			{
-				result::ok(bp(patterns[0]))
+				result::ok(factor(patterns[0]))
 			}
 			else
 			{
-				result::ok(bgp(patterns))
+				result::ok(group(vec::map(patterns, {|p| @factor(p)})))
 			}
 		};
 	
-	// [55] GroupGraphPatternSub ::= TriplesBlock? ( GraphPatternNotTriples '.'? TriplesBlock? )*
-	let GroupGraphPatternSub = TriplesBlock;
+	// [55] GroupGraphPatternSub ::= TriplesBlock? (GraphPatternNotTriples '.'? TriplesBlock?)*		*****
+	let ggps_suffix = seq3(GraphPatternNotTriples, ".".lit().ws().optional(), TriplesBlock.optional())
+		{|gpnt, _d, tb|
+			if option::is_some(tb)
+			{
+				result::ok(group([@gpnt, @(tb.get())]))
+			}
+			else
+			{
+				result::ok(gpnt)
+			}
+		};
+	let GroupGraphPatternSub = seq2(TriplesBlock.optional(), ggps_suffix.r0())
+		{|tb, gp|
+			let patterns =
+				if option::is_some(tb)
+				{
+					[tb.get()] + gp
+				}
+				else
+				{
+					gp
+				};
+			
+			if vec::len(patterns) == 1u
+			{
+				result::ok(patterns[0])
+			}
+			else
+			{
+				result::ok(group(vec::map(patterns, {|p| @p})))
+			}
+		};
 		
-	// [54] GroupGraphPattern ::= '{' ( SubSelect | GroupGraphPatternSub ) '}'
+	// [54] GroupGraphPattern ::= '{' (SubSelect | GroupGraphPatternSub) '}'
 	let GroupGraphPattern = seq3_ret1("{".lit().ws(), GroupGraphPatternSub, "}".lit().ws());
+	*GroupGraphPattern_ptr = GroupGraphPattern;
 	
 	// [17] WhereClause ::= 'WHERE'? GroupGraphPattern
 	let WhereClause = seq2_ret1(("WHERE".liti().ws()).optional(), GroupGraphPattern);

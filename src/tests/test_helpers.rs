@@ -39,7 +39,7 @@ fn check_bgp(groups: [solution], expected: solution) -> bool
 	let mut actual = [];
 	for vec::each(groups)
 	{|group|
-		actual = eval_bg_pair(["*"], actual, group);
+		actual = join_solutions(["*"], actual, group, false);
 	};
 	
 	// Form this point forward we are dealing with [str] instead of [[binding]].

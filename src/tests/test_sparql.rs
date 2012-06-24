@@ -166,3 +166,47 @@ fn prefixes()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn options1()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?name ?title ?pet
+	WHERE {
+		?s v:fn ?name .
+		OPTIONAL {
+			?s v:honorific-prefix ?title
+		}
+	}";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("name", create_str("Eddard Stark")), ("title", create_str("Lord"))],
+		[("name", create_str("Jon Snow"))],
+		[("name", create_str("Sandor Clegane"))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn options2()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?name ?title ?pet
+	WHERE {
+		?s v:fn ?name .
+		OPTIONAL {?s v:honorific-prefix ?title} .
+		OPTIONAL {?s v:pet ?pet}
+	}";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("name", create_str("Eddard Stark")), ("title", create_str("Lord"))],
+		[("name", create_str("Jon Snow")), ("pet", create_str("Ghost"))],
+		[("name", create_str("Sandor Clegane"))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
