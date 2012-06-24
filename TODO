@@ -9,9 +9,14 @@ http://dbpedia.org/sparql
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
+* Work on operators:
+	- probably want an expression enum and eval_expr fn
+	- == needs to use http://www.w3.org/TR/xpath-functions/#func-numeric-equal
+	- fix the couple mixed type tests
+	- || and && need to special case errors
+	-  < and > 
+	- probably want arithmatic operators, see http://www.w3.org/TR/sparql11-query/#OperatorMapping
 * Work on more complex matching:
-	- support optional, use section 18 to figure out the algebra
-	- support ; (seems to be a separator for patterns in a triple pattern)
 	- support some simple date filters (i.e. date is no more than 24 hours ago)
 		` support comparisons
 		` no support for subtracting dateTimes so user would have to do it
@@ -27,6 +32,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 	- etc
 * Do we need to be able to match collections?
 * Concepts doc at 307 talks about escaping urls.
+* Support common subjects and common prefixes (4.2.1 and 4.2.2)
 * Add a unit test demonstrating that solutions can be sent across tasks.
 * Add a unit test showing that add_triples args can be sent across threads.
 * Get more queries working:

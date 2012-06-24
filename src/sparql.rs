@@ -5,7 +5,7 @@ type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 
 enum algebra
 {
-	factor(triple_pattern),
+	basic(triple_pattern),
 	group([@algebra]),
 	optional(@algebra)
 }
@@ -34,9 +34,9 @@ fn expand(namespaces: [namespace], algebra: algebra) -> algebra
 {
 	alt algebra
 	{
-		factor(pattern)
+		basic(pattern)
 		{
-			factor(expand_triple(namespaces, pattern))
+			basic(expand_triple(namespaces, pattern))
 		}
 		group(terms)
 		{
@@ -608,11 +608,11 @@ fn make_parser() -> parser<selector>
 		{|patterns, _r|
 			if vec::len(patterns) == 1u
 			{
-				result::ok(factor(patterns[0]))
+				result::ok(basic(patterns[0]))
 			}
 			else
 			{
-				result::ok(group(vec::map(patterns, {|p| @factor(p)})))
+				result::ok(group(vec::map(patterns, {|p| @basic(p)})))
 			}
 		};
 	

@@ -309,7 +309,7 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 }
 
 // Returns the named bindings.
-fn eval_factor(store: store, names: [str], matcher: triple_pattern) -> result::result<solution, str>
+fn eval_basic(store: store, names: [str], matcher: triple_pattern) -> result::result<solution, str>
 {
 	let mut rows: solution = [];
 	
@@ -411,9 +411,9 @@ fn eval_algebra(store: store, names: [str], algebra: algebra) -> result::result<
 {
 	alt algebra
 	{
-		factor(pattern)
+		basic(pattern)
 		{
-			eval_factor(store, names, pattern)
+			eval_basic(store, names, pattern)
 		}
 		group(terms)
 		{
