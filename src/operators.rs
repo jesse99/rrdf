@@ -2,7 +2,8 @@
 import operands::*;
 
 export op_not, op_unary_plus, op_unary_minus, op_or, op_and, op_equals, op_not_equals,
-	op_less_than, op_less_than_or_equal, op_greater_than, op_greater_than_or_equal;
+	op_less_than, op_less_than_or_equal, op_greater_than, op_greater_than_or_equal,
+	op_multiply, op_divide, op_add, op_subtract;
 
 fn type_error(fname: str, operand: operand, expected: str) -> str
 {
@@ -484,8 +485,202 @@ fn op_greater_than_or_equal(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-// TODO:
-// multiply
-// divide
-// add
-// subtract
+fn op_multiply(lhs: operand, rhs: operand) -> operand
+{
+	alt lhs
+	{
+		int_value(lvalue)
+		{
+			alt rhs
+			{
+				int_value(rvalue)
+				{
+					int_value(lvalue*rvalue)
+				}
+				float_value(rvalue)
+				{
+					let lvalue = lvalue as f64;
+					float_value(lvalue*rvalue)
+				}
+				_
+				{
+					error_value(type_error("*", rhs, "numeric"))
+				}
+			}
+		}
+		float_value(lvalue)
+		{
+			alt rhs
+			{
+				int_value(rvalue)
+				{
+					let rvalue = rvalue as f64;
+					float_value(lvalue*rvalue)
+				}
+				float_value(rvalue)
+				{
+					float_value(lvalue*rvalue)
+				}
+				_
+				{
+					error_value(type_error("*", rhs, "numeric"))
+				}
+			}
+		}
+		_
+		{
+			error_value(type_error("*", lhs, "numeric"))
+		}
+	}
+}
+
+fn op_divide(lhs: operand, rhs: operand) -> operand
+{
+	alt lhs
+	{
+		int_value(lvalue)
+		{
+			alt rhs
+			{
+				int_value(0i64)
+				{
+					error_value("Divide by zero.")
+				}
+				int_value(rvalue)
+				{
+					int_value(lvalue/rvalue)
+				}
+				float_value(rvalue)
+				{
+					let lvalue = lvalue as f64;
+					float_value(lvalue/rvalue)
+				}
+				_
+				{
+					error_value(type_error("/", rhs, "numeric"))
+				}
+			}
+		}
+		float_value(lvalue)
+		{
+			alt rhs
+			{
+				int_value(rvalue)
+				{
+					let rvalue = rvalue as f64;
+					float_value(lvalue/rvalue)
+				}
+				float_value(rvalue)
+				{
+					float_value(lvalue/rvalue)
+				}
+				_
+				{
+					error_value(type_error("/", rhs, "numeric"))
+				}
+			}
+		}
+		_
+		{
+			error_value(type_error("/", lhs, "numeric"))
+		}
+	}
+}
+
+fn op_add(lhs: operand, rhs: operand) -> operand
+{
+	alt lhs
+	{
+		int_value(lvalue)
+		{
+			alt rhs
+			{
+				int_value(rvalue)
+				{
+					int_value(lvalue+rvalue)
+				}
+				float_value(rvalue)
+				{
+					let lvalue = lvalue as f64;
+					float_value(lvalue+rvalue)
+				}
+				_
+				{
+					error_value(type_error("+", rhs, "numeric"))
+				}
+			}
+		}
+		float_value(lvalue)
+		{
+			alt rhs
+			{
+				int_value(rvalue)
+				{
+					let rvalue = rvalue as f64;
+					float_value(lvalue+rvalue)
+				}
+				float_value(rvalue)
+				{
+					float_value(lvalue+rvalue)
+				}
+				_
+				{
+					error_value(type_error("+", rhs, "numeric"))
+				}
+			}
+		}
+		_
+		{
+			error_value(type_error("+", lhs, "numeric"))
+		}
+	}
+}
+
+fn op_subtract(lhs: operand, rhs: operand) -> operand
+{
+	alt lhs
+	{
+		int_value(lvalue)
+		{
+			alt rhs
+			{
+				int_value(rvalue)
+				{
+					int_value(lvalue-rvalue)
+				}
+				float_value(rvalue)
+				{
+					let lvalue = lvalue as f64;
+					float_value(lvalue-rvalue)
+				}
+				_
+				{
+					error_value(type_error("-", rhs, "numeric"))
+				}
+			}
+		}
+		float_value(lvalue)
+		{
+			alt rhs
+			{
+				int_value(rvalue)
+				{
+					let rvalue = rvalue as f64;
+					float_value(lvalue-rvalue)
+				}
+				float_value(rvalue)
+				{
+					float_value(lvalue-rvalue)
+				}
+				_
+				{
+					error_value(type_error("-", rhs, "numeric"))
+				}
+			}
+		}
+		_
+		{
+			error_value(type_error("-", lhs, "numeric"))
+		}
+	}
+}

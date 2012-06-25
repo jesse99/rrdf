@@ -148,3 +148,20 @@ fn operator_other_relational()
 	assert check_operands(op_greater_than_or_equal(int_value(3i64), float_value(4.0f64)), bool_value(false));
 }
 
+#[test]
+fn operator_multiply()
+{
+	assert check_operands(op_multiply(int_value(6i64), int_value(2i64)), int_value(12i64));
+	assert check_operands(op_multiply(int_value(3i64), float_value(4.0f64)), float_value(12.0f64));
+	assert check_operands(op_multiply(int_value(3i64), bool_value(true)), error_value("*: expected numeric value but found bool_value(1)."));
+}
+
+#[test]
+fn operator_other_arith()
+{
+	assert check_operands(op_divide(int_value(6i64), int_value(2i64)), int_value(3i64));
+	assert check_operands(op_divide(int_value(3i64), int_value(0i64)), error_value("Divide by zero."));
+
+	assert check_operands(op_add(int_value(6i64), int_value(2i64)), int_value(8i64));
+	assert check_operands(op_subtract(int_value(6i64), int_value(2i64)), int_value(4i64));
+}
