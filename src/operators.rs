@@ -5,29 +5,6 @@ export op_not, op_unary_plus, op_unary_minus, op_or, op_and, op_equals, op_not_e
 	op_less_than, op_less_than_or_equal, op_greater_than, op_greater_than_or_equal,
 	op_multiply, op_divide, op_add, op_subtract;
 
-fn type_error(fname: str, operand: operand, expected: str) -> str
-{
-	alt operand
-	{
-		unbound_value(name)
-		{
-			#fmt["%s: ?%s was not bound.", fname, name]
-		}
-		invalid_value(err)
-		{
-			#fmt["%s: %s", fname, err]
-		}
-		error_value(err)
-		{
-			#fmt["%s: %s", fname, err]
-		}
-		_
-		{
-			#fmt["%s: expected %s value but found %?.", fname, expected, operand]
-		}
-	}
-}
-
 fn equal_values(operator: str, lhs: operand, rhs: operand) -> result::result<bool, str>
 {
 	alt lhs

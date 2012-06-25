@@ -11,15 +11,10 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 * Work on operators:
 	- probably want an expression enum and eval_expr fn
-	- == needs to use http://www.w3.org/TR/xpath-functions/#func-numeric-equal
-	- fix the couple mixed type tests
-	- || and && need to special case errors
-	-  < and > 
-	- probably want arithmatic operators, see http://www.w3.org/TR/sparql11-query/#OperatorMapping
 * Work on more complex matching:
 	- support some simple date filters (i.e. date is no more than 24 hours ago)
-		` support comparisons
 		` no support for subtracting dateTimes so user would have to do it
+		   tho there are now and hours functions
 	- support filter inside of optional
 	- may want to support union
 * Select components can be strings?

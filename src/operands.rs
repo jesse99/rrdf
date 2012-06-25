@@ -1,26 +1,27 @@
 // Values used within SPARQL FILTER expressions. See 17.2 and related.
-//import std::map::hashmap;
-//import result::extensions;
-//import std::time::tm;
-//import sparql::*;
 
-//export join_solutions, eval, pattern;
-
+// Note that the error conditions do not always result in an error:
+// 1) Functions like COALESCE accept unbound variables.
+// 2) Boolean functions normally want effective boolean values which are false for invalid values.
+// 3) Functions like op_and do not always propagate errors.
 enum operand
 {
+	// literals
 	bool_value(bool),
-	int_value(i64),			// xsd:integer (and derived types)
-	float_value(f64),			// xsd:decimal, xsd:float, or xsd:double (and derived types)
+	int_value(i64),			// xsd:decimal (and derived types)
+	float_value(f64),			// xsd:float or xsd:double
 	dateTime_value(tm),	// xsd:dateTime
 	string_value(str, str),	// value + lang
 	typed_value(str, str),	// value + type (aka simple literal)
 	
-	iri_value(str),			// rdf terms are these plus the above
+	// other rdf terms
+	iri_value(str),
 	blank_value(str),
 	
-	unbound_value(str),	// name
-	invalid_value(str),		// err mesg for literal with invalid representation
-	error_value(str)			// we have to propagate errors because some operators special case them (e.g. ||)
+	// error conditions
+	unbound_value(str),	// binding name
+	invalid_value(str),		// err mesg (for literal with invalid representation)
+	error_value(str)			// err mesg
 }
 
 fn get_operand(row: solution_row, name: str) -> operand
@@ -78,3 +79,27 @@ fn get_ebv(operand: operand) -> result::result<bool, str>
 		}
 	}
 }
+
+fn type_error(fname: str, operand: operand, expected: str) -> str
+{
+	alt operand
+	{
+		unbound_value(name)
+		{
+			#fmt["%s: ?%s was not bound.", fname, name]
+		}
+		invalid_value(err)
+		{
+			#fmt["%s: %s", fname, err]
+		}
+		error_value(err)
+		{
+			#fmt["%s: %s", fname, err]
+		}
+		_
+		{
+			#fmt["%s: expected %s value but found %?.", fname, expected, operand]
+		}
+	}
+}
+
