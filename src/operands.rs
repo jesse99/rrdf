@@ -12,14 +12,14 @@ enum operand
 	int_value(i64),			// xsd:integer (and derived types)
 	float_value(f64),			// xsd:decimal, xsd:float, or xsd:double (and derived types)
 	dateTime_value(tm),	// xsd:dateTime
-	
 	string_value(str, str),	// value + lang
-	typed_value(str, str),	// value + type
-	iri_value(str),
-	blank_value(str),
-	unbound_value(str),	// name
+	typed_value(str, str),	// value + type (aka simple literal)
 	
-	invalid_value(str),		// bool or numeric with invalid representation
+	iri_value(str),			// rdf terms are these plus the above
+	blank_value(str),
+	
+	unbound_value(str),	// name
+	invalid_value(str),		// err mesg for literal with invalid representation
 	error_value(str)			// we have to propagate errors because some operators special case them (e.g. ||)
 }
 
@@ -44,7 +44,7 @@ fn get_ebv(operand: operand) -> result::result<bool, str>
 {
 	alt operand
 	{
-		invalid_value(_value)
+		invalid_value(_err)
 		{
 			result::ok(false)
 		}
