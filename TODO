@@ -8,6 +8,96 @@ http://dbpedia.org/sparql
 
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
+[111] BuiltInCall ::= 'STR' '(' Expression ')' 
+|	'LANG' '(' Expression ')' 
+|	'LANGMATCHES' '(' Expression ',' Expression ')' 
+|	'DATATYPE' '(' Expression ')' 
+|	'BOUND' '(' Var ')' 
+|	'IRI' '(' Expression ')' 
+|	'URI' '(' Expression ')' 
+|	'BNODE' ( '(' Expression ')' | NIL ) 
+|	'RAND' NIL 
+|	'ABS' '(' Expression ')' 
+|	'CEIL' '(' Expression ')' 
+|	'FLOOR' '(' Expression ')' 
+|	'ROUND' '(' Expression ')' 
+|	'CONCAT' ExpressionList 
+|	SubstringExpression 
+|	'STRLEN' '(' Expression ')' 
+|	StrReplaceExpression 
+|	'UCASE' '(' Expression ')' 
+|	'LCASE' '(' Expression ')' 
+|	'ENCODE_FOR_URI' '(' Expression ')' 
+|	'CONTAINS' '(' Expression ',' Expression ')' 
+|	'STRSTARTS' '(' Expression ',' Expression ')' 
+|	'STRENDS' '(' Expression ',' Expression ')' 
+|	'STRBEFORE' '(' Expression ',' Expression ')' 
+|	'STRAFTER' '(' Expression ',' Expression ')' 
+|	'YEAR' '(' Expression ')' 
+|	'MONTH' '(' Expression ')' 
+|	'DAY' '(' Expression ')' 
+|	'HOURS' '(' Expression ')' 
+|	'MINUTES' '(' Expression ')' 
+|	'SECONDS' '(' Expression ')' 
+|	'TIMEZONE' '(' Expression ')' 
+|	'TZ' '(' Expression ')' 
+|	'NOW' NIL 
+|	'MD5' '(' Expression ')' 
+|	'SHA1' '(' Expression ')' 
+|	'SHA256' '(' Expression ')' 
+|	'SHA384' '(' Expression ')' 
+|	'SHA512' '(' Expression ')' 
+|	'COALESCE' ExpressionList 
+|	'IF' '(' Expression ',' Expression ',' Expression ')' 
+|	'STRLANG' '(' Expression ',' Expression ')' 
+|	'STRDT' '(' Expression ',' Expression ')' 
+|	'sameTerm' '(' Expression ',' Expression ')' 
+|	'isIRI' '(' Expression ')' 
+|	'isURI' '(' Expression ')' 
+|	'isBLANK' '(' Expression ')' 
+|	'isLITERAL' '(' Expression ')' 
+|	'isNUMERIC' '(' Expression ')' 
+|	RegexExpression 
+|	ExistsFunc 
+|	NotExistsFunc
+
+[68] ExpressionList ::= NIL | '(' Expression ( ',' Expression )* ')'
+
+[123] NumericLiteralNegative ::= INTEGER_NEGATIVE |	DECIMAL_NEGATIVE |	DOUBLE_NEGATIVE
+
+[122] NumericLiteralPositive ::= INTEGER_POSITIVE |	DECIMAL_POSITIVE |	DOUBLE_POSITIVE
+
+[109] PrimaryExpression ::= BrackettedExpression | BuiltInCall | IRIrefOrFunction | RDFLiteral | NumericLiteral | BooleanLiteral | Var | Aggregate
+
+[108] UnaryExpression ::= '!' PrimaryExpression 
+|	'+' PrimaryExpression 
+|	'-' PrimaryExpression 
+|	PrimaryExpression
+
+[107] MultiplicativeExpression ::= UnaryExpression ( '*' UnaryExpression | '/' UnaryExpression )*
+
+[106] AdditiveExpression ::= MultiplicativeExpression ( '+' MultiplicativeExpression | '-' MultiplicativeExpression | ( NumericLiteralPositive | NumericLiteralNegative ) ( ( '*' UnaryExpression ) | ( '/' UnaryExpression ) )? )*
+
+[105] NumericExpression ::= AdditiveExpression
+
+[104] RelationalExpression ::= NumericExpression ( '=' NumericExpression | '!=' NumericExpression | '<' NumericExpression | '>' NumericExpression | '<=' NumericExpression | '>=' NumericExpression | 'IN' ExpressionList | 'NOT' 'IN' ExpressionList )?
+
+[103] ValueLogical ::= RelationalExpression
+
+[102] ConditionalAndExpression ::= ValueLogical ( '&&' ValueLogical )*
+
+[101] ConditionalOrExpression ::= ConditionalAndExpression ( '||' ConditionalAndExpression )*
+
+[100] Expression ::= ConditionalOrExpression
+
+[110] BrackettedExpression ::= '(' Expression ')'
+
+[66] FunctionCall ::= IRIref ArgList
+
+[65] Constraint ::= BrackettedExpression | BuiltInCall | FunctionCall
+
+[64] Filter ::= 'FILTER' Constraint
+
 
 * Work on operators:
 	- probably want an expression enum and eval_expr fn
@@ -100,29 +190,4 @@ ASK				return true/false instead of matches/no matches
 STRSTARTS
 STRENDS
 CONTAINS
-
-
-fn parse_dateTime(literal: str) -> option<std::time::timespec>
-{
-	// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
-	alt std::time::strptime(literal, "%FT%T%z").chain_err
-		{|_err1|
-			// Time zone expressed as a name, e.g. EST (technically only Z is supposed to be allowed).
-			std::time::strptime(literal, "%FT%T%Z").chain_err
-			{|_err2|
-				// No time zone (so the time will be considered to be in the local time zone).
-				std::time::strptime(literal, "%FT%T")
-			}}
-	{
-		result::ok(time)
-		{
-			option::some(time.to_timespec())
-		}
-		result::err(_)
-		{
-			#error["'%s' is not an ISO 8601 dateTime", literal];
-			option::none
-		}
-	}
-}
 

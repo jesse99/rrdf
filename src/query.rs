@@ -3,6 +3,8 @@
 import std::map::hashmap;
 import result::extensions;
 import std::time::tm;
+import operands::*;
+import operators::*;
 import sparql::*;
 
 export join_solutions, eval, pattern;
@@ -51,7 +53,7 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 		{
 			option::some(value2)
 			{
-				rdf_term_equal(value1, value2)
+				equal_objects(value1, value2)
 			}
 			option::none()
 			{
@@ -147,11 +149,19 @@ fn filter_row(names: [str], row: solution_row) -> solution_row
 	}
 }
 
-// TODO: This is the RDF notion of equality (see 17.4.1.7). Unfortunately this is not the SPARQL 
-// notion which is apparently based on the much more complex entailment goo.
-fn rdf_term_equal(actual: object, expected: object) -> bool
+fn equal_objects(actual: object, expected: object) -> bool
 {
-	actual.kind == expected.kind && actual.value == expected.value && str::to_lower(actual.lang) == str::to_lower(expected.lang)
+	alt op_equals(object_to_operand(actual), object_to_operand(expected))	// should get bool_value or error_value
+	{
+		bool_value(value)
+		{
+			value
+		}
+		_
+		{
+			false
+		}
+	}
 }
 
 fn match_subject(actual: str, pattern: pattern) -> match
@@ -222,7 +232,7 @@ fn match_object(actual: object, pattern: pattern) -> match
 		}
 		constant(expected)
 		{
-			let matched = rdf_term_equal(actual, expected);
+			let matched = equal_objects(actual, expected);
 			#debug["Actual object %? %s %?", actual.to_str(), ["did not match", "matched"][matched as uint], expected.to_str()];
 			either::right(matched)
 		}

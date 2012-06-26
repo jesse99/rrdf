@@ -161,9 +161,6 @@ fn int_literal()
 	assert check_solution(store, expr, expected);
 }
 
-// TODO: Not sure what is supposed to happen here. According to 18.6 and http://www.w3.org/TR/sparql11-entailment/
-// we're apparently supposed to use the 'simple entailment relation between RDF graphs' in http://www.w3.org/TR/rdf-mt/#entail
-// which looks far from simple. 
 #[test]
 fn signed_int_literal()
 {
@@ -172,7 +169,9 @@ fn signed_int_literal()
 	store.add("got:Some_Guy", [("v:age", create_int(23))]);
 	store.add("got:Another_Guy", [("v:age", create_typed("-23", "xsd:long"))]);
 	
-	let expected = [];
+	let expected = [
+		[("s", create_uri(got("Another_Guy")))]
+	];
 	
 	assert check_solution(store, expr, expected);
 }
@@ -186,8 +185,8 @@ fn decimal_literal()
 	store.add("got:Another_Guy", [("v:age", create_typed("3.14", "xsd:double"))]);
 	
 	let expected = [
-		[("s", create_uri(got("Another_Guy")))]
-		//[("s", create_uri(got("Some_Guy")))]
+		[("s", create_uri(got("Another_Guy")))],
+		[("s", create_uri(got("Some_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -212,26 +211,25 @@ fn signed_decimal_literal()
 	assert check_solution(store, expr, expected);
 }
 
-// TODO: is this supposed to work?
-//#[test]
-//fn double_literal()
-//{
-//	let expr = "SELECT ?s WHERE {?s ?p 314e-2}";
-//	let store = test_data::got_cast1();
-//	store.add("got:Some_Guy", [
-//		make_typed("v:age", "3.14", "xsd:double")
-//	]);
-//	store.add("got:Another_Guy", [
-//		make_typed("v:age", "3.14", "xsd:double")
-//	]);
-//	
-//	let expected = [
-//		[("s", create_uri(got("Another_Guy")))],
-//		[("s", create_uri(got("Some_Guy")))]
-//	];
-//	
-//	assert check_solution(store, expr, expected);
-//}
+#[test]
+fn double_literal()
+{
+	let expr = "SELECT ?s WHERE {?s ?p 314e-2}";
+	let store = test_data::got_cast1();
+	store.add("got:Some_Guy", [
+		("v:age", create_typed("3.14", "xsd:double"))
+	]);
+	store.add("got:Another_Guy", [
+		("v:age", create_typed("3.14", "xsd:float"))
+	]);
+	
+	let expected = [
+		[("s", create_uri(got("Another_Guy")))],
+		[("s", create_uri(got("Some_Guy")))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
 
 #[test]
 fn boolean_literal()
