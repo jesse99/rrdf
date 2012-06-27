@@ -1,20 +1,6 @@
-import io;
-import io::writer_util;
 import operands::*;
 import operators::*;
-
-fn check_operands(actual: operand, expected: operand) -> bool
-{
-	if actual != expected
-	{
-		io::stderr().write_line("Found:");
-		io::stderr().write_line(#fmt["   %?", actual]);
-		io::stderr().write_line("but expected:");
-		io::stderr().write_line(#fmt["   %?", expected]);
-		ret false;
-	}
-	ret true;
-}
+import test_helpers::*;
 
 // Also tests get_ebv.
 #[test]

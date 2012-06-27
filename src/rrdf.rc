@@ -21,6 +21,7 @@ mod tests
 {
 	mod test_data;
 	mod test_helpers;
+	mod test_operands;
 	mod test_operators;
 	mod test_sparql;
 	mod test_sparql_literals;

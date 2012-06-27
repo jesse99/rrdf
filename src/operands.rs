@@ -72,11 +72,11 @@ fn object_to_operand(value: object) -> operand
 				{
 					// invalid_value would seem more sensible, but the standard explicitly
 					// reserves that for bool and numeric.
-					error_value(#fmt["'%s' is not an ISO 8601 dateTime", v])
+					error_value(#fmt["'%s' is not an ISO 8601 dateTime.", v])
 				}
 			}
 		}
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#decimal", lang: ""} |
+		{value: v, kind: "http://www.w3.org/2001/XMLSchema#decimal", lang: ""} |	// minimally conformant processors must support at least 18 digits and i64 gives us 19
 		{value: v, kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""} |
 		{value: v, kind: "http://www.w3.org/2001/XMLSchema#nonPositiveInteger", lang: ""} |
 		{value: v, kind: "http://www.w3.org/2001/XMLSchema#negativeInteger", lang: ""} |

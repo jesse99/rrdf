@@ -1,14 +1,28 @@
 import io;
 import io::writer_util;
 import query::*;
+import operands::*;
 
-export check_bgp, check_strs, check_triples, check_solution, check_solution_err;
+export check_bgp, check_strs, check_operands, check_triples, check_solution, check_solution_err;
 
 fn check_strs(actual: str, expected: str) -> bool
 {
 	if actual != expected
 	{
 		io::stderr().write_line(#fmt["Found '%s', but expected '%s'", actual, expected]);
+		ret false;
+	}
+	ret true;
+}
+
+fn check_operands(actual: operand, expected: operand) -> bool
+{
+	if actual != expected
+	{
+		io::stderr().write_line("Found:");
+		io::stderr().write_line(#fmt["   %?", actual]);
+		io::stderr().write_line("but expected:");
+		io::stderr().write_line(#fmt["   %?", expected]);
 		ret false;
 	}
 	ret true;
