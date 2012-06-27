@@ -1,5 +1,6 @@
 import rparse::*;
 import query::*;
+import operands::*;
 
 type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 
@@ -10,13 +11,43 @@ enum algebra
 	optional(@algebra)
 }
 
+fn bool_literal(value: str) -> pattern
+{
+	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}))
+}
+
+fn int_literal(value: str) -> pattern
+{
+	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""}))
+}
+
+fn float_literal(value: str) -> pattern
+{
+	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#double", lang: ""}))
+}
+
+fn string_literal(value: str, lang: str) -> pattern
+{
+	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang}))
+}
+
+fn typed_literal(value: str, kind: str) -> pattern
+{
+	constant(object_to_operand({value: value, kind: kind, lang: ""}))
+}
+
+fn iri_literal(value: str) -> pattern
+{
+	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}))
+}
+
 fn expand_pattern(namespaces: [namespace], pattern: pattern) -> pattern
 {
 	alt pattern
 	{
-		constant({value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""})
+		constant(iri_value(value))
 		{
-			constant({value: expand_uri(namespaces, value), kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""})
+			constant(iri_value(expand_uri(namespaces, value)))
 		}
 		_
 		{
@@ -401,16 +432,6 @@ impl my_parser_methods<T: copy> for parser<T>
 	}
 }
 
-fn typed_literal(value: str, kind: str) -> pattern
-{
-	constant({value: value, kind: kind, lang: ""})
-}
-
-fn string_literal(value: str, lang: str) -> pattern
-{
-	constant({value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang})
-}
-
 // http://www.w3.org/TR/sparql11-query/#grammar
 // TODO: remove annotate calls
 fn make_parser() -> parser<selector>
@@ -454,23 +475,23 @@ fn make_parser() -> parser<selector>
 	let STRING_LITERAL1 = seq3_ret1("'".lit(), scan0(bind short_char('\'', _, _)), "'".lit().ws());
 	
 	// [136] INTEGER ::= [0-9]+
-	let INTEGER = match1(is_digit).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#integer"))}).ws();
+	let INTEGER = match1(is_digit).thene({|v| return(int_literal(v))}).ws();
 	
 	// [142] INTEGER_NEGATIVE ::= '-' INTEGER
-	let INTEGER_NEGATIVE = seq2_ret_str("-".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#integer"))}).ws();
+	let INTEGER_NEGATIVE = seq2_ret_str("-".lit(), match1(is_digit)).thene({|v| return(int_literal(v))}).ws();
 	
 	// [139] INTEGER_POSITIVE ::= '+' INTEGER
-	let INTEGER_POSITIVE = seq2_ret1("+".lit(), match1(is_digit)).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#integer"))}).ws();
+	let INTEGER_POSITIVE = seq2_ret1("+".lit(), match1(is_digit)).thene({|v| return(int_literal(v))}).ws();
 	
 	// [137] DECIMAL ::= [0-9]* '.' [0-9]+
 	let decimal_root = seq3_ret_str(match0(is_digit), ".".lit(), match1(is_digit)).ws();
-	let DECIMAL = decimal_root.thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
+	let DECIMAL = decimal_root.thene({|v| return(float_literal(v))});
 	
 	// [143] DECIMAL_NEGATIVE ::= '-' DECIMAL
-	let DECIMAL_NEGATIVE = seq2_ret_str("-".lit(), decimal_root).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
+	let DECIMAL_NEGATIVE = seq2_ret_str("-".lit(), decimal_root).thene({|v| return(float_literal(v))});
 		
 	// [140] DECIMAL_POSITIVE ::= '+' DECIMAL
-	let DECIMAL_POSITIVE = seq2_ret1("+".lit(), decimal_root).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
+	let DECIMAL_POSITIVE = seq2_ret1("+".lit(), decimal_root).thene({|v| return(float_literal(v))});
 	
 	// [145] EXPONENT ::= [eE] [+-]? [0-9]+
 	let EXPONENT = seq3_ret_str("e".liti(), optional_str((("+".lit()).or("-".lit()))), match1(is_digit));
@@ -483,13 +504,13 @@ fn make_parser() -> parser<selector>
 	let double3 = seq2_ret_str(match1(is_digit), EXPONENT);
 	
 	let double_root = or_v([double1, double2, double3]).ws();
-	let DOUBLE = double_root.thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
+	let DOUBLE = double_root.thene({|v| return(float_literal(v))});
 	
 	// [144] DOUBLE_NEGATIVE ::= '-' DOUBLE
-	let DOUBLE_NEGATIVE = seq2_ret_str("-".lit(), double_root).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
+	let DOUBLE_NEGATIVE = seq2_ret_str("-".lit(), double_root).thene({|v| return(float_literal(v))});
 	
 	// [141] DOUBLE_POSITIVE ::= '+' DOUBLE
-	let DOUBLE_POSITIVE = seq2_ret1("+".lit(), double_root).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#double"))});
+	let DOUBLE_POSITIVE = seq2_ret1("+".lit(), double_root).thene({|v| return(float_literal(v))});
 	
 	// [135] LANGTAG ::= '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
 	let LANGTAG = langtag();
@@ -507,7 +528,7 @@ fn make_parser() -> parser<selector>
 	let String = or_v([STRING_LITERAL_LONG1, STRING_LITERAL_LONG2, STRING_LITERAL1, STRING_LITERAL2]);
 	
 	// [124] BooleanLiteral	::= 'true' | 'false'
-	let BooleanLiteral = ("true".lit()).or("false".lit()).thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#boolean"))}).ws();
+	let BooleanLiteral = ("true".lit()).or("false".lit()).thene({|v| return(bool_literal(v))}).ws();
 	
 	// [121] NumericLiteralUnsigned ::= INTEGER | DECIMAL | DOUBLE
 	let NumericLiteralUnsigned = or_v([DOUBLE, DECIMAL, INTEGER]);
@@ -535,7 +556,7 @@ fn make_parser() -> parser<selector>
 	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral | BooleanLiteral |	BlankNode |	NIL
 	let GraphTerm = or_v([
 		RDFLiteral.annotate("RDFLiteral"),
-		IRIref.annotate("IRIref").thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#anyURI"))}),
+		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))}),
 		NumericLiteral,
 		BooleanLiteral
 	]);
@@ -556,7 +577,7 @@ fn make_parser() -> parser<selector>
 	let GraphNode = VarOrTerm;
 	
 	// [88] PathPrimary ::= IRIref | 'a' | '!' PathNegatedPropertySet | '(' Path ')'
-	let PathPrimary = IRIref.thene({|v| return(typed_literal(v, "http://www.w3.org/2001/XMLSchema#anyURI"))});
+	let PathPrimary = IRIref.thene({|v| return(iri_literal(v))});
 	
 	// [85] PathElt ::= PathPrimary PathMod?
 	let PathElt = PathPrimary;

@@ -25,6 +25,60 @@ enum operand
 	error_value(str)			// err mesg
 }
 
+impl of to_str for operand
+{
+	fn to_str() -> str
+	{
+		alt self
+		{
+			bool_value(value)
+			{
+				if value {"true"} else {"false"}
+			}
+			int_value(value)
+			{
+				#fmt["%?", value]
+			}
+			float_value(value)
+			{
+				#fmt["%?", value]
+			}
+			dateTime_value(value)
+			{
+				value.rfc3339()
+			}
+			string_value(value, lang)
+			{
+				if str::is_not_empty(lang) {#fmt["\"%s@%s\"", value, lang]} else {#fmt["\"%s\"", value]}
+			}
+			typed_value(value, kind)
+			{
+				#fmt["\"%s^^%s\"", value, kind]
+			}
+			iri_value(value)
+			{
+				"<" + value + ">"
+			}
+			blank_value(value)
+			{
+				"_:" + value
+			}
+			unbound_value(name)
+			{
+				name + " is not bound"
+			}
+			invalid_value(err)
+			{
+				err
+			}
+			error_value(err)
+			{
+				err
+			}
+		}
+	}
+}
+
 fn object_to_operand(value: object) -> operand
 {
 	alt value

@@ -16,7 +16,7 @@ type match = either::either<binding, bool>;	// match succeeded if bindings or tr
 enum pattern
 {
 	variable(str),
-	constant(object)
+	constant(operand)
 }
 
 fn solution_row_to_str(row: solution_row) -> str
@@ -53,7 +53,7 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 		{
 			option::some(value2)
 			{
-				equal_objects(value1, value2)
+				equal_objects(value1, object_to_operand(value2))
 			}
 			option::none()
 			{
@@ -149,9 +149,9 @@ fn filter_row(names: [str], row: solution_row) -> solution_row
 	}
 }
 
-fn equal_objects(actual: object, expected: object) -> bool
+fn equal_objects(actual: object, expected: operand) -> bool
 {
-	alt op_equals(object_to_operand(actual), object_to_operand(expected))	// should get bool_value or error_value
+	alt op_equals(object_to_operand(actual), expected)	// should get bool_value or error_value
 	{
 		bool_value(value)
 		{
@@ -181,13 +181,13 @@ fn match_subject(actual: str, pattern: pattern) -> match
 				};
 			either::left({name: name, value: value})
 		}
-		constant({value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""})
+		constant(iri_value(value))
 		{
 			let matched = actual == value;
 			#debug["Actual subject %? %s %?", actual.to_str(), ["did not match", "matched"][matched as uint], value];
 			either::right(matched)
 		}
-		constant({value: value, kind: "blank", lang: ""})
+		constant(blank_value(value))
 		{
 			let matched = actual == value;
 			#debug["Actual subject %? %s %?", actual.to_str(), ["did not match", "matched"][matched as uint], value];
@@ -209,7 +209,7 @@ fn match_predicate(actual: str, pattern: pattern) -> match
 			let value = {value: actual, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""};
 			either::left({name: name, value: value})
 		}
-		constant({value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""})
+		constant(iri_value(value))
 		{
 			let matched = actual == value;
 			#debug["Actual predicate %? %s %?", actual.to_str(), ["did not match", "matched"][matched as uint], value];
@@ -289,8 +289,7 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 	
 	alt spattern
 	{
-		constant({value: subject, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}) |
-		constant({value: subject, kind: "blank", lang: ""})
+		constant(iri_value(subject)) | constant(blank_value(subject))
 		{
 			// Optimization for a common case where we are attempting to match a specific subject.
 			let candidate = store.subjects.find(subject);
