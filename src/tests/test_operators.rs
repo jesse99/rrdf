@@ -6,7 +6,7 @@ import test_helpers::*;
 #[test]
 fn operator_not()
 {
-	assert check_operands(op_not(invalid_value("oops")), bool_value(true));
+	assert check_operands(op_not(invalid_value("oops", "some:type")), bool_value(true));
 
 	assert check_operands(op_not(bool_value(false)), bool_value(true));
 	
@@ -76,11 +76,11 @@ fn operator_equals()
 	assert check_operands(op_equals(typed_value("foo", "long"), typed_value("foo", "long")), bool_value(true));
 	assert check_operands(op_equals(typed_value("foo", "long"), typed_value("foo", "Long")), bool_value(false));
 	assert check_operands(op_equals(iri_value("foo"), iri_value("foo")), bool_value(true));
-	assert check_operands(op_equals(blank_value("foo"), blank_value("foo")), bool_value(true));
+	assert check_operands(op_equals(blank_value("foo"), blank_value("foo")), bool_value(true)); 
 	
 	assert check_operands(op_equals(int_value(3i64), bool_value(true)), error_value("=: expected numeric value but found bool_value(1)."));
 	assert check_operands(op_equals(bool_value(true), unbound_value("foo")), error_value("=: ?foo was not bound."));
-	assert check_operands(op_equals(bool_value(true), invalid_value("foo")), error_value("=: foo"));
+	assert check_operands(op_equals(bool_value(true), invalid_value("foo", "some:type")), error_value("=: 'foo' is not a valid some:type"));
 	assert check_operands(op_equals(bool_value(true), error_value("foo")), error_value("=: foo"));
 }
 
@@ -104,7 +104,7 @@ fn operator_not_equals()
 	
 	assert check_operands(op_not_equals(int_value(3i64), bool_value(true)), error_value("!=: expected numeric value but found bool_value(1)."));
 	assert check_operands(op_not_equals(bool_value(true), unbound_value("foo")), error_value("!=: ?foo was not bound."));
-	assert check_operands(op_not_equals(bool_value(true), invalid_value("foo")), error_value("!=: foo"));
+	assert check_operands(op_not_equals(bool_value(true), invalid_value("foo", "some:type")), error_value("!=: 'foo' is not a valid some:type"));
 	assert check_operands(op_not_equals(bool_value(true), error_value("foo")), error_value("!=: foo"));
 }
 

@@ -21,8 +21,8 @@ enum operand
 	
 	// error conditions
 	unbound_value(str),	// binding name
-	invalid_value(str),		// err mesg (for literal with invalid representation)
-	error_value(str)			// err mesg
+	invalid_value(str, str),	// literal + type
+	error_value(str)	// err mesg
 }
 
 impl of to_str for operand
@@ -67,9 +67,9 @@ impl of to_str for operand
 			{
 				name + " is not bound"
 			}
-			invalid_value(err)
+			invalid_value(literal, kind)
 			{
-				err
+				#fmt["'%s' is not a valid %s", literal, kind]
 			}
 			error_value(err)
 			{
@@ -103,7 +103,7 @@ fn object_to_operand(value: object) -> operand
 			}
 			else
 			{
-				invalid_value(#fmt["'%s' is not a valid boolean", v])
+				invalid_value(v, value.kind)
 			}
 		}
 		{value: v, kind: "http://www.w3.org/2001/XMLSchema#dateTime", lang: ""}
@@ -158,7 +158,7 @@ fn object_to_operand(value: object) -> operand
 					}
 					else
 					{
-						invalid_value(#fmt["'%s' is not a valid integer.", v])
+						invalid_value(v, value.kind)
 					}
 				}
 			}
@@ -179,7 +179,7 @@ fn object_to_operand(value: object) -> operand
 					}
 					else
 					{
-						invalid_value(#fmt["'%s' is not a valid floating point number.", v])
+						invalid_value(v, value.kind)
 					}
 				}
 			}
@@ -221,12 +221,12 @@ fn get_operand(row: solution_row, name: str) -> operand
 	}
 }
 
-// 17.2.2
+// Effective boolean value, see 17.2.2
 fn get_ebv(operand: operand) -> result::result<bool, str>
 {
 	alt operand
 	{
-		invalid_value(_err)
+		invalid_value(_literal, _type)
 		{
 			result::ok(false)
 		}
@@ -269,9 +269,9 @@ fn type_error(fname: str, operand: operand, expected: str) -> str
 		{
 			#fmt["%s: ?%s was not bound.", fname, name]
 		}
-		invalid_value(err)
+		invalid_value(literal, kind)
 		{
-			#fmt["%s: %s", fname, err]
+			#fmt["%s: '%s' is not a valid %s", fname, literal, kind]
 		}
 		error_value(err)
 		{
