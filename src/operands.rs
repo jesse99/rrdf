@@ -5,15 +5,15 @@ import result::extensions;
 // 1) Functions like COALESCE accept unbound variables.
 // 2) Boolean functions normally want effective boolean values which are false for invalid values.
 // 3) Functions like op_and do not always propagate errors.
-enum operand
+enum operand			// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
 {
 	// literals
 	bool_value(bool),
-	int_value(i64),			// xsd:decimal (and derived types)
-	float_value(f64),			// xsd:float or xsd:double
+	int_value(i64),			// value, xsd:decimal (and derived types)
+	float_value(f64),			// value, xsd:float or xsd:double
 	dateTime_value(tm),	// xsd:dateTime
 	string_value(str, str),	// value + lang
-	typed_value(str, str),	// value + type (aka simple literal)
+	typed_value(str, str),	// value + type iri (aka simple literal)
 	
 	// other rdf terms
 	iri_value(str),
@@ -21,8 +21,8 @@ enum operand
 	
 	// error conditions
 	unbound_value(str),	// binding name
-	invalid_value(str, str),	// literal + type
-	error_value(str)	// err mesg
+	invalid_value(str, str),	// literal + type iri
+	error_value(str)			// err mesg
 }
 
 impl of to_str for operand
