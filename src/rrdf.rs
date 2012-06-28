@@ -6,7 +6,6 @@ import object::*;
 import query::*;
 import solution::*;
 import store::*;
-import types::*;
 
 export selector;
 export subject, predicate, triple, namespace, entry, store, to_str, create_store, each_triple;
