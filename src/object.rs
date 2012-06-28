@@ -116,7 +116,7 @@ impl object_methods for object
 			}
 			_
 			{
-				fail(#fmt["Expected a float_value but found %?", self]);
+				fail(#fmt["Expected int_value or float_value but found %?", self]);
 			}
 		}
 	}
@@ -135,7 +135,7 @@ impl object_methods for object
 			}
 			_
 			{
-				fail(#fmt["Expected a float_value but found %?", self]);
+				fail(#fmt["Expected int_value or float_value but found %?", self]);
 			}
 		}
 	}
@@ -166,6 +166,21 @@ impl object_methods for object
 			_
 			{
 				fail(#fmt["Expected a string_value but found %?", self]);
+			}
+		}
+	}
+	
+	fn as_iri() -> str
+	{
+		alt self
+		{
+			iri_value(value)
+			{
+				value
+			}
+			_
+			{
+				fail(#fmt["Expected an iri_value but found %?", self]);
 			}
 		}
 	}
@@ -302,6 +317,21 @@ impl object_methods for object
 		alt self
 		{
 			string_value(value, _lang)
+			{
+				value
+			}
+			_
+			{
+				default
+			}
+		}
+	}
+	
+	fn as_iri_or_default(default: str) -> str
+	{
+		alt self
+		{
+			iri_value(value)
 			{
 				value
 			}
