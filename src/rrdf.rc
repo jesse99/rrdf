@@ -15,6 +15,7 @@ mod operators;
 mod query;
 mod solution;
 mod sparql;
+mod store;
 mod types;
 
 #[cfg(test)]
