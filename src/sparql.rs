@@ -1,6 +1,7 @@
 import rparse::*;
 import query::*;
-//import operands::*;
+
+export algebra, triple_pattern, compile;
 
 type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 
@@ -729,5 +730,17 @@ fn build_parser(namespaces: [namespace], patterns: [pattern], algebra: algebra) 
 	else
 	{
 		result::err(#fmt["Select clause has duplicates: %s", str::connect(dupes, " ")])
+	}
+}
+
+#[doc = "Returns either a function capable of matching triples or a parse error.
+
+Expr can be a subset of http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"SPARQL\"."]
+fn compile(expr: str) -> result::result<selector, str>
+{
+	let parser = make_parser();
+	result::chain_err(rparse::parse(parser, "sparql", expr))
+	{|err|
+		result::err(#fmt["%s on line %? col %?", err.mesg, err.line, err.col])
 	}
 }
