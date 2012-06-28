@@ -17,8 +17,8 @@ fn trivial()
 	let expr = "SELECT ?s ?p ?o WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn"))), ("o", create_str("Eddard Stark"))],
-		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname"))), ("o", create_str("Ned"))]
+		[("s", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("fn"))), ("o", string_value("Eddard Stark", ""))],
+		[("s", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("nickname"))), ("o", string_value("Ned", ""))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -30,8 +30,8 @@ fn out_of_order()
 	let expr = "SELECT ?o ?s ?p WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		[("o", create_str("Eddard Stark")), ("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn")))],
-		[("o", create_str("Ned")), ("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname")))]
+		[("o", string_value("Eddard Stark", "")), ("s", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("fn")))],
+		[("o", string_value("Ned", "")), ("s", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -43,8 +43,8 @@ fn long_names()
 	let expr = "SELECT ?subject ?p ?obj WHERE {?subject ?p ?obj}";
 	let store = test_data::got_cast1();
 	let expected = [
-		[("subject", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn"))), ("obj", create_str("Eddard Stark"))],
-		[("subject", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname"))), ("obj", create_str("Ned"))]
+		[("subject", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("fn"))), ("obj", string_value("Eddard Stark", ""))],
+		[("subject", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("nickname"))), ("obj", string_value("Ned", ""))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -56,8 +56,8 @@ fn keyword_case()
 	let expr = "SeLecT ?s ?p ?o where {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn"))), ("o", create_str("Eddard Stark"))],
-		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname"))), ("o", create_str("Ned"))]
+		[("s", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("fn"))), ("o", string_value("Eddard Stark", ""))],
+		[("s", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("nickname"))), ("o", string_value("Ned", ""))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -87,8 +87,8 @@ fn unbound_variable()
 	let expr = "SELECT ?s ?p ?z WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = [
-		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("fn")))],
-		[("s", create_uri(got("Eddard_Stark"))), ("p", create_uri(v("nickname")))]
+		[("s", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("fn")))],
+		[("s", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -127,7 +127,7 @@ fn simple_path()
 	}";
 	let store = test_data::got_cast3();
 	let expected = [
-		[("org", create_str("Small Council"))]
+		[("org", string_value("Small Council", ""))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -142,8 +142,8 @@ fn select_all()
 	}";
 	let store = test_data::got_cast3();
 	let expected = [
-		[("p", create_uri(v("fn"))), ("o", create_str("Sandor Clegane"))],
-		[("p", create_uri(v("nickname"))), ("o", create_str("The Hound"))]
+		[("p", iri_value(v("fn"))), ("o", string_value("Sandor Clegane", ""))],
+		[("p", iri_value(v("nickname"))), ("o", string_value("The Hound", ""))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -161,7 +161,7 @@ fn prefixes()
 	}";
 	let store = test_data::got_cast3();
 	let expected = [
-		[("org", create_str("Small Council"))]
+		[("org", string_value("Small Council", ""))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -181,9 +181,9 @@ fn options1()
 	}";
 	let store = test_data::got_cast3();
 	let expected = [
-		[("name", create_str("Eddard Stark")), ("title", create_str("Lord"))],
-		[("name", create_str("Jon Snow"))],
-		[("name", create_str("Sandor Clegane"))]
+		[("name", string_value("Eddard Stark", "")), ("title", string_value("Lord", ""))],
+		[("name", string_value("Jon Snow", ""))],
+		[("name", string_value("Sandor Clegane", ""))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -202,9 +202,9 @@ fn options2()
 	}";
 	let store = test_data::got_cast3();
 	let expected = [
-		[("name", create_str("Eddard Stark")), ("title", create_str("Lord"))],
-		[("name", create_str("Jon Snow")), ("pet", create_str("Ghost"))],
-		[("name", create_str("Sandor Clegane"))]
+		[("name", string_value("Eddard Stark", "")), ("title", string_value("Lord", ""))],
+		[("name", string_value("Jon Snow", "")), ("pet", string_value("Ghost", ""))],
+		[("name", string_value("Sandor Clegane", ""))]
 	];
 	
 	assert check_solution(store, expr, expected);

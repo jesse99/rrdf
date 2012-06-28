@@ -3,7 +3,6 @@
 import std::map::hashmap;
 import result::extensions;
 import std::time::tm;
-import operands::*;
 import operators::*;
 import sparql::*;
 
@@ -16,7 +15,7 @@ type match = either::either<binding, bool>;	// match succeeded if bindings or tr
 enum pattern
 {
 	variable(str),
-	constant(operand)
+	constant(object)
 }
 
 fn solution_row_to_str(row: solution_row) -> str
@@ -53,7 +52,7 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 		{
 			option::some(value2)
 			{
-				equal_objects(value1, object_to_operand(value2))
+				equal_objects(value1, value2)
 			}
 			option::none()
 			{
@@ -149,9 +148,9 @@ fn filter_row(names: [str], row: solution_row) -> solution_row
 	}
 }
 
-fn equal_objects(actual: object, expected: operand) -> bool
+fn equal_objects(actual: object, expected: object) -> bool
 {
-	alt op_equals(object_to_operand(actual), expected)	// should get bool_value or error_value
+	alt op_equals(actual, expected)	// should get bool_value or error_value
 	{
 		bool_value(value)
 		{
@@ -171,13 +170,13 @@ fn match_subject(actual: str, pattern: pattern) -> match
 		variable(name)
 		{
 			let value =
-				if actual.starts_with("{")
+				if actual.starts_with("_:")
 				{
-					{value: actual, kind: "blank", lang: ""}
+					blank_value(actual)
 				}
 				else
 				{
-					{value: actual, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}
+					iri_value(actual)
 				};
 			either::left({name: name, value: value})
 		}
@@ -206,7 +205,7 @@ fn match_predicate(actual: str, pattern: pattern) -> match
 	{
 		variable(name)
 		{
-			let value = {value: actual, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""};
+			let value = iri_value(actual);
 			either::left({name: name, value: value})
 		}
 		constant(iri_value(value))
@@ -247,6 +246,7 @@ fn eval_match(&bindings: [(str, object)], match: match) -> result::result<bool, 
 		{
 			if option::is_none(bindings.search(binding.name))
 			{
+				#debug["Bound %? to %s", binding.value, binding.name];
 				vec::push(bindings, (binding.name, binding.value));
 				result::ok(true)
 			}
@@ -331,6 +331,7 @@ fn eval_basic(store: store, names: [str], matcher: triple_pattern) -> result::re
 			let mut bindings = [];
 			if option::is_some(sbinding)
 			{
+				#debug["Bound %? to %s", option::get(sbinding).value, option::get(sbinding).name];
 				vec::push(bindings, (option::get(sbinding).name, option::get(sbinding).value));
 			}
 			

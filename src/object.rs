@@ -1,12 +1,12 @@
-// Values used within SPARQL FILTER expressions. See 17.2 and related.
 import result::extensions;
 
-// Note that the error conditions do not always result in an error:
+// Note that the SPARQL error conditions do not always result in an error:
 // 1) Functions like COALESCE accept unbound variables.
 // 2) Boolean functions normally want effective boolean values which are false for invalid values.
 // 3) Functions like op_and do not always propagate errors.
-enum operand			// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
-{
+#[doc = "Value component of a triple."]
+enum object			// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
+{							// TODO: predicate could maybe be enum with type code and uri
 	// literals
 	bool_value(bool),
 	int_value(i64),			// value, xsd:decimal (and derived types)
@@ -25,7 +25,7 @@ enum operand			// TODO: once we support serialization we'll need to add somethin
 	error_value(str)			// err mesg
 }
 
-impl of to_str for operand
+impl of to_str for object
 {
 	fn to_str() -> str
 	{
@@ -49,11 +49,11 @@ impl of to_str for operand
 			}
 			string_value(value, lang)
 			{
-				if str::is_not_empty(lang) {#fmt["\"%s@%s\"", value, lang]} else {#fmt["\"%s\"", value]}
+				if str::is_not_empty(lang) {#fmt["\"%s\"@%s", value, lang]} else {#fmt["\"%s\"", value]}
 			}
 			typed_value(value, kind)
 			{
-				#fmt["\"%s^^%s\"", value, kind]
+				#fmt["\"%s^^\"%s", value, kind]
 			}
 			iri_value(value)
 			{
@@ -61,7 +61,7 @@ impl of to_str for operand
 			}
 			blank_value(value)
 			{
-				"_:" + value
+				value
 			}
 			unbound_value(name)
 			{
@@ -79,19 +79,27 @@ impl of to_str for operand
 	}
 }
 
-fn object_to_operand(value: object) -> operand
+
+fn literal_to_object(value: str, kind: str, lang: str) -> object
 {
-	alt value
+	alt (value, kind, lang)
 	{
-		{value: v, kind: "blank", lang: ""}
+		(v, "blank", "")
 		{
 			blank_value(v)
 		}
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}
+		(v, "http://www.w3.org/2001/XMLSchema#anyURI", "")
 		{
-			iri_value(v)
+			if str::starts_with(v, "_:")
+			{
+				blank_value(v)
+			}
+			else
+			{
+				iri_value(v)
+			}
 		}
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}
+		(v, "http://www.w3.org/2001/XMLSchema#boolean", "")
 		{
 			if v == "true" || v == "1"
 			{
@@ -103,10 +111,10 @@ fn object_to_operand(value: object) -> operand
 			}
 			else
 			{
-				invalid_value(v, value.kind)
+				invalid_value(v, kind)
 			}
 		}
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#dateTime", lang: ""}
+		(v, "http://www.w3.org/2001/XMLSchema#dateTime", "")
 		{
 			// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
 			alt std::time::strptime(v, "%FT%T%z").chain_err
@@ -130,20 +138,20 @@ fn object_to_operand(value: object) -> operand
 				}
 			}
 		}
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#decimal", lang: ""} |	// minimally conformant processors must support at least 18 digits and i64 gives us 19
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#nonPositiveInteger", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#negativeInteger", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#long", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#int", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#short", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#byte", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#nonNegativeInteger", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#unsignedLong", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#unsignedInt", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#unsignedShort", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#unsignedByte", lang: ""} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#positiveInteger", lang: ""}
+		(v, "http://www.w3.org/2001/XMLSchema#decimal", "") |	// minimally conformant processors must support at least 18 digits and i64 gives us 19
+		(v, "http://www.w3.org/2001/XMLSchema#integer", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#nonPositiveInteger", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#negativeInteger", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#long", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#int", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#short", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#byte", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#nonNegativeInteger", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#unsignedLong", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#unsignedInt", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#unsignedShort", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#unsignedByte", "") |
+		(v, "http://www.w3.org/2001/XMLSchema#positiveInteger", "")
 		{
 			str::as_c_str(v)
 			{|vp|
@@ -158,13 +166,13 @@ fn object_to_operand(value: object) -> operand
 					}
 					else
 					{
-						invalid_value(v, value.kind)
+						invalid_value(v, kind)
 					}
 				}
 			}
 		}
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#float", lang: ""} | 
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#double", lang: ""}
+		(v, "http://www.w3.org/2001/XMLSchema#float", "") | 
+		(v, "http://www.w3.org/2001/XMLSchema#double", "")
 		{
 			str::as_c_str(v)
 			{|vp|
@@ -179,40 +187,40 @@ fn object_to_operand(value: object) -> operand
 					}
 					else
 					{
-						invalid_value(v, value.kind)
+						invalid_value(v, kind)
 					}
 				}
 			}
 		}
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#string", lang: l} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#normalizedString", lang: l} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#token", lang: l} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#language", lang: l} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#Name", lang: l} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#NCName", lang: l} |
-		{value: v, kind: "http://www.w3.org/2001/XMLSchema#ID", lang: l}
+		(v, "http://www.w3.org/2001/XMLSchema#string", l) |
+		(v, "http://www.w3.org/2001/XMLSchema#normalizedString", l) |
+		(v, "http://www.w3.org/2001/XMLSchema#token", l) |
+		(v, "http://www.w3.org/2001/XMLSchema#language", l) |
+		(v, "http://www.w3.org/2001/XMLSchema#Name", l) |
+		(v, "http://www.w3.org/2001/XMLSchema#NCName", l) |
+		(v, "http://www.w3.org/2001/XMLSchema#ID", l)
 		{
 			string_value(v, l)
 		}
-		{value: v, kind: k, lang: ""}
+		(v, k, "")
 		{
 			typed_value(v, k)
 		}
 		_
 		{
-			#error["object_to_operand unsupported type: %s.", value.kind];
-			error_value(#fmt["object_to_operand unsupported type: %s.", value.kind])
+			#error["object_to_operand unsupported type: %s.", kind];
+			error_value(#fmt["object_to_operand unsupported type: %s.", kind])
 		}
 	}
 }
 
-fn get_operand(row: solution_row, name: str) -> operand
+fn get_object(row: solution_row, name: str) -> object
 {
 	alt row.search(name)
 	{
 		option::some(value)
 		{
-			object_to_operand(value)
+			value
 		}
 		option::none
 		{
@@ -222,7 +230,7 @@ fn get_operand(row: solution_row, name: str) -> operand
 }
 
 // Effective boolean value, see 17.2.2
-fn get_ebv(operand: operand) -> result::result<bool, str>
+fn get_ebv(operand: object) -> result::result<bool, str>
 {
 	alt operand
 	{
@@ -261,7 +269,7 @@ fn get_ebv(operand: operand) -> result::result<bool, str>
 	}
 }
 
-fn type_error(fname: str, operand: operand, expected: str) -> str
+fn type_error(fname: str, operand: object, expected: str) -> str
 {
 	alt operand
 	{

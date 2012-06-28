@@ -2,14 +2,16 @@ import to_str::to_str;
 import core::dvec::*;
 import std::map::hashmap; 
 import std::time::tm;
+import object::*;
 import types::*;
 
 // types
-export subject, predicate, object, triple, namespace, solution_row, solution, selector;
+export subject, predicate, triple, namespace, solution_row, solution, selector;
+
+export object;
 
 // this file
 export to_str, create_store, store_methods, each_triple, compile,
-create_bool, create_dateTime, create_double, create_int, create_lang, create_str, create_typed, create_uri,
 solution_row_methods, solution_methods;
 
 impl solution_row_methods for solution_row
@@ -45,7 +47,7 @@ impl solution_row_methods for solution_row
 		}
 	}
 	
-	pure fn get_or_default(name: str, value: str) -> object
+	pure fn get_or_default(name: str, value: object) -> object
 	{
 		alt vec::find(self, {|e| tuple::first(e) == name})
 		{
@@ -55,7 +57,7 @@ impl solution_row_methods for solution_row
 			}
 			option::none
 			{
-				{value: value, kind: "?", lang: ""}
+				value
 			}
 		}
 	}
@@ -78,26 +80,9 @@ impl solution_methods for solution
 		self[row].search(name)
 	}
 	
-	pure fn get_or_default(row: uint, name: str, value: str) -> object
+	pure fn get_or_default(row: uint, name: str, value: object) -> object
 	{
 		self[row].get_or_default(name, value)
-	}
-}
-
-impl of to_str for object
-{
-	fn to_str() -> str
-	{
-		alt self
-		{
-			{value: v, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}	{v}
-			{value: v, kind: "blank", lang: ""}														{str::slice(v, 1u, str::len(v)-1u)}
-			{value: v, kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}	{v}
-			{value: v, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""}		{#fmt["\"%s\"", v]}
-			{value: v, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang}	{#fmt["\"%s\"@%s", v, lang]}
-			{value: v, kind: kind, lang: ""}														{#fmt["\"%s\"^^%s", v, kind]}
-			{value: v, kind: kind, lang: lang}														{#fmt["\"%s\"^^%s@%s", v, kind, lang]}	// not sure this case makes sense
-		}
 	}
 }
 
@@ -138,57 +123,6 @@ fn create_store(namespaces: [namespace]) -> store
 		mut next_blank: 0u
 	}
 }
-
-fn create_bool(value: bool) -> object
-{
-	if value
-	{
-		{value: "true", kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}
-	}
-	else
-	{
-		{value: "false", kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}
-	}
-}
-
-fn create_dateTime(value: tm) -> object
-{
-	{value: value.rfc3339(), kind: "http://www.w3.org/2001/XMLSchema#dateTime", lang: ""}
-}
-
-fn create_double(value: f64) -> object
-{
-	{value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#double", lang: ""}
-}
-
-fn create_int(value: int) -> object
-{
-	{value: #fmt["%?", value], kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""}
-}
-
-fn create_lang(value: str, lang: str) -> object
-{
-	{value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang}
-}
-
-fn create_str(value: str) -> object
-{
-	{value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""}
-}
-
-fn create_uri(value: str) -> object
-{
-	{value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}
-}
-
-#[doc = "Note that some of the xsd datatypes should not be used: duration (which doesn't have a well defined
-value space), QName, ENTITY, ID, IDREF, NOTATION, IDREFS, ENTITIES, and NMTOKENS."]
-fn create_typed(value: str, kind: str) -> object
-{
-	{value: value, kind: kind, lang: ""}
-}
-
-// TODO: add date and time
 
 impl store_methods for store
 {
@@ -247,7 +181,7 @@ impl store_methods for store
 	fn add_aggregate(subject: str, predicate: str, label: str, entries: [(str, object)])
 	{
 		let blank = get_blank_name(self, label);
-		self.add_triple([], {subject: subject, predicate: predicate, object: {value: blank, kind: "blank", lang: ""}});
+		self.add_triple([], {subject: subject, predicate: predicate, object: blank_value(blank)});
 		self.add(blank, entries);
 	}
 	
@@ -267,7 +201,7 @@ impl store_methods for store
 	fn add_container(subject: str, kind: str, values: [object])
 	{
 		let blank = get_blank_name(self, after(subject, ':') + "-items");
-		self.add_triple([], {subject: subject, predicate: kind, object: {value: blank, kind: "blank", lang: ""}});
+		self.add_triple([], {subject: subject, predicate: kind, object: blank_value(blank)});
 		
 		let predicates = iter::map_to_vec(vec::len(values)) {|i: uint| #fmt["http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u]};
 		self.add(blank, vec::zip(predicates, values));
@@ -278,15 +212,15 @@ impl store_methods for store
 	{
 		let prefix = after(predicate, ':');
 		let mut blank = get_blank_name(self, prefix);
-		self.add_triple([], {subject: subject, predicate: predicate, object: {value: blank, kind: "blank", lang: ""}});
+		self.add_triple([], {subject: subject, predicate: predicate, object: blank_value(blank)});
 		for vec::each(values)
 		{|value|
 			let next = get_blank_name(self, prefix);
 			self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", object: value});
-			self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: {value: next, kind: "blank", lang: ""}});
+			self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: blank_value(next)});
 			blank = next;
 		};
-		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: {value: "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil", kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}});
+		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: iri_value("http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")});
 	}
 	
 	#[doc = "Adds a statement about a statement.
@@ -295,9 +229,9 @@ impl store_methods for store
 	fn add_reify(subject: str, predicate: str, value: object)
 	{
 		let mut blank = get_blank_name(self, after(predicate, ':'));
-		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", object: {value: "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement", kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}});
-		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#subject", object: {value: subject, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}});
-		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate", object: {value: predicate, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}});
+		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", object: iri_value("http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement")});
+		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#subject", object: iri_value(subject)});
+		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate", object: iri_value(predicate)});
 		self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#object", object: value});
 	}
 	
@@ -341,7 +275,7 @@ fn compile(expr: str) -> result::result<selector, str>
 fn default_namespaces() -> [namespace]
 {
 	[
-		{prefix: "_", path: "_"},
+		{prefix: "_", path: "_:"},
 		{prefix: "xsd", path: "http://www.w3.org/2001/XMLSchema#"},
 		{prefix: "rdf", path: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
 		{prefix: "rdfs", path: "http://www.w3.org/2000/01/rdf-schema#"},
@@ -354,15 +288,6 @@ fn get_blank_name(store: store, prefix: str) -> str
 	let name = #fmt["_:%s-%?", prefix, copy(store.next_blank)];
 	store.next_blank += 1u;
 	ret name;
-}
-
-fn expand_blank(name: str) -> str
-{
-	assert str::starts_with(name, "_:");
-	
-	// Curly braces are illegal IRI characters so this allows us to unambiguously
-	// distinguish between IRIs and blank node references.
-	ret "{" + str::slice(name, 2u, str::len(name)) + "}";
 }
 
 fn expand_uri(namespaces: [namespace], name: str) -> str
@@ -382,7 +307,7 @@ fn expand_uri_or_blank(namespaces: [namespace], name: str) -> str
 {
 	if str::starts_with(name, "_:")
 	{
-		expand_blank(name)
+		name
 	}
 	else
 	{
@@ -392,23 +317,25 @@ fn expand_uri_or_blank(namespaces: [namespace], name: str) -> str
 
 fn expand_object(namespaces: [namespace], obj: object) -> object
 {
-	let kind = expand_uri_or_blank(namespaces, obj.kind);
-	
-	let value = 
-		if kind == "blank"
+	alt obj
+	{
+		typed_value(value, kind)
 		{
-			expand_blank(obj.value)
+			typed_value(value, expand_uri(namespaces, kind))
 		}
-		else if kind == "http://www.w3.org/2001/XMLSchema#anyURI"
+		iri_value(value)
 		{
-			expand_uri(namespaces, obj.value)
+			iri_value(expand_uri(namespaces, value))
 		}
-		else
+		blank_value(value)
 		{
-			obj.value
-		};
-	
-	{value: value, kind: kind, lang: obj.lang}
+			blank_value(expand_uri(namespaces, value))
+		}
+		_
+		{
+			obj
+		}
+	}
 }
 
 fn expand_entry(namespaces: [namespace], entry: (str, object)) -> entry
@@ -421,7 +348,7 @@ fn make_triple_blank(store: store, subject: str, predicate: str, value: str) -> 
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
 		predicate: expand_uri(store.namespaces, predicate), 
-		object: {value: #fmt["{%s}", value], kind: "blank", lang: ""}
+		object: blank_value(#fmt["_:%s", value])
 	}
 }
 
@@ -430,7 +357,7 @@ fn make_triple_str(store: store, subject: str, predicate: str, value: str) -> tr
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
 		predicate: expand_uri(store.namespaces, predicate), 
-		object: {value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""}
+		object: string_value(value, "")
 	}
 }
 
@@ -439,7 +366,7 @@ fn make_triple_uri(store: store, subject: str, predicate: str, value: str) -> tr
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
 		predicate: expand_uri(store.namespaces, predicate), 
-		object: {value: expand_uri(store.namespaces, value), kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}
+		object: iri_value(expand_uri(store.namespaces, value))
 	}
 }
 

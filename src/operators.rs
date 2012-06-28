@@ -1,11 +1,10 @@
 // Operators used within SPARQL FILTER expressions. See 17.2 and related.
-import operands::*;
 
 export op_not, op_unary_plus, op_unary_minus, op_or, op_and, op_equals, op_not_equals,
 	op_less_than, op_less_than_or_equal, op_greater_than, op_greater_than_or_equal,
 	op_multiply, op_divide, op_add, op_subtract;
 
-fn equal_values(operator: str, lhs: operand, rhs: operand) -> result::result<bool, str>
+fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool, str>
 {
 	alt lhs
 	{
@@ -136,7 +135,7 @@ fn equal_values(operator: str, lhs: operand, rhs: operand) -> result::result<boo
 	}
 }
 
-fn compare_values(operator: str, lhs: operand, rhs: operand) -> result::result<int, str>
+fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int, str>
 {
 	alt lhs
 	{
@@ -244,7 +243,7 @@ fn compare_values(operator: str, lhs: operand, rhs: operand) -> result::result<i
 }
 
 // ---- Unary Operators -------------------------------------------------------
-fn op_not(operand: operand) -> operand
+fn op_not(operand: object) -> object
 {
 	alt get_ebv(operand)
 	{
@@ -259,7 +258,7 @@ fn op_not(operand: operand) -> operand
 	}
 }
 
-fn op_unary_plus(operand: operand) -> operand
+fn op_unary_plus(operand: object) -> object
 {
 	alt operand
 	{
@@ -278,7 +277,7 @@ fn op_unary_plus(operand: operand) -> operand
 	}
 }
 
-fn op_unary_minus(operand: operand) -> operand
+fn op_unary_minus(operand: object) -> object
 {
 	alt operand
 	{
@@ -298,7 +297,7 @@ fn op_unary_minus(operand: operand) -> operand
 }
 
 // ---- Binary Operators -------------------------------------------------------
-fn op_or(lhs: operand, rhs: operand) -> operand
+fn op_or(lhs: object, rhs: object) -> object
 {
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
@@ -335,7 +334,7 @@ fn op_or(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_and(lhs: operand, rhs: operand) -> operand
+fn op_and(lhs: object, rhs: object) -> object
 {
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
@@ -372,7 +371,7 @@ fn op_and(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_equals(lhs: operand, rhs: operand) -> operand
+fn op_equals(lhs: object, rhs: object) -> object
 {
 	alt equal_values("=", lhs, rhs)
 	{
@@ -387,7 +386,7 @@ fn op_equals(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_not_equals(lhs: operand, rhs: operand) -> operand
+fn op_not_equals(lhs: object, rhs: object) -> object
 {
 	alt equal_values("!=", lhs, rhs)
 	{
@@ -402,7 +401,7 @@ fn op_not_equals(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_less_than(lhs: operand, rhs: operand) -> operand
+fn op_less_than(lhs: object, rhs: object) -> object
 {
 	alt compare_values("<", lhs, rhs)
 	{
@@ -417,7 +416,7 @@ fn op_less_than(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_less_than_or_equal(lhs: operand, rhs: operand) -> operand
+fn op_less_than_or_equal(lhs: object, rhs: object) -> object
 {
 	alt compare_values("<=", lhs, rhs)
 	{
@@ -432,7 +431,7 @@ fn op_less_than_or_equal(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_greater_than(lhs: operand, rhs: operand) -> operand
+fn op_greater_than(lhs: object, rhs: object) -> object
 {
 	alt compare_values(">", lhs, rhs)
 	{
@@ -447,7 +446,7 @@ fn op_greater_than(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_greater_than_or_equal(lhs: operand, rhs: operand) -> operand
+fn op_greater_than_or_equal(lhs: object, rhs: object) -> object
 {
 	alt compare_values(">=", lhs, rhs)
 	{
@@ -462,7 +461,7 @@ fn op_greater_than_or_equal(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_multiply(lhs: operand, rhs: operand) -> operand
+fn op_multiply(lhs: object, rhs: object) -> object
 {
 	alt lhs
 	{
@@ -511,7 +510,7 @@ fn op_multiply(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_divide(lhs: operand, rhs: operand) -> operand
+fn op_divide(lhs: object, rhs: object) -> object
 {
 	alt lhs
 	{
@@ -564,7 +563,7 @@ fn op_divide(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_add(lhs: operand, rhs: operand) -> operand
+fn op_add(lhs: object, rhs: object) -> object
 {
 	alt lhs
 	{
@@ -613,7 +612,7 @@ fn op_add(lhs: operand, rhs: operand) -> operand
 	}
 }
 
-fn op_subtract(lhs: operand, rhs: operand) -> operand
+fn op_subtract(lhs: object, rhs: object) -> object
 {
 	alt lhs
 	{

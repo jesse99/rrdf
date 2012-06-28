@@ -10,7 +10,7 @@
 use std;
 use rparse (name = "rparse", vers = "0.4");
 
-mod operands;
+mod object;
 mod operators;
 mod query;
 mod sparql;

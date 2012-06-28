@@ -11,8 +11,8 @@ fn got_cast1() -> store
 		{prefix: "v", path: "http://www.w3.org/2006/vcard/ns#"}
 		]);
 	store.add("got:Eddard_Stark", [
-		("v:fn", create_str("Eddard Stark")),
-		("v:nickname", create_str("Ned"))
+		("v:fn", string_value("Eddard Stark", "")),
+		("v:nickname", string_value("Ned", ""))
 	]);
 	ret store;
 }
@@ -25,28 +25,28 @@ fn got_cast3() -> store
 		]);
 	
 	store.add("got:Eddard_Stark", [
-		("v:fn", create_str("Eddard Stark")),
-		("v:nickname", create_str("Ned")),
-		("v:honorific-prefix", create_str("Lord"))
+		("v:fn", string_value("Eddard Stark", "")),
+		("v:nickname", string_value("Ned", "")),
+		("v:honorific-prefix", string_value("Lord", ""))
 	]);
 	store.add_aggregate("got:Eddard_Stark", "v:org", "ned-org", [
-		("v:organisation-name", create_str("Small Council")),
-		("v:organisation-unit", create_str("Hand"))
+		("v:organisation-name", string_value("Small Council", "")),
+		("v:organisation-unit", string_value("Hand", ""))
 	]);
 	
 	store.add("got:Jon_Snow", [
-		("v:fn", create_str("Jon Snow")),
-		("v:nickname", create_str("Lord Snow")),
-		("v:pet", create_str("Ghost"))
+		("v:fn", string_value("Jon Snow", "")),
+		("v:nickname", string_value("Lord Snow", "")),
+		("v:pet", string_value("Ghost", ""))
 	]);
 	store.add_aggregate("got:Jon_Snow", "v:org", "jon-org", [
-		("v:organisation-name", create_str("Night's Watch")),
-		("v:organisation-unit", create_str("Stewards"))
+		("v:organisation-name", string_value("Night's Watch", "")),
+		("v:organisation-unit", string_value("Stewards", ""))
 	]);
 	
 	store.add("got:Sandor_Clegane", [
-		("v:fn", create_str("Sandor Clegane")),
-		("v:nickname", create_str("The Hound"))
+		("v:fn", string_value("Sandor Clegane", "")),
+		("v:nickname", string_value("The Hound", ""))
 	]);
 	ret store;
 }

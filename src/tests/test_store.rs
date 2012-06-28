@@ -7,16 +7,16 @@ import test_helpers::*;
 #[test]
 fn to_strs()
 {
-	let obj = {value: "some long url", kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""};
-	assert check_strs(obj.to_str(), "some long url");
+	let obj = literal_to_object("some long url", "http://www.w3.org/2001/XMLSchema#anyURI", "");
+	assert check_strs(obj.to_str(), "<some long url>");
 	
-	let obj = {value: "12", kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""};
-	assert check_strs(obj.to_str(), "\"12\"^^http://www.w3.org/2001/XMLSchema#integer");
+	let obj = literal_to_object("12", "http://www.w3.org/2001/XMLSchema#integer", "");
+	assert check_strs(obj.to_str(), "12");
 	
-	let obj = {value: "12", kind: "http://www.w3.org/2001/XMLSchema#string", lang: "en"};
+	let obj = literal_to_object("12", "http://www.w3.org/2001/XMLSchema#string", "en");
 	assert check_strs(obj.to_str(), "\"12\"@en");
 	
-	let obj = {value: "12", kind: "http://www.w3.org/2001/XMLSchema#string", lang: ""};
+	let obj = literal_to_object("12", "http://www.w3.org/2001/XMLSchema#string", "");
 	assert check_strs(obj.to_str(), "\"12\"");
 }
 
@@ -48,12 +48,12 @@ fn references()
 		]);
 		
 	store.add("got:Eddard_Stark", [
-		("v:fn", create_str("Eddard Stark")),
-		("v:nickname", create_str("Ned")),
-		("foo:child", create_uri("got:Jon_Snow"))
+		("v:fn", string_value("Eddard Stark", "")),
+		("v:nickname", string_value("Ned", "")),
+		("foo:child", iri_value("got:Jon_Snow"))
 	]);
 	store.add("got:Jon_Snow", [
-		("v:fn", create_str("Jon Snow"))
+		("v:fn", string_value("Jon Snow", ""))
 	]);
 	
 	let mut actual = [];
@@ -98,10 +98,10 @@ fn blank_nodes()
 		make_triple_str(store, "got:Sandor_Clegane", "v:fn", "Sandor Clegane"),
 		make_triple_str(store, "got:Sandor_Clegane", "v:nickname", "The Hound"),
 		
-		make_triple_str(store, "{jon-org-1}", "v:organisation-name", "Night's Watch"),
-		make_triple_str(store, "{jon-org-1}", "v:organisation-unit", "Stewards"),
-		make_triple_str(store, "{ned-org-0}", "v:organisation-name", "Small Council"),
-		make_triple_str(store, "{ned-org-0}", "v:organisation-unit", "Hand")
+		make_triple_str(store, "_:jon-org-1", "v:organisation-name", "Night's Watch"),
+		make_triple_str(store, "_:jon-org-1", "v:organisation-unit", "Stewards"),
+		make_triple_str(store, "_:ned-org-0", "v:organisation-name", "Small Council"),
+		make_triple_str(store, "_:ned-org-0", "v:organisation-unit", "Hand")
 	];
 	
 	assert check_triples(actual, expected);
@@ -111,7 +111,7 @@ fn blank_nodes()
 fn container() 
 {
 	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}]);
-	store.add_alt("got:places", [create_uri("got:The_Wall"), create_uri("got:Winterfell")]);
+	store.add_alt("got:places", [iri_value("got:The_Wall"), iri_value("got:Winterfell")]);
 	
 	let mut actual = [];
 	for each_triple(store)
@@ -121,8 +121,8 @@ fn container()
 	
 	let expected = [
 		make_triple_blank(store, "got:places", "rdf:Alt", "places-items-0"),
-		make_triple_uri(store, "{places-items-0}", "rdf:_1", "got:The_Wall"),
-		make_triple_uri(store, "{places-items-0}", "rdf:_2", "got:Winterfell")
+		make_triple_uri(store, "_:places-items-0", "rdf:_1", "got:The_Wall"),
+		make_triple_uri(store, "_:places-items-0", "rdf:_2", "got:Winterfell")
 	];
 	
 	assert check_triples(actual, expected);
@@ -142,7 +142,7 @@ fn list0()
 	
 	let expected = [
 		make_triple_blank(store, "got:westeros", "got:cities", "cities-0"),
-		make_triple_uri(store, "{cities-0}", "rdf:rest", "rdf:nil")
+		make_triple_uri(store, "_:cities-0", "rdf:rest", "rdf:nil")
 	];
 	
 	assert check_triples(actual, expected);
@@ -152,7 +152,7 @@ fn list0()
 fn list1() 
 {
 	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}]);
-	store.add_list("got:westeros", "got:cities", [create_str("Lanisport")]);
+	store.add_list("got:westeros", "got:cities", [string_value("Lanisport", "")]);
 	
 	let mut actual = [];
 	for each_triple(store)
@@ -163,10 +163,10 @@ fn list1()
 	let expected = [
 		make_triple_blank(store, "got:westeros", "got:cities", "cities-0"),
 		
-		make_triple_str(store, "{cities-0}", "rdf:first", "Lanisport"),
-		make_triple_blank(store, "{cities-0}", "rdf:rest", "cities-1"),
+		make_triple_str(store, "_:cities-0", "rdf:first", "Lanisport"),
+		make_triple_blank(store, "_:cities-0", "rdf:rest", "cities-1"),
 		
-		make_triple_uri(store, "{cities-1}", "rdf:rest", "rdf:nil")
+		make_triple_uri(store, "_:cities-1", "rdf:rest", "rdf:nil")
 	];
 	
 	assert check_triples(actual, expected);
@@ -176,7 +176,7 @@ fn list1()
 fn reify() 
 {
 	let store = got_cast1();
-	store.add_reify("got:Eddard_Stark", "got:wife", create_uri("got:Caitlyn_Stark"));
+	store.add_reify("got:Eddard_Stark", "got:wife", iri_value("got:Caitlyn_Stark"));
 	
 	let mut actual = [];
 	for each_triple(store)
@@ -187,10 +187,10 @@ fn reify()
 	let expected = [
 		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
 		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned"),
-		make_triple_uri(store, "{wife-0}", "rdf:type", "rdf:Statement"),
-		make_triple_uri(store, "{wife-0}", "rdf:subject", "got:Eddard_Stark"),
-		make_triple_uri(store, "{wife-0}", "rdf:predicate", "got:wife"),
-		make_triple_uri(store, "{wife-0}", "rdf:object", "got:Caitlyn_Stark")
+		make_triple_uri(store, "_:wife-0", "rdf:type", "rdf:Statement"),
+		make_triple_uri(store, "_:wife-0", "rdf:subject", "got:Eddard_Stark"),
+		make_triple_uri(store, "_:wife-0", "rdf:predicate", "got:wife"),
+		make_triple_uri(store, "_:wife-0", "rdf:object", "got:Caitlyn_Stark")
 	];
 	assert check_triples(actual, expected);
 }
@@ -200,8 +200,8 @@ fn trivial_bgp()
 {
 	let group1 = [];
 	let group2 = [
-		[("age", create_int(25))],
-		[("age", create_int(18))]
+		[("age", int_value(25i64))],
+		[("age", int_value(18i64))]
 	];
 	let expected = group2;
 	
@@ -213,12 +213,12 @@ fn trivial_bgp()
 fn identical_bgp()
 {
 	let group1 = [
-		[("age", create_int(25))],		// TODO: use some fancy regex, remember \1 is atually $1
-		[("age", create_int(18))]
+		[("age", int_value(25i64))],		// TODO: use some fancy regex, remember \1 is atually $1
+		[("age", int_value(18i64))]
 	];
 	let group2 = [
-		[("age", create_int(25))],
-		[("age", create_int(18))]
+		[("age", int_value(25i64))],
+		[("age", int_value(18i64))]
 	];
 	let expected = group2;
 	
@@ -230,18 +230,18 @@ fn identical_bgp()
 fn disjoint1_bgp()
 {
 	let group1 = [
-		[("age", create_int(25))],
-		[("age", create_int(18))]
+		[("age", int_value(25i64))],
+		[("age", int_value(18i64))]
 	];
 	let group2 = [
-		[("name", create_str("Bob"))],
-		[("name", create_str("Ted"))]
+		[("name", string_value("Bob", ""))],
+		[("name", string_value("Ted", ""))]
 	];
 	let expected = [
-		[("age", create_int(18)), ("name", create_str("Bob"))],
-		[("age", create_int(18)), ("name", create_str("Ted"))],
-		[("age", create_int(25)), ("name", create_str("Bob"))],
-		[("age", create_int(25)), ("name", create_str("Ted"))]
+		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
+		[("age", int_value(18i64)), ("name", string_value("Ted", ""))],
+		[("age", int_value(25i64)), ("name", string_value("Bob", ""))],
+		[("age", int_value(25i64)), ("name", string_value("Ted", ""))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -252,18 +252,18 @@ fn disjoint1_bgp()
 fn disjoint2_bgp() 
 {
 	let group1 = [
-		[("age", create_int(25)), ("job", create_str("cowboy"))],
-		[("age", create_int(18)), ("job", create_str("muckraker"))]
+		[("age", int_value(25i64)), ("job", string_value("cowboy", ""))],
+		[("age", int_value(18i64)), ("job", string_value("muckraker", ""))]
 	];
 	let group2 = [
-		[("id", create_str("bbb")), ("name", create_str("Bob"))],
-		[("id", create_str("ttt")), ("name", create_str("Ted"))]
+		[("id", string_value("bbb", "")), ("name", string_value("Bob", ""))],
+		[("id", string_value("ttt", "")), ("name", string_value("Ted", ""))]
 	];
 	let expected = [
-		[("age", create_int(18)), ("id", create_str("bbb")), ("job", create_str("muckraker")), ("name", create_str("Bob"))],
-		[("age", create_int(18)), ("id", create_str("ttt")), ("job", create_str("muckraker")), ("name", create_str("Ted"))],
-		[("age", create_int(25)), ("id", create_str("bbb")), ("job", create_str("cowboy")), ("name", create_str("Bob"))],
-		[("age", create_int(25)), ("id", create_str("ttt")), ("job", create_str("cowboy")), ("name", create_str("Ted"))]
+		[("age", int_value(18i64)), ("id", string_value("bbb", "")), ("job", string_value("muckraker", "")), ("name", string_value("Bob", ""))],
+		[("age", int_value(18i64)), ("id", string_value("ttt", "")), ("job", string_value("muckraker", "")), ("name", string_value("Ted", ""))],
+		[("age", int_value(25i64)), ("id", string_value("bbb", "")), ("job", string_value("cowboy", "")), ("name", string_value("Bob", ""))],
+		[("age", int_value(25i64)), ("id", string_value("ttt", "")), ("job", string_value("cowboy", "")), ("name", string_value("Ted", ""))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -274,19 +274,19 @@ fn disjoint2_bgp()
 fn asymmetric_bgp() 
 {
 	let group1 = [
-		[("age", create_int(33))],
-		[("age", create_int(25))],
-		[("age", create_int(18))]
+		[("age", int_value(33i64))],
+		[("age", int_value(25i64))],
+		[("age", int_value(18i64))]
 	];
 	let group2 = [
-		[("age", create_int(88)), ("name", create_str("Bob"))],
-		[("age", create_int(18)), ("name", create_str("Bob"))],
-		[("age", create_int(18)), ("name", create_str("Ted"))]
+		[("age", int_value(88i64)), ("name", string_value("Bob", ""))],
+		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
+		[("age", int_value(18i64)), ("name", string_value("Ted", ""))]
 	];
 	
 	let expected = [
-		[("age", create_int(18)), ("name", create_str("Bob"))],
-		[("age", create_int(18)), ("name", create_str("Ted"))]
+		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
+		[("age", int_value(18i64)), ("name", string_value("Ted", ""))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -297,18 +297,18 @@ fn asymmetric_bgp()
 fn symmetric_bgp() 
 {
 	let group1 = [
-		[("age", create_int(33))],
-		[("age", create_int(25))],
-		[("age", create_int(18))]
+		[("age", int_value(33i64))],
+		[("age", int_value(25i64))],
+		[("age", int_value(18i64))]
 	];
 	let group2 = [
-		[("age", create_int(88)), ("name", create_str("Bob"))],
-		[("age", create_int(18)), ("name", create_str("Bob"))],
-		[("age", create_int(18)), ("name", create_str("Ted"))]
+		[("age", int_value(88i64)), ("name", string_value("Bob", ""))],
+		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
+		[("age", int_value(18i64)), ("name", string_value("Ted", ""))]
 	];
 	let expected = [
-		[("age", create_int(18)), ("name", create_str("Bob"))],
-		[("age", create_int(18)), ("name", create_str("Ted"))]
+		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
+		[("age", int_value(18i64)), ("name", string_value("Ted", ""))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -319,18 +319,18 @@ fn symmetric_bgp()
 fn path_bgp() 
 {
 	let group1 = [
-		[("name", create_str("Bob")), ("id", create_str("bbb"))],
-		[("name", create_str("Ted")), ("id", create_str("ttt"))],
-		[("name", create_str("George")), ("id", create_str("ggg"))]
+		[("name", string_value("Bob", "")), ("id", string_value("bbb", ""))],
+		[("name", string_value("Ted", "")), ("id", string_value("ttt", ""))],
+		[("name", string_value("George", "")), ("id", string_value("ggg", ""))]
 	];
 	let group2 = [
-		[("id", create_str("ttt")), ("age", create_int(18))],
-		[("id", create_str("bbb")), ("age", create_int(88))],
-		[("id", create_str("zzz")), ("age", create_int(38))]
+		[("id", string_value("ttt", "")), ("age", int_value(18i64))],
+		[("id", string_value("bbb", "")), ("age", int_value(88i64))],
+		[("id", string_value("zzz", "")), ("age", int_value(38i64))]
 	];
 	let expected = [
-		[("age", create_int(88)), ("id", create_str("bbb")), ("name", create_str("Bob"))],
-		[("age", create_int(18)), ("id", create_str("ttt")), ("name", create_str("Ted"))]
+		[("age", int_value(88i64)), ("id", string_value("bbb", "")), ("name", string_value("Bob", ""))],
+		[("age", int_value(18i64)), ("id", string_value("ttt", "")), ("name", string_value("Ted", ""))]
 	];
 	
 	assert check_bgp([group1, group2], expected);
@@ -341,14 +341,14 @@ fn path_bgp()
 fn incompatible_bgp() 
 {
 	let group1 = [
-		[("name", create_str("Bob")), ("id", create_str("bbb"))],
-		[("name", create_str("Ted")), ("id", create_str("ttt"))],
-		[("name", create_str("George")), ("id", create_str("ggg"))]
+		[("name", string_value("Bob", "")), ("id", string_value("bbb", ""))],
+		[("name", string_value("Ted", "")), ("id", string_value("ttt", ""))],
+		[("name", string_value("George", "")), ("id", string_value("ggg", ""))]
 	];
 	let group2 = [
-		[("id", create_str("tyt")), ("age", create_int(18))],
-		[("id", create_str("bxb")), ("age", create_int(88))],
-		[("id", create_str("zzz")), ("age", create_int(38))]
+		[("id", string_value("tyt", "")), ("age", int_value(18i64))],
+		[("id", string_value("bxb", "")), ("age", int_value(88i64))],
+		[("id", string_value("zzz", "")), ("age", int_value(38i64))]
 	];
 	let expected = [];
 	

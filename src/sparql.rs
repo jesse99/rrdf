@@ -1,6 +1,6 @@
 import rparse::*;
 import query::*;
-import operands::*;
+//import operands::*;
 
 type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 
@@ -13,32 +13,32 @@ enum algebra
 
 fn bool_literal(value: str) -> pattern
 {
-	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#boolean", lang: ""}))
+	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#boolean", ""))
 }
 
 fn int_literal(value: str) -> pattern
 {
-	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#integer", lang: ""}))
+	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#integer", ""))
 }
 
 fn float_literal(value: str) -> pattern
 {
-	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#double", lang: ""}))
+	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#double", ""))
 }
 
 fn string_literal(value: str, lang: str) -> pattern
 {
-	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#string", lang: lang}))
+	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#string", lang))
 }
 
 fn typed_literal(value: str, kind: str) -> pattern
 {
-	constant(object_to_operand({value: value, kind: kind, lang: ""}))
+	constant(literal_to_object(value, kind, ""))
 }
 
 fn iri_literal(value: str) -> pattern
 {
-	constant(object_to_operand({value: value, kind: "http://www.w3.org/2001/XMLSchema#anyURI", lang: ""}))
+	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#anyURI", ""))
 }
 
 fn expand_pattern(namespaces: [namespace], pattern: pattern) -> pattern

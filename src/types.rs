@@ -8,15 +8,6 @@ type subject = str;
 #[doc = "An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)."]
 type predicate = str;
 
-#[doc = "Value component of a triple.
-
-* value is an abitrary lexical value.
-* kind is a prefixed name or an IRI indicating the value's type. Common types include 
-   xsd:boolean, xsd:string, xsd:anyURI, xsd:double, xsd:integer, and xsd:positiveInteger, 
-   see http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"XML Schema\" for more.
-* lang is either empty for an undefined language or a tag like  \"en-us\". See http://tools.ietf.org/html/bcp47 \"Tags for Identifying Languages\" for more."]
-type object = {value: str, kind: str, lang: str};
-
 #[doc = "A relationship between a subject and an object.
 
 * subject identifies a resource, usually via an IRI.

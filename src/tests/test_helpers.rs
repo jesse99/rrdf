@@ -1,7 +1,7 @@
 import io;
 import io::writer_util;
 import query::*;
-import operands::*;
+//import operands::*;
 
 export check_bgp, check_strs, check_operands, check_triples, check_solution, check_solution_err;
 
@@ -15,7 +15,7 @@ fn check_strs(actual: str, expected: str) -> bool
 	ret true;
 }
 
-fn check_operands(actual: operand, expected: operand) -> bool
+fn check_operands(actual: object, expected: object) -> bool
 {
 	if actual != expected
 	{
@@ -124,23 +124,9 @@ fn check_triples(actual: [triple], expected: [triple]) -> bool
 			ret false;
 		}
 		
-		if atriple.object.value != etriple.object.value
+		if atriple.object != etriple.object
 		{
-			io::stderr().write_line(#fmt["Object #%? value is %?, but expected %?", i, atriple.object.value, etriple.object.value]);
-			dump_triples(actual);
-			ret false;
-		}
-		
-		if atriple.object.kind != etriple.object.kind
-		{
-			io::stderr().write_line(#fmt["Object #%? kind is %?, but expected %?", i, atriple.object.kind, etriple.object.kind]);
-			dump_triples(actual);
-			ret false;
-		}
-		
-		if atriple.object.lang != etriple.object.lang
-		{
-			io::stderr().write_line(#fmt["Object #%? lang is %?, but expected %?", i, atriple.object.lang, etriple.object.lang]);
+			io::stderr().write_line(#fmt["Object #%? is %s, but expected %s", i, atriple.object.to_str(), etriple.object.to_str()]);
 			dump_triples(actual);
 			ret false;
 		}
@@ -193,22 +179,10 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 							{
 								option::some(value2)
 								{
-									if value1.lang != value2.lang
+									if value1 != value2
 									{
-										print_failure(#fmt["Row %? actual %s was %s but expected lang %s.", 
-											i, name1, value1.to_str(), value2.lang], actual, expected);
-										ret false;
-									}
-									else if value1.kind != value2.kind
-									{
-										print_failure(#fmt["Row %? actual %s was %s but expected kind %s.", 
-											i, name1, value1.to_str(), value2.kind], actual, expected);
-										ret false;
-									}
-									else if value1.value != value2.value
-									{
-										print_failure(#fmt["Row %? actual %s was %s but expected value %s.", 
-											i, name1, value1.to_str(), value2.value], actual, expected);
+										print_failure(#fmt["Row %? actual %s was %s but expected %s.", 
+											i, name1, value1.to_str(), value2.to_str()], actual, expected);
 										ret false;
 									}
 								}
