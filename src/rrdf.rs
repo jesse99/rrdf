@@ -3,88 +3,15 @@ import core::dvec::*;
 import std::map::hashmap; 
 import std::time::tm;
 import object::*;
+import solution::*;
 import types::*;
 
-// types
-export subject, predicate, triple, namespace, solution_row, solution, selector;
-
+export subject, predicate, triple, namespace, selector;
 export object;
+export solution_row, solution; 
 
 // this file
-export to_str, create_store, store_methods, each_triple, compile,
-solution_row_methods, solution_methods;
-
-impl solution_row_methods for solution_row
-{
-	pure fn get(name: str) -> object
-	{
-		alt vec::find(self, {|e| tuple::first(e) == name})
-		{
-			option::some(result)
-			{
-				tuple::second(result)
-			}
-			option::none
-			{
-				fail("Couldn't find " + name)
-			}
-		}
-	}
-	
-	// Named search so we don't wind up conflicting with the find vec extension.
-	pure fn search(name: str) -> option<object>
-	{
-		alt vec::find(self, {|e| tuple::first(e) == name})
-		{
-			option::some(result)
-			{
-				option::some(tuple::second(result))
-			}
-			option::none
-			{
-				option::none
-			}
-		}
-	}
-	
-	pure fn get_or_default(name: str, value: object) -> object
-	{
-		alt vec::find(self, {|e| tuple::first(e) == name})
-		{
-			option::some(result)
-			{
-				tuple::second(result)
-			}
-			option::none
-			{
-				value
-			}
-		}
-	}
-}
-
-impl solution_methods for solution
-{
-	pure fn size() -> uint
-	{
-		vec::len(self)
-	}
-	
-	pure fn get(row: uint, name: str) -> object
-	{
-		self[row].get(name)
-	}
-	
-	pure fn search(row: uint, name: str) -> option<object>
-	{
-		self[row].search(name)
-	}
-	
-	pure fn get_or_default(row: uint, name: str, value: object) -> object
-	{
-		self[row].get_or_default(name, value)
-	}
-}
+export to_str, create_store, store_methods, each_triple, compile; 
 
 impl of to_str for triple
 {

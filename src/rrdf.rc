@@ -13,6 +13,7 @@ use rparse (name = "rparse", vers = "0.4");
 mod object;
 mod operators;
 mod query;
+mod solution;
 mod sparql;
 mod types;
 

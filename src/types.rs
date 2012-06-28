@@ -32,15 +32,6 @@ type store = {
 	mut next_blank: uint
 };
 
-#[doc = "Result of matching a triple with a SPARQL query."]
-type solution_row = [(str, object)];
-
-#[doc = "Result of a SPARQL query.
-
-Note that the solution_methods impl provides a number of convenience methods
-to simplify result retrieval."]
-type solution = [solution_row];
-
 #[doc = "The function returned by compile and invoked to execute a SPARQL query.
 
 Returns a solution or a 'runtime' error."]
