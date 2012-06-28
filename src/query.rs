@@ -1,3 +1,5 @@
+#[doc = "Used when evaluating a SPARQL query. Clients will not ordinarily use this."];
+
 // The sparql parser operates by building a sequence of matcher functions and
 // then creating a selector function using the select function.
 import std::map::hashmap;
@@ -6,7 +8,7 @@ import std::time::tm;
 import operators::*;
 import sparql::*;
 
-export join_solutions, eval, selector, pattern;
+export join_solutions, eval, pattern;
 
 type binding = {name: str, value: object};
 
@@ -17,11 +19,6 @@ enum pattern
 	variable(str),
 	constant(object)
 }
-
-#[doc = "The function returned by compile and invoked to execute a SPARQL query.
-
-Returns a solution or a 'runtime' error."]
-type selector = fn@ (store) -> result::result<solution, str>;
 
 fn solution_row_to_str(row: solution_row) -> str
 {

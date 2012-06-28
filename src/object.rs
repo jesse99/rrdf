@@ -1,3 +1,4 @@
+#[doc = "Value component of a triple and associated methods."];
 import result::extensions;
 
 // Note that the SPARQL error conditions do not always result in an error:

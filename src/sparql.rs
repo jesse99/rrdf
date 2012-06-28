@@ -1,7 +1,8 @@
+#[doc = "Compiles a SRARQL query into a function that can be applied to a store value."];
 import rparse::*;
 import query::*;
 
-export algebra, triple_pattern, compile;
+export algebra, triple_pattern, selector, compile;
 
 type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 
@@ -732,6 +733,11 @@ fn build_parser(namespaces: [namespace], patterns: [pattern], algebra: algebra) 
 		result::err(#fmt["Select clause has duplicates: %s", str::connect(dupes, " ")])
 	}
 }
+
+#[doc = "The function returned by compile and invoked to execute a SPARQL query.
+
+Returns a solution or a 'runtime' error."]
+type selector = fn@ (store) -> result::result<solution, str>;
 
 #[doc = "Returns either a function capable of matching triples or a parse error.
 
