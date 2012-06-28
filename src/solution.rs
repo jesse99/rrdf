@@ -41,21 +41,6 @@ impl solution_row_methods for solution_row
 			}
 		}
 	}
-	
-	pure fn get_or_default(name: str, value: object) -> object
-	{
-		alt vec::find(self, {|e| tuple::first(e) == name})
-		{
-			option::some(result)
-			{
-				tuple::second(result)
-			}
-			option::none
-			{
-				value
-			}
-		}
-	}
 }
 
 impl solution_methods for solution
@@ -73,11 +58,6 @@ impl solution_methods for solution
 	pure fn search(row: uint, name: str) -> option<object>
 	{
 		self[row].search(name)
-	}
-	
-	pure fn get_or_default(row: uint, name: str, value: object) -> object
-	{
-		self[row].get_or_default(name, value)
 	}
 }
 

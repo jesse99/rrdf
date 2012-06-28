@@ -5,8 +5,8 @@ import result::extensions;
 // 2) Boolean functions normally want effective boolean values which are false for invalid values.
 // 3) Functions like op_and do not always propagate errors.
 #[doc = "Value component of a triple."]
-enum object			// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
-{							// TODO: predicate could maybe be enum with type code and uri
+enum object				// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
+{								// TODO: predicate could maybe be enum with type code and uri
 	// literals
 	bool_value(bool),
 	int_value(i64),			// value, xsd:decimal (and derived types)
@@ -23,6 +23,293 @@ enum object			// TODO: once we support serialization we'll need to add something
 	unbound_value(str),	// binding name
 	invalid_value(str, str),	// literal + type iri
 	error_value(str)			// err mesg
+}
+
+impl object_methods for object
+{
+	fn as_bool() -> bool
+	{
+		alt self
+		{
+			bool_value(value)
+			{
+				value
+			}
+			_
+			{
+				fail(#fmt["Expected a bool_value but found %?", self]);
+			}
+		}
+	}
+	
+	fn as_int() -> int
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				if value >= int::min_value as i64 && value <= int::max_value as i64
+				{
+					value as int
+				}
+				else
+				{
+					fail(#fmt["Can't convert %? to an int", self]);
+				}
+			}
+			_
+			{
+				fail(#fmt["Expected an int_value but found %?", self]);
+			}
+		}
+	}
+	
+	fn as_uint() -> uint
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				if value >= uint::min_value as i64 && value <= uint::max_value as i64
+				{
+					value as uint
+				}
+				else
+				{
+					fail(#fmt["Can't convert %? to a uint", self]);
+				}
+			}
+			_
+			{
+				fail(#fmt["Expected an int_value but found %?", self]);
+			}
+		}
+	}
+	
+	fn as_i64() -> i64
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				value
+			}
+			_
+			{
+				fail(#fmt["Expected an int_value but found %?", self]);
+			}
+		}
+	}
+	
+	fn as_float() -> float
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				value as float
+			}
+			float_value(value)
+			{
+				value as float
+			}
+			_
+			{
+				fail(#fmt["Expected a float_value but found %?", self]);
+			}
+		}
+	}
+	
+	fn as_f64() -> f64
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				value as f64
+			}
+			float_value(value)
+			{
+				value
+			}
+			_
+			{
+				fail(#fmt["Expected a float_value but found %?", self]);
+			}
+		}
+	}
+	
+	fn as_tm() -> tm
+	{
+		alt self
+		{
+			dateTime_value(value)
+			{
+				value
+			}
+			_
+			{
+				fail(#fmt["Expected a dateTime_value but found %?", self]);
+			}
+		}
+	}
+	
+	fn as_str() -> str
+	{
+		alt self
+		{
+			string_value(value, _lang)
+			{
+				value
+			}
+			_
+			{
+				fail(#fmt["Expected a string_value but found %?", self]);
+			}
+		}
+	}
+	
+	fn as_bool_or_default(default:bool) -> bool
+	{
+		alt self
+		{
+			bool_value(value)
+			{
+				value
+			}
+			_
+			{
+				default
+			}
+		}
+	}
+	
+	fn as_int_or_default(default: int) -> int
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				if value >= int::min_value as i64 && value <= int::max_value as i64
+				{
+					value as int
+				}
+				else
+				{
+					fail(#fmt["Can't convert %? to an int", self]);
+				}
+			}
+			_
+			{
+				default
+			}
+		}
+	}
+	
+	fn as_uint_or_default(default: uint) -> uint
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				if value >= uint::min_value as i64 && value <= uint::max_value as i64
+				{
+					value as uint
+				}
+				else
+				{
+					fail(#fmt["Can't convert %? to a uint", self]);
+				}
+			}
+			_
+			{
+				default
+			}
+		}
+	}
+	
+	fn as_i64_or_default(default: i64) -> i64
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				value
+			}
+			_
+			{
+				default
+			}
+		}
+	}
+	
+	fn as_float_or_default(default:float) -> float
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				value as float
+			}
+			float_value(value)
+			{
+				value as float
+			}
+			_
+			{
+				default
+			}
+		}
+	}
+	
+	fn as_f64_or_default(default: f64) -> f64
+	{
+		alt self
+		{
+			int_value(value)
+			{
+				value as f64
+			}
+			float_value(value)
+			{
+				value
+			}
+			_
+			{
+				default
+			}
+		}
+	}
+	
+	fn as_tm_or_default(default: tm) -> tm
+	{
+		alt self
+		{
+			dateTime_value(value)
+			{
+				value
+			}
+			_
+			{
+				default
+			}
+		}
+	}
+	
+	fn as_str_or_default(default: str) -> str
+	{
+		alt self
+		{
+			string_value(value, _lang)
+			{
+				value
+			}
+			_
+			{
+				default
+			}
+		}
+	}
 }
 
 impl of to_str for object
@@ -78,7 +365,6 @@ impl of to_str for object
 		}
 	}
 }
-
 
 fn literal_to_object(value: str, kind: str, lang: str) -> object
 {
