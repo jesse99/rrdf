@@ -3,6 +3,7 @@ import core::dvec::*;
 import std::map::hashmap; 
 import std::time::tm;
 import object::*;
+import query::*;
 import solution::*;
 import store::*;
 import types::*;

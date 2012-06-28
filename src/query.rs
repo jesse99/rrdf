@@ -6,7 +6,7 @@ import std::time::tm;
 import operators::*;
 import sparql::*;
 
-export join_solutions, eval, pattern;
+export join_solutions, eval, selector, pattern;
 
 type binding = {name: str, value: object};
 
@@ -17,6 +17,11 @@ enum pattern
 	variable(str),
 	constant(object)
 }
+
+#[doc = "The function returned by compile and invoked to execute a SPARQL query.
+
+Returns a solution or a 'runtime' error."]
+type selector = fn@ (store) -> result::result<solution, str>;
 
 fn solution_row_to_str(row: solution_row) -> str
 {
