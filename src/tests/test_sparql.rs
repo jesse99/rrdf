@@ -289,3 +289,85 @@ fn filter_binary()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn filter_bound()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s
+	WHERE {
+		?s v:age ?age .
+		FILTER (BOUND (?age) && ?age = 19)
+	}";
+	let store = test_data::got_cast3();
+	store.add("got:Eddard_Stark", [
+		("v:age", int_value(45i64))
+	]);
+	store.add("got:Jon_Snow", [
+		("v:age", int_value(19i64))
+	]);
+	store.add("got:Sandor_Clegane", [
+		("v:age", int_value(35i64))
+	]);
+	let expected = [
+		[("s", iri_value(got("Jon_Snow")))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn filter_if()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s
+	WHERE {
+		?s v:age ?age .
+		FILTER IF(?s = got:Eddard_Stark, ?age = 45, ?age = 19)
+	}";
+	let store = test_data::got_cast3();
+	store.add("got:Eddard_Stark", [
+		("v:age", int_value(45i64))
+	]);
+	store.add("got:Jon_Snow", [
+		("v:age", int_value(19i64))
+	]);
+	store.add("got:Sandor_Clegane", [
+		("v:age", int_value(35i64))
+	]);
+	let expected = [
+		[("s", iri_value(got("Eddard_Stark")))],
+		[("s", iri_value(got("Jon_Snow")))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn filter_coalesce()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s
+	WHERE {
+		?s v:age ?age .
+		FILTER (COALESCE(?x, ?age) = 19)
+	}";
+	let store = test_data::got_cast3();
+	store.add("got:Eddard_Stark", [
+		("v:age", int_value(45i64))
+	]);
+	store.add("got:Jon_Snow", [
+		("v:age", int_value(19i64))
+	]);
+	store.add("got:Sandor_Clegane", [
+		("v:age", int_value(35i64))
+	]);
+	let expected = [
+		[("s", iri_value(got("Jon_Snow")))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}

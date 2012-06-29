@@ -35,6 +35,25 @@ fn iri_literal(value: str) -> pattern
 	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#anyURI", ""))
 }
 
+fn expand_expr(namespaces: [namespace], expr: expr) -> expr
+{
+	alt expr
+	{
+		constant_expr(iri_value(value))
+		{
+			constant_expr(iri_value(expand_uri(namespaces, value)))
+		}
+		call_expr(fname, expressions)
+		{
+			call_expr(fname, vec::map(expressions, {|e| @expand_expr(namespaces, *e)}))
+		}
+		_
+		{
+			expr
+		}
+	}
+}
+
 fn expand_pattern(namespaces: [namespace], pattern: pattern) -> pattern
 {
 	alt pattern
@@ -71,9 +90,9 @@ fn expand(namespaces: [namespace], algebra: algebra) -> algebra
 		{
 			optional(@expand(namespaces, *term))
 		}
-		filter(_expr)
+		filter(expr)
 		{
-			algebra
+			filter(expand_expr(namespaces, expr))
 		}
 	}
 }
@@ -441,7 +460,7 @@ fn binary_expr(term: parser<expr>, ops: [{oname: str, fname: str}]) -> parser<ex
 			}
 	));
 	
-	seq2(term, suffix.r0())
+	seq2(term, suffix.r0(), 
 		{|b, r|
 			if vec::len(r) == 0u
 			{
@@ -459,7 +478,83 @@ fn binary_expr(term: parser<expr>, ops: [{oname: str, fname: str}]) -> parser<ex
 					}
 				)
 			}
-		}
+		}).tag("")
+}
+
+fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
+{
+	let var = seq3_ret1("(".lit().ws(), Var, ")".lit().ws()).tag("Expected argument list");
+	//let unary = seq3_ret1("(".lit().ws(), Expression, ")".lit().ws()).tag("Expected argument list");
+	let binary = seq5("(".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), {|_a0, a1, _a2, a3, _a4| result::ok([a1, a3])}).tag("Expected argument list");
+	let ternary = seq7("(".lit().ws(), Expression, ",".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), {|_a0, a1, _a2, a3, _a4, a5, _a6| result::ok([a1, a3, a5])}).tag("Expected argument list");
+	let variadic = seq3_ret1("(".lit().ws(), list(Expression, ",".lit().ws()), ")".lit().ws()).tag("Expected argument list");
+	
+	// TODO: use a binary helper
+	
+	// [111] BuiltInCall ::= 
+	or_v([
+		// 'STR' '(' Expression ')' 
+		// |	'LANG' '(' Expression ')' 
+		// |	'LANGMATCHES' '(' Expression ',' Expression ')' 
+		// |	'DATATYPE' '(' Expression ')' 
+		// |	'BOUND' '(' Var ')' 
+		seq2("BOUND".liti().ws(), var)	{|_f, a0| result::ok(call_expr("bound_fn", [@variable_expr(a0)]))},
+		
+		// |	'IRI' '(' Expression ')' 
+		// |	'URI' '(' Expression ')' 
+		// |	'BNODE' ( '(' Expression ')' | NIL ) 
+		// |	'RAND' NIL 
+		// |	'ABS' '(' Expression ')' 
+		// |	'CEIL' '(' Expression ')' 
+		// |	'FLOOR' '(' Expression ')' 
+		// |	'ROUND' '(' Expression ')' 
+		// |	'CONCAT' ExpressionList 
+		// |	SubstringExpression 
+		// |	'STRLEN' '(' Expression ')' 
+		// |	StrReplaceExpression 
+		// |	'UCASE' '(' Expression ')' 
+		// |	'LCASE' '(' Expression ')' 
+		// |	'ENCODE_FOR_URI' '(' Expression ')' 
+		// |	'CONTAINS' '(' Expression ',' Expression ')' 
+		// |	'STRSTARTS' '(' Expression ',' Expression ')' 
+		// |	'STRENDS' '(' Expression ',' Expression ')' 
+		// |	'STRBEFORE' '(' Expression ',' Expression ')' 
+		// |	'STRAFTER' '(' Expression ',' Expression ')' 
+		// |	'YEAR' '(' Expression ')' 
+		// |	'MONTH' '(' Expression ')' 
+		// |	'DAY' '(' Expression ')' 
+		// |	'HOURS' '(' Expression ')' 
+		// |	'MINUTES' '(' Expression ')' 
+		// |	'SECONDS' '(' Expression ')' 
+		// |	'TIMEZONE' '(' Expression ')' 
+		// |	'TZ' '(' Expression ')' 
+		// |	'NOW' NIL 
+		// |	'MD5' '(' Expression ')' 
+		// |	'SHA1' '(' Expression ')' 
+		// |	'SHA256' '(' Expression ')' 
+		// |	'SHA384' '(' Expression ')' 
+		// |	'SHA512' '(' Expression ')' 
+		// |	'COALESCE' ExpressionList 
+		seq2("COALESCE".liti().ws(), variadic)	{|_f, a| result::ok(call_expr("coalesce_fn", vec::map(a, {|e| @e})))},
+		
+		// |	'IF' '(' Expression ',' Expression ',' Expression ')' 
+		seq2("IF".liti().ws(), ternary)	{|_f, a| result::ok(call_expr("if_fn", [@a[0], @a[1], @a[2]]))},
+		
+		// |	'STRLANG' '(' Expression ',' Expression ')' 
+		// |	'STRDT' '(' Expression ',' Expression ')' 
+		
+		// |	'sameTerm' '(' Expression ',' Expression ')' 
+		seq2("sameTerm".liti().ws(), binary)	{|_f, a| result::ok(call_expr("sameterm_fn", [@a[0], @a[1]]))}
+		
+		// |	'isIRI' '(' Expression ')' 
+		// |	'isURI' '(' Expression ')' 
+		// |	'isBLANK' '(' Expression ')' 
+		// |	'isLITERAL' '(' Expression ')' 
+		// |	'isNUMERIC' '(' Expression ')' 
+		// |	RegexExpression 
+		// |	ExistsFunc 
+		// |	NotExistsFunc
+	]).tag("Expected built-in call")
 }
 
 // http://www.w3.org/TR/sparql11-query/#grammar
@@ -600,8 +695,20 @@ fn make_parser() -> parser<selector>
 	// [98] Var ::= VAR1 | VAR2
 	let Var = VAR1;
 	
+	// [111] BuiltInCall
+	let Expression_ptr = @mut return(constant_expr(unbound_value("foo")));
+	let Expression_ref = forward_ref(Expression_ptr);
+	
+	let BuiltInCall = built_in_call(Expression_ref, Var);
+	
 	// [109] PrimaryExpression ::= BrackettedExpression | BuiltInCall | IRIrefOrFunction | RDFLiteral | NumericLiteral | BooleanLiteral | Var | Aggregate
+	let BrackettedExpression_ptr = @mut return(constant_expr(unbound_value("foo")));
+	let BrackettedExpression_ref = forward_ref(BrackettedExpression_ptr);
+	
 	let PrimaryExpression = or_v([
+		BrackettedExpression_ref,
+		BuiltInCall,
+		IRIref.thene {|v| return(constant_expr(iri_value(v)))},
 		NumericLiteral.thene {|v| return(constant_expr(v))},
 		Var.thene {|v| return(variable_expr(v))}
 		]);
@@ -646,8 +753,9 @@ fn make_parser() -> parser<selector>
 		seq3(NumericExpression, "IN".liti().ws(), NumericExpression)
 			{|lhs, _op, rhs| result::ok(call_expr("in_op", [@lhs, @rhs]))},
 		seq4(NumericExpression, "NOT".liti().ws(), "IN".liti().ws(), NumericExpression)
-			{|lhs, _o1, _o2, rhs| result::ok(call_expr("not_in_op", [@lhs, @rhs]))}
-	]);
+			{|lhs, _o1, _o2, rhs| result::ok(call_expr("not_in_op", [@lhs, @rhs]))},
+		NumericExpression
+	]).tag("Expected relational expression");
 	
 	// [103] ValueLogical ::= RelationalExpression
 	let ValueLogical = RelationalExpression;
@@ -659,10 +767,12 @@ fn make_parser() -> parser<selector>
 	let ConditionalOrExpression = binary_expr(ConditionalAndExpression, [{oname: "||", fname: "op_or"}]);
 	
 	// [100] Expression ::= ConditionalOrExpression
-	let Expression = ConditionalOrExpression;
+	let Expression = ConditionalOrExpression.tag("Expected expression");
+	*Expression_ptr = Expression;
 	
 	// [110] BrackettedExpression ::= '(' Expression ')'
-	let BrackettedExpression = seq3_ret1("(".lit().ws(), Expression, ")".lit().ws());
+	let BrackettedExpression = seq3_ret1("(".lit().ws(), Expression, ")".lit().ws()).tag("Expected sub-expression");
+	*BrackettedExpression_ptr = BrackettedExpression;
 	
 	// [96] VarOrTerm ::= Var | GraphTerm
 	let VarOrTerm = (Var.thene({|v| return(variable((v)))})).or(GraphTerm);
@@ -709,7 +819,7 @@ fn make_parser() -> parser<selector>
 		{|subject, e| result::ok({subject: subject, predicate: e[0], object: e[1]})};
 		
 	// [65] Constraint ::= BrackettedExpression | BuiltInCall | FunctionCall
-	let Constraint = BrackettedExpression;
+	let Constraint = or_v([BrackettedExpression, BuiltInCall]);
 	
 	// [64] Filter ::= 'FILTER' Constraint
 	let Filter = seq2_ret1("FILTER".liti().ws(), Constraint).thene {|v| return(filter(v))};
@@ -737,7 +847,7 @@ fn make_parser() -> parser<selector>
 			}
 		};
 	
-	// [55] GroupGraphPatternSub ::= TriplesBlock? (GraphPatternNotTriples '.'? TriplesBlock?)*		*****
+	// [55] GroupGraphPatternSub ::= TriplesBlock? (GraphPatternNotTriples '.'? TriplesBlock?)*
 	let ggps_suffix = seq3(GraphPatternNotTriples, ".".lit().ws().optional(), TriplesBlock.optional())
 		{|gpnt, _d, tb|
 			if option::is_some(tb)
