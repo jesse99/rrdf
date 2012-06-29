@@ -4,7 +4,7 @@
 export op_not, op_unary_plus, op_unary_minus, op_or, op_and, op_equals, op_not_equals,
 	op_less_than, op_less_than_or_equal, op_greater_than, op_greater_than_or_equal,
 	op_multiply, op_divide, op_add, op_subtract;
-
+	
 fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool, str>
 {
 	alt lhs

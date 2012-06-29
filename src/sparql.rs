@@ -1,31 +1,23 @@
 #[doc = "Compiles a SRARQL query into a function that can be applied to a store value."];
 import rparse::*;
-import query::*;
+import query::optional;
+import expression::*;
 
-export algebra, triple_pattern, selector, compile;
-
-type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
-
-enum algebra
-{
-	basic(triple_pattern),
-	group([@algebra]),
-	optional(@algebra)
-}
+export selector, compile;
 
 fn bool_literal(value: str) -> pattern
 {
 	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#boolean", ""))
 }
 
-fn int_literal(value: str) -> pattern
+fn int_literal(value: str) -> object
 {
-	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#integer", ""))
+	literal_to_object(value, "http://www.w3.org/2001/XMLSchema#integer", "")
 }
 
-fn float_literal(value: str) -> pattern
+fn float_literal(value: str) -> object
 {
-	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#double", ""))
+	literal_to_object(value, "http://www.w3.org/2001/XMLSchema#double", "")
 }
 
 fn string_literal(value: str, lang: str) -> pattern
@@ -78,6 +70,10 @@ fn expand(namespaces: [namespace], algebra: algebra) -> algebra
 		optional(term)
 		{
 			optional(@expand(namespaces, *term))
+		}
+		filter(_expr)
+		{
+			algebra
 		}
 	}
 }
@@ -434,6 +430,38 @@ impl my_parser_methods<T: copy> for parser<T>
 	}
 }
 
+fn binary_expr(term: parser<expr>, ops: [{oname: str, fname: str}]) -> parser<expr>
+{
+	// Parser that returns which arm branched plus the value of the arm.
+	let suffix = or_v(
+		vec::mapi(ops,
+			{|i, x|
+				seq2(x.oname.lit().ws(), term,
+					{|_o, r| result::ok((i, r))})
+			}
+	));
+	
+	seq2(term, suffix.r0())
+		{|b, r|
+			if vec::len(r) == 0u
+			{
+				// If only one term matched then use that result.
+				result::ok(b)
+			}
+			else
+			{
+				// Otherwise we need to create call expressions for each pair of terms, from left to right.
+				result::ok(
+					vec::foldl(b, r)
+					{|lhs, rhs|
+						let (i, right) = rhs;
+						call_expr(ops[i].fname, [@lhs, @right])
+					}
+				)
+			}
+		}
+}
+
 // http://www.w3.org/TR/sparql11-query/#grammar
 // TODO: remove annotate calls
 fn make_parser() -> parser<selector>
@@ -544,7 +572,7 @@ fn make_parser() -> parser<selector>
 	// [120] NumericLiteral	::= NumericLiteralUnsigned | NumericLiteralPositive | NumericLiteralNegative
 	let NumericLiteral = or_v([NumericLiteralPositive, NumericLiteralNegative, NumericLiteralUnsigned]);
 	
-	// [119] RDFLiteral ::= String ( LANGTAG | ( '^^' IRIref ) )?
+	// [119] RDFLiteral ::= String (LANGTAG | ('^^' IRIref))?
 	let RDFLiteral1 = String.thene({|v| return(string_literal(v, ""))});
 	
 	let RDFLiteral2 = seq2(String, LANGTAG)
@@ -559,21 +587,85 @@ fn make_parser() -> parser<selector>
 	let GraphTerm = or_v([
 		RDFLiteral.annotate("RDFLiteral"),
 		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))}),
-		NumericLiteral,
+		NumericLiteral.thene {|v| return(constant(v))},
 		BooleanLiteral
 	]);
 	
-	// [156] VARNAME ::= ( PN_CHARS_U | [0-9] ) ( PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040] )*
+	// [156] VARNAME ::= (PN_CHARS_U | [0-9]) (PN_CHARS_U | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040])*
 	let VARNAME = identifier().ws();
 	
 	// [133] VAR1 ::= '?' VARNAME
-	let VAR1 = seq2_ret1("?".lit().ws(), VARNAME).thene({|v| return(variable((v)))});
+	let VAR1 = seq2_ret1("?".lit().ws(), VARNAME);
 	
 	// [98] Var ::= VAR1 | VAR2
 	let Var = VAR1;
 	
+	// [109] PrimaryExpression ::= BrackettedExpression | BuiltInCall | IRIrefOrFunction | RDFLiteral | NumericLiteral | BooleanLiteral | Var | Aggregate
+	let PrimaryExpression = or_v([
+		NumericLiteral.thene {|v| return(constant_expr(v))},
+		Var.thene {|v| return(variable_expr(v))}
+		]);
+		
+	// [108] UnaryExpression ::= '!' PrimaryExpression | '+' PrimaryExpression | '-' PrimaryExpression | PrimaryExpression
+	let UnaryExpression = or_v([
+		seq2_ret1("!".lit().ws(), PrimaryExpression).thene {|term| return(call_expr("op_not", [@term]))},
+		seq2_ret1("+".lit().ws(), PrimaryExpression),
+		seq2_ret1("-".lit().ws(), PrimaryExpression).thene {|term| return(call_expr("op_unary_minus", [@term]))},
+		PrimaryExpression
+		]);
+	
+	// [107] MultiplicativeExpression ::= UnaryExpression ('*' UnaryExpression | '/' UnaryExpression)*
+	let MultiplicativeExpression = binary_expr(UnaryExpression, [{oname: "*", fname: "op_multiply"}, {oname: "/", fname: "op_divide"}]);
+	
+	// [106] AdditiveExpression ::= MultiplicativeExpression (
+	//                                                 '+' MultiplicativeExpression | '-' MultiplicativeExpression | 
+	//                                                 (NumericLiteralPositive | NumericLiteralNegative ) (('*' UnaryExpression) | ('/' UnaryExpression))?
+	//                                           )*
+	let AdditiveExpression = binary_expr(MultiplicativeExpression, [{oname: "+", fname: "op_add"}, {oname: "-", fname: "op_subtract"}]);
+	
+	// [105] NumericExpression ::= AdditiveExpression
+	let NumericExpression = AdditiveExpression;
+	
+	// [104] RelationalExpression ::= NumericExpression ( '=' NumericExpression | '!=' NumericExpression | 
+	//                                                                           '<' NumericExpression | '>' NumericExpression | 
+	//                                                                           '<=' NumericExpression | '>=' NumericExpression | 
+	//                                                                           'IN' ExpressionList | 'NOT' 'IN' ExpressionList )?
+	let RelationalExpression = or_v([
+		seq3(NumericExpression, "=".lit().ws(), NumericExpression)
+			{|lhs, _op, rhs| result::ok(call_expr("op_equals", [@lhs, @rhs]))},
+		seq3(NumericExpression, "!=".lit().ws(), NumericExpression)
+			{|lhs, _op, rhs| result::ok(call_expr("op_not_equals", [@lhs, @rhs]))},
+		seq3(NumericExpression, "<".lit().ws(), NumericExpression)
+			{|lhs, _op, rhs| result::ok(call_expr("op_less_than", [@lhs, @rhs]))},
+		seq3(NumericExpression, ">".lit().ws(), NumericExpression)
+			{|lhs, _op, rhs| result::ok(call_expr("op_greater_than", [@lhs, @rhs]))},
+		seq3(NumericExpression, "<=".lit().ws(), NumericExpression)
+			{|lhs, _op, rhs| result::ok(call_expr("op_less_than_or_equal", [@lhs, @rhs]))},
+		seq3(NumericExpression, ">=".lit().ws(), NumericExpression)
+			{|lhs, _op, rhs| result::ok(call_expr("op_greater_than_or_equal", [@lhs, @rhs]))},
+		seq3(NumericExpression, "IN".liti().ws(), NumericExpression)
+			{|lhs, _op, rhs| result::ok(call_expr("in_op", [@lhs, @rhs]))},
+		seq4(NumericExpression, "NOT".liti().ws(), "IN".liti().ws(), NumericExpression)
+			{|lhs, _o1, _o2, rhs| result::ok(call_expr("not_in_op", [@lhs, @rhs]))}
+	]);
+	
+	// [103] ValueLogical ::= RelationalExpression
+	let ValueLogical = RelationalExpression;
+	
+	// [102] ConditionalAndExpression ::= ValueLogical ( '&&' ValueLogical )*
+	let ConditionalAndExpression = binary_expr(ValueLogical, [{oname: "&&", fname: "op_and"}]);
+	
+	// [101] ConditionalOrExpression ::= ConditionalAndExpression ( '||' ConditionalAndExpression )*
+	let ConditionalOrExpression = binary_expr(ConditionalAndExpression, [{oname: "||", fname: "op_or"}]);
+	
+	// [100] Expression ::= ConditionalOrExpression
+	let Expression = ConditionalOrExpression;
+	
+	// [110] BrackettedExpression ::= '(' Expression ')'
+	let BrackettedExpression = seq3_ret1("(".lit().ws(), Expression, ")".lit().ws());
+	
 	// [96] VarOrTerm ::= Var | GraphTerm
-	let VarOrTerm = Var.or(GraphTerm);
+	let VarOrTerm = (Var.thene({|v| return(variable((v)))})).or(GraphTerm);
 	
 	// [95] GraphNode ::= VarOrTerm | TriplesNode
 	let GraphNode = VarOrTerm;
@@ -597,7 +689,7 @@ fn make_parser() -> parser<selector>
 	let Path = PathAlternative;
 	
 	// [81] VerbSimple ::= Var
-	let VerbSimple = Var;
+	let VerbSimple = Var.thene({|v| return(variable((v)))});;
 	
 	// [75] Object ::= GraphNode
 	let Object = GraphNode;
@@ -616,15 +708,21 @@ fn make_parser() -> parser<selector>
 	let TriplesSameSubjectPath = seq2(VarOrTerm, PropertyListNotEmptyPath)
 		{|subject, e| result::ok({subject: subject, predicate: e[0], object: e[1]})};
 		
+	// [65] Constraint ::= BrackettedExpression | BuiltInCall | FunctionCall
+	let Constraint = BrackettedExpression;
+	
+	// [64] Filter ::= 'FILTER' Constraint
+	let Filter = seq2_ret1("FILTER".liti().ws(), Constraint).thene {|v| return(filter(v))};
+	
 	// [58] OptionalGraphPattern ::= 'OPTIONAL' GroupGraphPattern
 	let GroupGraphPattern_ptr = @mut return(group([]));
 	let GroupGraphPattern_ref = forward_ref(GroupGraphPattern_ptr);
 	
-	let OptionalGraphPattern = seq2("OPTIONAL".lit().ws(), GroupGraphPattern_ref)
+	let OptionalGraphPattern = seq2("OPTIONAL".liti().ws(), GroupGraphPattern_ref)
 		{|_o, a| result::ok(optional(@a))};
 	
 	// [57] GraphPatternNotTriples ::= GroupOrUnionGraphPattern | OptionalGraphPattern | MinusGraphPattern | GraphGraphPattern | ServiceGraphPattern | Filter | Bind
-	let GraphPatternNotTriples = OptionalGraphPattern;
+	let GraphPatternNotTriples = OptionalGraphPattern.or(Filter);
 	
 	// [56] TriplesBlock ::= TriplesSameSubjectPath ('.' TriplesBlock?)?
 	let TriplesBlock = seq2(list(TriplesSameSubjectPath, ".".lit().ws()), ".".lit().ws().optional())
@@ -682,7 +780,7 @@ fn make_parser() -> parser<selector>
 	
 	// [9] SelectClause ::= 'SELECT' ('DISTINCT' | 'REDUCED')? ((Var | ('(' Expression 'AS' Var ')'))+ | '*')
 	let select_suffix = or_v([
-		Var.r1(),
+		(Var.thene({|v| return(variable((v)))})).r1(),
 		"*".lit().ws().thene({|_x| return([variable("*")])})]);
 		
 	let SelectClause = seq2_ret1("SELECT".liti().ws(), select_suffix);
@@ -692,7 +790,7 @@ fn make_parser() -> parser<selector>
 		{|patterns, algebra| result::ok((patterns, algebra))};
 		
 	// [6] PrefixDecl ::= 'PREFIX' PNAME_NS IRI_REF
-	let PrefixDecl = seq3("PREFIX".lit().ws(), PNAME_NS.ws(), IRI_REF)
+	let PrefixDecl = seq3("PREFIX".liti().ws(), PNAME_NS.ws(), IRI_REF)
 		{|_p, ns, ref| result::ok({prefix: str::slice(ns, 0u, str::len(ns)-1u), path: ref})};
 	
 	// [4] Prologue ::= (BaseDecl | PrefixDecl)*

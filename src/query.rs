@@ -5,10 +5,11 @@
 import std::map::hashmap;
 import result::extensions;
 import std::time::tm;
+import expression::*;
 import operators::*;
 import sparql::*;
 
-export join_solutions, eval, pattern;
+export join_solutions, eval, pattern, algebra, triple_pattern;
 
 type binding = {name: str, value: object};
 
@@ -18,6 +19,16 @@ enum pattern
 {
 	variable(str),
 	constant(object)
+}
+
+type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
+
+enum algebra
+{
+	basic(triple_pattern),
+	group([@algebra]),
+	optional(@algebra),
+	filter(expr)
 }
 
 fn solution_row_to_str(row: solution_row) -> str
@@ -372,31 +383,79 @@ fn eval_basic(store: store, names: [str], matcher: triple_pattern) -> result::re
 	result::ok(rows)
 }
 
+fn filter_solution(names: [str], solution: solution, expr: expr) -> result::result<solution, str>
+{
+	let mut result = [];
+	vec::reserve(result, vec::len(solution));
+	
+	for vec::each(solution)
+	{|row|
+		let value = eval_expr(row, expr);
+		alt get_ebv(value)
+		{
+			result::ok(true)
+			{
+				vec::push(result, filter_row(names, row));
+			}
+			result::ok(false)
+			{
+				#debug["FILTER rejected %?", row];
+			}
+			result::err(err)
+			{
+				ret result::err(err);
+			}
+		}
+	}
+	
+	ret result::ok(result);
+}
+
 fn eval_group(store: store, in_names: [str], terms: [@algebra]) -> result::result<solution, str>
 {
 	let mut result = [];
 	
 	for vec::eachi(terms)
 	{|i, term|
-		alt eval_algebra(store, ["*"], *term)
+	// We can't filter out bindings not in names until we've finished joining bindings.
+	let names =
+		if i == vec::len(terms) - 1u
 		{
-			result::ok(solution)
+			in_names
+		}
+		else
+		{
+			["*"]
+		};
+		alt term 
+		{
+			@filter(expr)
 			{
-				// We can't filter out bindings not in names until we've finished joining bindings.
-				let names =
-					if i == vec::len(terms) - 1u
+				alt filter_solution(names, result, expr)
+				{
+					result::ok(solution)
 					{
-						in_names
+						result = solution;
 					}
-					else
+					result::err(mesg)
 					{
-						["*"]
-					};
-				result = join_solutions(names, result, solution, alt *term {optional(_t) {true} _ {false}});
+						ret result::err(mesg);
+					}
+				}
 			}
-			result::err(mesg)
+			_
 			{
-				ret result::err(mesg);
+				alt eval_algebra(store, ["*"], *term)
+				{
+					result::ok(solution)
+					{
+						result = join_solutions(names, result, solution, alt *term {optional(_t) {true} _ {false}});
+					}
+					result::err(mesg)
+					{
+						ret result::err(mesg);
+					}
+				}
 			}
 		}
 	}
@@ -434,6 +493,13 @@ fn eval_algebra(store: store, names: [str], algebra: algebra) -> result::result<
 		optional(term)
 		{
 			eval_optional(store, names, *term)
+		}
+		filter(expr)
+		{
+			// Not sure what's supposed to happen here. According to GroupGraphPatternSub a
+			// group can contain just a FILTER (should be a no-op?) or a filter and then a triple
+			// pattern (filter position doesn't matter?).
+			result::err("FILTER should appear last in a pattern group.")
 		}
 	}
 }

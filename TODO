@@ -63,40 +63,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 [68] ExpressionList ::= NIL | '(' Expression ( ',' Expression )* ')'
 
-[123] NumericLiteralNegative ::= INTEGER_NEGATIVE |	DECIMAL_NEGATIVE |	DOUBLE_NEGATIVE
-
-[122] NumericLiteralPositive ::= INTEGER_POSITIVE |	DECIMAL_POSITIVE |	DOUBLE_POSITIVE
-
-[109] PrimaryExpression ::= BrackettedExpression | BuiltInCall | IRIrefOrFunction | RDFLiteral | NumericLiteral | BooleanLiteral | Var | Aggregate
-
-[108] UnaryExpression ::= '!' PrimaryExpression 
-|	'+' PrimaryExpression 
-|	'-' PrimaryExpression 
-|	PrimaryExpression
-
-[107] MultiplicativeExpression ::= UnaryExpression ( '*' UnaryExpression | '/' UnaryExpression )*
-
-[106] AdditiveExpression ::= MultiplicativeExpression ( '+' MultiplicativeExpression | '-' MultiplicativeExpression | ( NumericLiteralPositive | NumericLiteralNegative ) ( ( '*' UnaryExpression ) | ( '/' UnaryExpression ) )? )*
-
-[105] NumericExpression ::= AdditiveExpression
-
-[104] RelationalExpression ::= NumericExpression ( '=' NumericExpression | '!=' NumericExpression | '<' NumericExpression | '>' NumericExpression | '<=' NumericExpression | '>=' NumericExpression | 'IN' ExpressionList | 'NOT' 'IN' ExpressionList )?
-
-[103] ValueLogical ::= RelationalExpression
-
-[102] ConditionalAndExpression ::= ValueLogical ( '&&' ValueLogical )*
-
-[101] ConditionalOrExpression ::= ConditionalAndExpression ( '||' ConditionalAndExpression )*
-
-[100] Expression ::= ConditionalOrExpression
-
-[110] BrackettedExpression ::= '(' Expression ')'
-
 [66] FunctionCall ::= IRIref ArgList
-
-[65] Constraint ::= BrackettedExpression | BuiltInCall | FunctionCall
-
-[64] Filter ::= 'FILTER' Constraint
 
 
 * Work on operators:
@@ -119,6 +86,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 * Do we need to be able to match collections?
 * Concepts doc at 307 talks about escaping urls.
 * Support common subjects and common prefixes (4.2.1 and 4.2.2)
+* WHen we support lists we'll also need to support in and not in operators.
 * Add a unit test demonstrating that solutions can be sent across tasks.
 * Add a unit test showing that add_triples args can be sent across threads.
 * Get more queries working:
