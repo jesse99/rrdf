@@ -16,20 +16,20 @@ fn bound_fn(operand: object) -> object
 	}
 }
 
-fn eval_if(bindings: [(str, object)], args: [@expr]) -> object
+fn eval_if(context: query_context, bindings: [(str, object)], args: [@expr]) -> object
 {
 	if vec::len(args) == 3u
 	{
-		let predicate = eval_expr(bindings, *args[0]);
+		let predicate = eval_expr(context, bindings, *args[0]);
 		alt get_ebv(predicate)
 		{
 			result::ok(true)
 			{
-				eval_expr(bindings, *args[1])
+				eval_expr(context, bindings, *args[1])
 			}
 			result::ok(false)
 			{
-				eval_expr(bindings, *args[2])
+				eval_expr(context, bindings, *args[2])
 			}
 			result::err(err)
 			{
@@ -50,11 +50,11 @@ fn eval_if(bindings: [(str, object)], args: [@expr]) -> object
 	}
 }
 
-fn eval_coalesce(bindings: [(str, object)], args: [@expr]) -> object
+fn eval_coalesce(context: query_context, bindings: [(str, object)], args: [@expr]) -> object
 {
 	for vec::each(args)
 	{|arg|
-		let candidate = eval_expr(bindings, *arg);
+		let candidate = eval_expr(context, bindings, *arg);
 		alt candidate
 		{
 			unbound_value(*) | invalid_value(*) | error_value(*)

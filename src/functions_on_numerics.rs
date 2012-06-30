@@ -76,4 +76,16 @@ fn floor_fn(operand: object) -> object
 	}
 }
 
-// TODO: add rand
+fn rand_fn(context: query_context, args: [object]) -> object
+{
+	if vec::len(args) == 0u
+	{
+		let n = context.rng.next() as f64;
+		let d = u32::max_value as f64;
+		float_value(n/d)
+	}
+	else
+	{
+		error_value(#fmt["RAND accepts 0 arguments but was called with %? arguments.", vec::len(args)])
+	}
+}

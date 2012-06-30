@@ -9,7 +9,7 @@ import expression::*;
 import operators::*;
 import sparql::*;
 
-export join_solutions, eval, pattern, algebra, triple_pattern;
+export join_solutions, eval, pattern, algebra, triple_pattern, query_context;
 
 type binding = {name: str, value: object};
 
@@ -30,6 +30,8 @@ enum algebra
 	optional(@algebra),
 	filter(expr)
 }
+
+type query_context = {algebra: algebra, rng: rand::rng};
 
 fn solution_row_to_str(row: solution_row) -> str
 {
@@ -383,14 +385,14 @@ fn eval_basic(store: store, names: [str], matcher: triple_pattern) -> result::re
 	result::ok(rows)
 }
 
-fn filter_solution(names: [str], solution: solution, expr: expr) -> result::result<solution, str>
+fn filter_solution(context: query_context, names: [str], solution: solution, expr: expr) -> result::result<solution, str>
 {
 	let mut result = [];
 	vec::reserve(result, vec::len(solution));
 	
 	for vec::each(solution)
 	{|row|
-		let value = eval_expr(row, expr);
+		let value = eval_expr(context, row, expr);
 		alt get_ebv(value)
 		{
 			result::ok(true)
@@ -411,7 +413,7 @@ fn filter_solution(names: [str], solution: solution, expr: expr) -> result::resu
 	ret result::ok(result);
 }
 
-fn eval_group(store: store, in_names: [str], terms: [@algebra]) -> result::result<solution, str>
+fn eval_group(store: store, context: query_context, in_names: [str], terms: [@algebra]) -> result::result<solution, str>
 {
 	let mut result = [];
 	
@@ -431,7 +433,7 @@ fn eval_group(store: store, in_names: [str], terms: [@algebra]) -> result::resul
 		{
 			@filter(expr)
 			{
-				alt filter_solution(names, result, expr)
+				alt filter_solution(context, names, result, expr)
 				{
 					result::ok(solution)
 					{
@@ -445,7 +447,7 @@ fn eval_group(store: store, in_names: [str], terms: [@algebra]) -> result::resul
 			}
 			_
 			{
-				alt eval_algebra(store, ["*"], *term)
+				alt eval_algebra(store, ["*"], {algebra: *term with context})
 				{
 					result::ok(solution)
 					{
@@ -463,9 +465,9 @@ fn eval_group(store: store, in_names: [str], terms: [@algebra]) -> result::resul
 	ret result::ok(result);
 }
 
-fn eval_optional(store: store, names: [str], term: algebra) -> result::result<solution, str>
+fn eval_optional(store: store, names: [str], context: query_context, term: algebra) -> result::result<solution, str>
 {
-	alt eval_algebra(store, names, term)
+	alt eval_algebra(store, names, {algebra: term with context})
 	{
 		result::ok(solution)
 		{
@@ -478,9 +480,9 @@ fn eval_optional(store: store, names: [str], term: algebra) -> result::result<so
 	}
 }
 
-fn eval_algebra(store: store, names: [str], algebra: algebra) -> result::result<solution, str>
+fn eval_algebra(store: store, names: [str], context: query_context) -> result::result<solution, str>
 {
-	alt algebra
+	alt context.algebra
 	{
 		basic(pattern)
 		{
@@ -488,11 +490,11 @@ fn eval_algebra(store: store, names: [str], algebra: algebra) -> result::result<
 		}
 		group(terms)
 		{
-			eval_group(store, names, terms)
+			eval_group(store, context, names, terms)
 		}
 		optional(term)
 		{
-			eval_optional(store, names, *term)
+			eval_optional(store, names, context, *term)
 		}
 		filter(expr)
 		{
@@ -504,10 +506,10 @@ fn eval_algebra(store: store, names: [str], algebra: algebra) -> result::result<
 	}
 }
 
-fn eval(names: [str], matcher: algebra) -> selector
+fn eval(names: [str], context: query_context) -> selector
 {
 	{|store: store|
-		#debug["algebra: %?", matcher];
-		eval_algebra(store, names, matcher)
+		#debug["algebra: %?", context.algebra];
+		eval_algebra(store, names, context)
 	}
 }

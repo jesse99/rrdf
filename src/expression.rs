@@ -14,7 +14,7 @@ enum expr
 	call_expr(str, [@expr])		// function name + arguments
 }
 
-fn eval_expr(bindings: [(str, object)], expr: expr) -> object
+fn eval_expr(context: query_context, bindings: [(str, object)], expr: expr) -> object
 {
 	let result = alt expr
 	{
@@ -38,15 +38,15 @@ fn eval_expr(bindings: [(str, object)], expr: expr) -> object
 		}
 		call_expr("if_fn", args)				// special case this because it is supposed to short circuit
 		{
-			eval_if(bindings, args)
+			eval_if(context, bindings, args)
 		}
 		call_expr("coalesce_fn", args)		// special case this because it is variadic
 		{
-			eval_coalesce(bindings, args)
+			eval_coalesce(context, bindings, args)
 		}
 		call_expr(fname, args)
 		{
-			eval_call(bindings, fname, args)
+			eval_call(context, bindings, fname, args)
 		}
 	};
 	
@@ -59,9 +59,9 @@ type unary_fn = fn (object) -> object;
 type binary_fn = fn (object, object) -> object;
 type ternary_fn = fn (object, object, object) -> object;
 
-fn eval_call(bindings: [(str, object)], fname: str, args: [@expr]) -> object
+fn eval_call(context: query_context, bindings: [(str, object)], fname: str, args: [@expr]) -> object
 {
-	let args = vec::map(args) {|a| eval_expr(bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = vec::map(args) {|a| eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	alt fname
 	{
 		// operators
@@ -240,6 +240,10 @@ fn eval_call(bindings: [(str, object)], fname: str, args: [@expr]) -> object
 		"floor_fn"
 		{
 			eval_call1(fname, @floor_fn, args)
+		}
+		"rand_fn"
+		{
+			rand_fn(context, args)
 		}
 		// unknown functions
 		_

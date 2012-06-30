@@ -499,6 +499,7 @@ fn binary_expr(term: parser<expr>, ops: [{oname: str, fname: str}]) -> parser<ex
 fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 {
 	let var = seq3_ret1("(".lit().ws(), Var, ")".lit().ws()).tag("Expected argument list");
+	let nullary = seq2_ret1("(".lit().ws(), ")".lit().ws()).tag("Expected argument list");
 	let unary = seq3_ret1("(".lit().ws(), Expression, ")".lit().ws()).tag("Expected argument list");
 	let binary = seq5("(".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), {|_a0, a1, _a2, a3, _a4| result::ok([a1, a3])}).tag("Expected argument list");
 	let ternary = seq7("(".lit().ws(), Expression, ",".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), {|_a0, a1, _a2, a3, _a4, a5, _a6| result::ok([a1, a3, a5])}).tag("Expected argument list");
@@ -528,6 +529,8 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		// |	'URI' '(' Expression ')' 
 		// |	'BNODE' ( '(' Expression ')' | NIL ) 
 		// |	'RAND' NIL 
+		seq2("RAND".liti().ws(), nullary)	{|_f, _a| result::ok(call_expr("rand_fn", []))},
+		
 		// |	'ABS' '(' Expression ')' 
 		#unary_fn["abs"],
 		
@@ -999,11 +1002,13 @@ fn build_parser(namespaces: [namespace], patterns: [pattern], algebra: algebra) 
 	{
 		if vec::is_not_empty(namespaces)
 		{
-			result::ok(eval(names, expand(namespaces, algebra)))
+			let context = {algebra: expand(namespaces, algebra), rng: rand::rng()};
+			result::ok(eval(names, context))
 		}
 		else
 		{
-			result::ok(eval(names, algebra))
+			let context = {algebra: algebra, rng: rand::rng()};
+			result::ok(eval(names, context))
 		}
 	}
 	else
