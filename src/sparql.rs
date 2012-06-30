@@ -35,6 +35,21 @@ fn iri_literal(value: str) -> pattern
 	constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#anyURI", ""))
 }
 
+fn pattern_to_expr(pattern: pattern) -> expr
+{
+	alt pattern
+	{
+		variable(name)
+		{
+			variable_expr(name)
+		}
+		constant(value)
+		{
+			constant_expr(value)
+		}
+	}
+}
+
 fn expand_expr(namespaces: [namespace], expr: expr) -> expr
 {
 	alt expr
@@ -484,19 +499,26 @@ fn binary_expr(term: parser<expr>, ops: [{oname: str, fname: str}]) -> parser<ex
 fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 {
 	let var = seq3_ret1("(".lit().ws(), Var, ")".lit().ws()).tag("Expected argument list");
-	//let unary = seq3_ret1("(".lit().ws(), Expression, ")".lit().ws()).tag("Expected argument list");
+	let unary = seq3_ret1("(".lit().ws(), Expression, ")".lit().ws()).tag("Expected argument list");
 	let binary = seq5("(".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), {|_a0, a1, _a2, a3, _a4| result::ok([a1, a3])}).tag("Expected argument list");
 	let ternary = seq7("(".lit().ws(), Expression, ",".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), {|_a0, a1, _a2, a3, _a4, a5, _a6| result::ok([a1, a3, a5])}).tag("Expected argument list");
 	let variadic = seq3_ret1("(".lit().ws(), list(Expression, ",".lit().ws()), ")".lit().ws()).tag("Expected argument list");
 	
-	// TODO: use a binary helper
+	#macro([#unary_fn[name], seq2(name.liti().ws(), unary)	{|_f, a| result::ok(call_expr(name+"_fn", [@a]))}]);
+	#macro([#binary_fn[name], seq2(name.liti().ws(), binary)	{|_f, a| result::ok(call_expr(name+"_fn", [@a[0], @a[1]]))}]);
 	
 	// [111] BuiltInCall ::= 
 	or_v([
 		// 'STR' '(' Expression ')' 
+		#unary_fn["str"],
+		
 		// |	'LANG' '(' Expression ')' 
+		#unary_fn["lang"],
+		
 		// |	'LANGMATCHES' '(' Expression ',' Expression ')' 
 		// |	'DATATYPE' '(' Expression ')' 
+		#unary_fn["datatype"],
+		
 		// |	'BOUND' '(' Var ')' 
 		seq2("BOUND".liti().ws(), var)	{|_f, a0| result::ok(call_expr("bound_fn", [@variable_expr(a0)]))},
 		
@@ -541,16 +563,29 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		seq2("IF".liti().ws(), ternary)	{|_f, a| result::ok(call_expr("if_fn", [@a[0], @a[1], @a[2]]))},
 		
 		// |	'STRLANG' '(' Expression ',' Expression ')' 
+		#binary_fn["strlang"],
+		
 		// |	'STRDT' '(' Expression ',' Expression ')' 
+		#binary_fn["strdt"],
 		
 		// |	'sameTerm' '(' Expression ',' Expression ')' 
-		seq2("sameTerm".liti().ws(), binary)	{|_f, a| result::ok(call_expr("sameterm_fn", [@a[0], @a[1]]))}
+		#binary_fn["sameterm"],
 		
 		// |	'isIRI' '(' Expression ')' 
+		#unary_fn["isiri"],
+		
 		// |	'isURI' '(' Expression ')' 
+		seq2("isURI".liti().ws(), unary)	{|_f, a| result::ok(call_expr("is_iri_fn", [@a]))},
+		
 		// |	'isBLANK' '(' Expression ')' 
+		#unary_fn["isblank"],
+		
 		// |	'isLITERAL' '(' Expression ')' 
+		#unary_fn["isliteral"],
+		
 		// |	'isNUMERIC' '(' Expression ')' 
+		#unary_fn["isnumeric"]
+		
 		// |	RegexExpression 
 		// |	ExistsFunc 
 		// |	NotExistsFunc
@@ -658,7 +693,7 @@ fn make_parser() -> parser<selector>
 	// [121] NumericLiteralUnsigned ::= INTEGER | DECIMAL | DOUBLE
 	let NumericLiteralUnsigned = or_v([DOUBLE, DECIMAL, INTEGER]);
 	
-	// [122] NumericLiteralPositive ::= INTEGER_POSITIVE |	DECIMAL_POSITIVE |	DOUBLE_POSITIVE
+	// [122] NumericLiteralPositive ::= INTEGER_POSITIVE |	DECIMAL_POSITIVE | DOUBLE_POSITIVE
 	let NumericLiteralPositive = or_v([DOUBLE_POSITIVE, DECIMAL_POSITIVE, INTEGER_POSITIVE]);
 
 	// [123] NumericLiteralNegative ::= INTEGER_NEGATIVE |	DECIMAL_NEGATIVE |	DOUBLE_NEGATIVE
@@ -678,7 +713,7 @@ fn make_parser() -> parser<selector>
 	
 	let RDFLiteral = or_v([RDFLiteral3, RDFLiteral2, RDFLiteral1]);
 	
-	// [99] GraphTerm	::= IRIref | RDFLiteral | NumericLiteral | BooleanLiteral |	BlankNode |	NIL
+	// [99] GraphTerm ::= IRIref | RDFLiteral | NumericLiteral | BooleanLiteral | BlankNode | NIL
 	let GraphTerm = or_v([
 		RDFLiteral.annotate("RDFLiteral"),
 		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))}),
@@ -709,6 +744,7 @@ fn make_parser() -> parser<selector>
 		BrackettedExpression_ref,
 		BuiltInCall,
 		IRIref.thene {|v| return(constant_expr(iri_value(v)))},
+		RDFLiteral.thene({|v| return(pattern_to_expr(v))}),
 		NumericLiteral.thene {|v| return(constant_expr(v))},
 		Var.thene {|v| return(variable_expr(v))}
 		]);

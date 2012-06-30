@@ -1,5 +1,6 @@
 #[doc = "SPARQL FILTER expressions."];
 import functional_forms::*;
+import functions_on_terms::*;
 import operators::*;
 
 export expr, eval_expr;
@@ -185,7 +186,43 @@ fn eval_call(bindings: [(str, object)], fname: str, args: [@expr]) -> object
 		{
 			eval_call2(fname, @sameterm_fn, args)
 		}
-		// TODO: note that if_fn and coalesce_fn take exprs
+		"isiri_fn"
+		{
+			eval_call1(fname, @isiri_fn, args)
+		}
+		"isblank_fn"
+		{
+			eval_call1(fname, @isblank_fn, args)
+		}
+		"isliteral_fn"
+		{
+			eval_call1(fname, @isliteral_fn, args)
+		}
+		"isnumeric_fn"
+		{
+			eval_call1(fname, @isnumeric_fn, args)
+		}
+		"str_fn"
+		{
+			eval_call1(fname, @str_fn, args)
+		}
+		"lang_fn"
+		{
+			eval_call1(fname, @lang_fn, args)
+		}
+		"datatype_fn"
+		{
+			eval_call1(fname, @datatype_fn, args)
+		}
+		"strdt_fn"
+		{
+			eval_call2(fname, @strdt_fn, args)
+		}
+		"strlang_fn"
+		{
+			eval_call2(fname, @strlang_fn, args)
+		}
+		// functions on terms
 		// unknown functions
 		_
 		{
