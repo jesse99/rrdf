@@ -529,9 +529,17 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		// |	'BNODE' ( '(' Expression ')' | NIL ) 
 		// |	'RAND' NIL 
 		// |	'ABS' '(' Expression ')' 
+		#unary_fn["abs"],
+		
 		// |	'CEIL' '(' Expression ')' 
+		#unary_fn["ceil"],
+		
 		// |	'FLOOR' '(' Expression ')' 
+		#unary_fn["floor"],
+		
 		// |	'ROUND' '(' Expression ')' 
+		#unary_fn["round"],
+		
 		// |	'CONCAT' ExpressionList 
 		seq2("CONCAT".liti().ws(), variadic)	{|_f, a| result::ok(call_expr("concat_fn", vec::map(a, {|e| @e})))},
 		

@@ -1,4 +1,5 @@
 #[doc = "SPARQL functions. Clients will not ordinarily use this."];
+import expression::*;
 
 fn bound_fn(operand: object) -> object
 {
@@ -15,9 +16,60 @@ fn bound_fn(operand: object) -> object
 	}
 }
 
-// eval_expr special cases if_fn and coalesce
+fn eval_if(bindings: [(str, object)], args: [@expr]) -> object
+{
+	if vec::len(args) == 3u
+	{
+		let predicate = eval_expr(bindings, *args[0]);
+		alt get_ebv(predicate)
+		{
+			result::ok(true)
+			{
+				eval_expr(bindings, *args[1])
+			}
+			result::ok(false)
+			{
+				eval_expr(bindings, *args[2])
+			}
+			result::err(err)
+			{
+				error_value("IF: " + err)
+			}
+		}
+	}
+	else
+	{
+		if vec::len(args) == 1u
+		{
+			error_value("IF accepts 3 arguments but was called with 1 argument.")
+		}
+		else
+		{
+			error_value(#fmt["IF accepts 3 arguments but was called with %? arguments.", vec::len(args)])
+		}
+	}
+}
 
-// TODO: implement NOT EXISTS and EXISTS (these take patterns, not expressions)
+fn eval_coalesce(bindings: [(str, object)], args: [@expr]) -> object
+{
+	for vec::each(args)
+	{|arg|
+		let candidate = eval_expr(bindings, *arg);
+		alt candidate
+		{
+			unbound_value(*) | invalid_value(*) | error_value(*)
+			{
+				// try the next argument
+			}
+			_
+			{
+				ret candidate;
+			}
+		}
+	}
+	
+	ret error_value("COALESCE: all arguments failed to evaluate");
+}
 
 fn sameterm_fn(lhs: object, rhs: object) -> object
 {

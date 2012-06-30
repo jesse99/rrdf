@@ -380,6 +380,33 @@ fn filter_term_fn()
 	SELECT ?s
 	WHERE {
 		?s v:age ?age .
+		FILTER (STR(?age) = \"19\")
+	}";
+	let store = test_data::got_cast3();
+	store.add("got:Eddard_Stark", [
+		("v:age", int_value(45i64))
+	]);
+	store.add("got:Jon_Snow", [
+		("v:age", int_value(19i64))
+	]);
+	store.add("got:Sandor_Clegane", [
+		("v:age", int_value(35i64))
+	]);
+	let expected = [
+		[("s", iri_value(got("Jon_Snow")))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn filter_str_fn()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s
+	WHERE {
+		?s v:age ?age .
 		FILTER CONTAINS(STR(?s), \"_S\")
 	}";
 	let store = test_data::got_cast3();
@@ -394,6 +421,33 @@ fn filter_term_fn()
 	]);
 	let expected = [
 		[("s", iri_value(got("Eddard_Stark")))],
+		[("s", iri_value(got("Jon_Snow")))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn filter_numeric()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s
+	WHERE {
+		?s v:age ?age .
+		FILTER (ABS(?age) = 19)
+	}";
+	let store = test_data::got_cast3();
+	store.add("got:Eddard_Stark", [
+		("v:age", int_value(45i64))
+	]);
+	store.add("got:Jon_Snow", [
+		("v:age", int_value(-19i64))
+	]);
+	store.add("got:Sandor_Clegane", [
+		("v:age", int_value(35i64))
+	]);
+	let expected = [
 		[("s", iri_value(got("Jon_Snow")))]
 	];
 	

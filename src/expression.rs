@@ -1,5 +1,6 @@
 #[doc = "SPARQL FILTER expressions."];
 import functional_forms::*;
+import functions_on_numerics::*;
 import functions_on_strings::*;
 import functions_on_terms::*;
 import operators::*;
@@ -57,61 +58,6 @@ fn eval_expr(bindings: [(str, object)], expr: expr) -> object
 type unary_fn = fn (object) -> object;
 type binary_fn = fn (object, object) -> object;
 type ternary_fn = fn (object, object, object) -> object;
-
-fn eval_if(bindings: [(str, object)], args: [@expr]) -> object
-{
-	if vec::len(args) == 3u
-	{
-		let predicate = eval_expr(bindings, *args[0]);
-		alt get_ebv(predicate)
-		{
-			result::ok(true)
-			{
-				eval_expr(bindings, *args[1])
-			}
-			result::ok(false)
-			{
-				eval_expr(bindings, *args[2])
-			}
-			result::err(err)
-			{
-				error_value("IF: " + err)
-			}
-		}
-	}
-	else
-	{
-		if vec::len(args) == 1u
-		{
-			error_value("IF accepts 3 arguments but was called with 1 argument.")
-		}
-		else
-		{
-			error_value(#fmt["IF accepts 3 arguments but was called with %? arguments.", vec::len(args)])
-		}
-	}
-}
-
-fn eval_coalesce(bindings: [(str, object)], args: [@expr]) -> object
-{
-	for vec::each(args)
-	{|arg|
-		let candidate = eval_expr(bindings, *arg);
-		alt candidate
-		{
-			unbound_value(*) | invalid_value(*) | error_value(*)
-			{
-				// try the next argument
-			}
-			_
-			{
-				ret candidate;
-			}
-		}
-	}
-	
-	ret error_value("COALESCE: all arguments failed to evaluate");
-}
 
 fn eval_call(bindings: [(str, object)], fname: str, args: [@expr]) -> object
 {
@@ -277,6 +223,23 @@ fn eval_call(bindings: [(str, object)], fname: str, args: [@expr]) -> object
 		"langmatches_fn"
 		{
 			eval_call2(fname, @langmatches_fn, args)
+		}
+		// functions on numerics
+		"abs_fn"
+		{
+			eval_call1(fname, @abs_fn, args)
+		}
+		"round_fn"
+		{
+			eval_call1(fname, @round_fn, args)
+		}
+		"ceil_fn"
+		{
+			eval_call1(fname, @ceil_fn, args)
+		}
+		"floor_fn"
+		{
+			eval_call1(fname, @floor_fn, args)
 		}
 		// unknown functions
 		_
