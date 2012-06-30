@@ -12,6 +12,7 @@ use rparse (name = "rparse", vers = "0.4");
 
 mod expression;
 mod functional_forms;
+mod functions_on_dates;
 mod functions_on_numerics;
 mod functions_on_strings;
 mod functions_on_terms;

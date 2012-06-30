@@ -1,4 +1,5 @@
 #[doc = "Compiles a SRARQL query into a function that can be applied to a store value."];
+import std::time;
 import rparse::*;
 import query::optional;
 import expression::*;
@@ -579,14 +580,30 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		#binary_fn["strafter"],
 		
 		// |	'YEAR' '(' Expression ')' 
+		#unary_fn["year"],
+		
 		// |	'MONTH' '(' Expression ')' 
+		#unary_fn["month"],
+		
 		// |	'DAY' '(' Expression ')' 
+		#unary_fn["day"],
+		
 		// |	'HOURS' '(' Expression ')' 
+		#unary_fn["hours"],
+		
 		// |	'MINUTES' '(' Expression ')' 
+		#unary_fn["minutes"],
+		
 		// |	'SECONDS' '(' Expression ')' 
+		#unary_fn["seconds"],
+		
 		// |	'TIMEZONE' '(' Expression ')' 
 		// |	'TZ' '(' Expression ')' 
+		#unary_fn["tz"],
+		
 		// |	'NOW' NIL 
+		seq2("NOW".liti().ws(), nullary)	{|_f, _a| result::ok(call_expr("now_fn", []))},
+		
 		// |	'MD5' '(' Expression ')' 
 		// |	'SHA1' '(' Expression ')' 
 		// |	'SHA256' '(' Expression ')' 
@@ -1002,12 +1019,12 @@ fn build_parser(namespaces: [namespace], patterns: [pattern], algebra: algebra) 
 	{
 		if vec::is_not_empty(namespaces)
 		{
-			let context = {algebra: expand(namespaces, algebra), rng: rand::rng()};
+			let context = {algebra: expand(namespaces, algebra), rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 		else
 		{
-			let context = {algebra: algebra, rng: rand::rng()};
+			let context = {algebra: algebra, rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 	}

@@ -31,7 +31,7 @@ enum algebra
 	filter(expr)
 }
 
-type query_context = {algebra: algebra, rng: rand::rng};
+type query_context = {algebra: algebra, rng: rand::rng, timestamp: tm};
 
 fn solution_row_to_str(row: solution_row) -> str
 {

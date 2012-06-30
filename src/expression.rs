@@ -1,5 +1,6 @@
 #[doc = "SPARQL FILTER expressions."];
 import functional_forms::*;
+import functions_on_dates::*;
 import functions_on_numerics::*;
 import functions_on_strings::*;
 import functions_on_terms::*;
@@ -244,6 +245,39 @@ fn eval_call(context: query_context, bindings: [(str, object)], fname: str, args
 		"rand_fn"
 		{
 			rand_fn(context, args)
+		}
+		// functions on dates
+		"now_fn"
+		{
+			now_fn(context, args)
+		}
+		"year_fn"
+		{
+			eval_call1(fname, @year_fn, args)
+		}
+		"month_fn"
+		{
+			eval_call1(fname, @month_fn, args)
+		}
+		"day_fn"
+		{
+			eval_call1(fname, @day_fn, args)
+		}
+		"hours_fn"
+		{
+			eval_call1(fname, @hours_fn, args)
+		}
+		"minutes_fn"
+		{
+			eval_call1(fname, @minutes_fn, args)
+		}
+		"seconds_fn"
+		{
+			eval_call1(fname, @seconds_fn, args)
+		}
+		"tz_fn"
+		{
+			eval_call1(fname, @tz_fn, args)
 		}
 		// unknown functions
 		_

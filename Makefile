@@ -34,7 +34,7 @@ install: lib
 # setting an executable's name, but not libraries).
 .PHONY : lib
 lib:
-	$(RUSTC) --out-dir bin -O src/rrdf.rc
+	$(RUSTC) -L bin --out-dir bin -O src/rrdf.rc
 
 bin/test-rrdf: src/rrdf.rc src/*.rs src/tests/*.rs
 	$(RUSTC) -g -L bin --test -o $@ $<
