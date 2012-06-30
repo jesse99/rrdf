@@ -676,16 +676,16 @@ fn make_parser() -> parser<selector>
 		{|l, r| result::ok(l + r)};
 	
 	// [149] STRING_LITERAL_LONG2 ::= '"""' ( ( '"' | '""' )? ( [^"\] | ECHAR ) )* '"""'
-	let STRING_LITERAL_LONG2 = seq3_ret1("\"\"\"".lit(), scan0(bind long_char('"', _, _)), "\"\"\"".lit().ws());
+	let STRING_LITERAL_LONG2 = seq3_ret1("\"\"\"".lit(), scan0({|x, y| long_char('"', x, y)}), "\"\"\"".lit().ws());
 	
 	// [148] STRING_LITERAL_LONG1 ::= "'''" ( ( "'" | "''" )? ( [^'\] | ECHAR ) )* "'''"
-	let STRING_LITERAL_LONG1 = seq3_ret1("'''".lit(), scan0(bind long_char('\'', _, _)), "'''".lit().ws());
+	let STRING_LITERAL_LONG1 = seq3_ret1("'''".lit(), scan0({|x, y| long_char('\'', x, y)}), "'''".lit().ws());
 	
 	// [147] STRING_LITERAL2 ::= '"' ( ([^"\\\n\r]) | ECHAR )* '"'
-	let STRING_LITERAL2 = seq3_ret1("\"".lit(), scan0(bind short_char('"', _, _)), "\"".lit().ws());
+	let STRING_LITERAL2 = seq3_ret1("\"".lit(), scan0({|x, y| short_char('"', x, y)}), "\"".lit().ws());
 	
 	// [146] STRING_LITERAL1 ::= "'" ( ([^'\\\n\r]) | ECHAR )* "'"
-	let STRING_LITERAL1 = seq3_ret1("'".lit(), scan0(bind short_char('\'', _, _)), "'".lit().ws());
+	let STRING_LITERAL1 = seq3_ret1("'".lit(), scan0({|x, y| short_char('\'', x, y)}), "'".lit().ws());
 	
 	// [136] INTEGER ::= [0-9]+
 	let INTEGER = match1(is_digit).thene({|v| return(int_literal(v))}).ws();

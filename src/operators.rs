@@ -303,11 +303,11 @@ fn op_or(lhs: object, rhs: object) -> object
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
 	
-	if result::is_success(lvalue) && result::is_success(rvalue)
+	if result::is_ok(lvalue) && result::is_ok(rvalue)
 	{
 		bool_value(result::get(lvalue) || result::get(rvalue))
 	}
-	else if result::is_success(lvalue)
+	else if result::is_ok(lvalue)
 	{
 		if result::get(lvalue)
 		{
@@ -318,7 +318,7 @@ fn op_or(lhs: object, rhs: object) -> object
 			error_value(result::get_err(rvalue))
 		}
 	}
-	else if result::is_success(rvalue)
+	else if result::is_ok(rvalue)
 	{
 		if result::get(rvalue)
 		{
@@ -340,11 +340,11 @@ fn op_and(lhs: object, rhs: object) -> object
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
 	
-	if result::is_success(lvalue) && result::is_success(rvalue)
+	if result::is_ok(lvalue) && result::is_ok(rvalue)
 	{
 		bool_value(result::get(lvalue) && result::get(rvalue))
 	}
-	else if result::is_success(lvalue)
+	else if result::is_ok(lvalue)
 	{
 		if !result::get(lvalue)
 		{
@@ -355,7 +355,7 @@ fn op_and(lhs: object, rhs: object) -> object
 			error_value(result::get_err(rvalue))
 		}
 	}
-	else if result::is_success(rvalue)
+	else if result::is_ok(rvalue)
 	{
 		if !result::get(rvalue)
 		{
