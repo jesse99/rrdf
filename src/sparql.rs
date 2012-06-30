@@ -516,6 +516,8 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		#unary_fn["lang"],
 		
 		// |	'LANGMATCHES' '(' Expression ',' Expression ')' 
+		#binary_fn["langmatches"],
+		
 		// |	'DATATYPE' '(' Expression ')' 
 		#unary_fn["datatype"],
 		
@@ -531,17 +533,40 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		// |	'FLOOR' '(' Expression ')' 
 		// |	'ROUND' '(' Expression ')' 
 		// |	'CONCAT' ExpressionList 
+		seq2("CONCAT".liti().ws(), variadic)	{|_f, a| result::ok(call_expr("concat_fn", vec::map(a, {|e| @e})))},
+		
 		// |	SubstringExpression 
+		seq2("substr".liti().ws(), binary)	{|_f, a| result::ok(call_expr("substr2_fn", [@a[0], @a[1]]))},
+		seq2("substr".liti().ws(), ternary)	{|_f, a| result::ok(call_expr("substr3_fn", [@a[0], @a[1], @a[2]]))},
+		
 		// |	'STRLEN' '(' Expression ')' 
+		#unary_fn["strlen"],
+		
 		// |	StrReplaceExpression 
 		// |	'UCASE' '(' Expression ')' 
+		#unary_fn["ucase"],
+		
 		// |	'LCASE' '(' Expression ')' 
+		#unary_fn["lcase"],
+		
 		// |	'ENCODE_FOR_URI' '(' Expression ')' 
+		#unary_fn["encode_for_uri"],
+		
 		// |	'CONTAINS' '(' Expression ',' Expression ')' 
+		#binary_fn["contains"],
+		
 		// |	'STRSTARTS' '(' Expression ',' Expression ')' 
+		#binary_fn["strstarts"],
+		
 		// |	'STRENDS' '(' Expression ',' Expression ')' 
+		#binary_fn["strends"],
+		
 		// |	'STRBEFORE' '(' Expression ',' Expression ')' 
+		#binary_fn["strbefore"],
+		
 		// |	'STRAFTER' '(' Expression ',' Expression ')' 
+		#binary_fn["strafter"],
+		
 		// |	'YEAR' '(' Expression ')' 
 		// |	'MONTH' '(' Expression ')' 
 		// |	'DAY' '(' Expression ')' 
@@ -746,7 +771,8 @@ fn make_parser() -> parser<selector>
 		IRIref.thene {|v| return(constant_expr(iri_value(v)))},
 		RDFLiteral.thene({|v| return(pattern_to_expr(v))}),
 		NumericLiteral.thene {|v| return(constant_expr(v))},
-		Var.thene {|v| return(variable_expr(v))}
+		Var.thene {|v| return(variable_expr(v))},
+		BooleanLiteral.thene({|v| return(pattern_to_expr(v))})
 		]);
 		
 	// [108] UnaryExpression ::= '!' PrimaryExpression | '+' PrimaryExpression | '-' PrimaryExpression | PrimaryExpression

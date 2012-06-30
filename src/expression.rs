@@ -1,5 +1,6 @@
 #[doc = "SPARQL FILTER expressions."];
 import functional_forms::*;
+import functions_on_strings::*;
 import functions_on_terms::*;
 import operators::*;
 
@@ -55,6 +56,7 @@ fn eval_expr(bindings: [(str, object)], expr: expr) -> object
 // ---- Internal Functions ----------------------------------------------------
 type unary_fn = fn (object) -> object;
 type binary_fn = fn (object, object) -> object;
+type ternary_fn = fn (object, object, object) -> object;
 
 fn eval_if(bindings: [(str, object)], args: [@expr]) -> object
 {
@@ -186,6 +188,7 @@ fn eval_call(bindings: [(str, object)], fname: str, args: [@expr]) -> object
 		{
 			eval_call2(fname, @sameterm_fn, args)
 		}
+		// functions on terms
 		"isiri_fn"
 		{
 			eval_call1(fname, @isiri_fn, args)
@@ -222,7 +225,59 @@ fn eval_call(bindings: [(str, object)], fname: str, args: [@expr]) -> object
 		{
 			eval_call2(fname, @strlang_fn, args)
 		}
-		// functions on terms
+		// functions on strings
+		"strlen_fn"
+		{
+			eval_call1(fname, @strlen_fn, args)
+		}
+		"substr2_fn"
+		{
+			eval_call2(fname, @substr2_fn, args)
+		}
+		"substr3_fn"
+		{
+			eval_call3(fname, @substr3_fn, args)
+		}
+		"ucase_fn"
+		{
+			eval_call1(fname, @ucase_fn, args)
+		}
+		"lcase_fn"
+		{
+			eval_call1(fname, @lcase_fn, args)
+		}
+		"strstarts_fn"
+		{
+			eval_call2(fname, @strstarts_fn, args)
+		}
+		"strends_fn"
+		{
+			eval_call2(fname, @strends_fn, args)
+		}
+		"contains_fn"
+		{
+			eval_call2(fname, @contains_fn, args)
+		}
+		"strbefore_fn"
+		{
+			eval_call2(fname, @strbefore_fn, args)
+		}
+		"strafter_fn"
+		{
+			eval_call2(fname, @strafter_fn, args)
+		}
+		"encode_for_uri_fn"
+		{
+			eval_call1(fname, @encode_for_uri_fn, args)
+		}
+		"concat_fn"
+		{
+			concat_fn(args)
+		}
+		"langmatches_fn"
+		{
+			eval_call2(fname, @langmatches_fn, args)
+		}
 		// unknown functions
 		_
 		{
@@ -258,6 +313,25 @@ fn eval_call2(fname: str, fp: @binary_fn, args: [object]) -> object
 		else
 		{
 			error_value(#fmt["%s accepts 2 arguments but was called with %? arguments.", fname, vec::len(args)])
+		}
+	}
+}
+
+fn eval_call3(fname: str, fp: @ternary_fn, args: [object]) -> object
+{
+	if vec::len(args) == 3u
+	{
+		(*fp)(args[0], args[1], args[2])
+	}
+	else
+	{
+		if vec::len(args) == 1u
+		{
+			error_value(#fmt["%s accepts 3 arguments but was called with 1 argument.", fname])
+		}
+		else
+		{
+			error_value(#fmt["%s accepts 3 arguments but was called with %? arguments.", fname, vec::len(args)])
 		}
 	}
 }

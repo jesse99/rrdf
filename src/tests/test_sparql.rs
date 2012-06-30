@@ -380,7 +380,7 @@ fn filter_term_fn()
 	SELECT ?s
 	WHERE {
 		?s v:age ?age .
-		FILTER (STR(?age) = \"19\")
+		FILTER CONTAINS(STR(?s), \"_S\")
 	}";
 	let store = test_data::got_cast3();
 	store.add("got:Eddard_Stark", [
@@ -393,6 +393,7 @@ fn filter_term_fn()
 		("v:age", int_value(35i64))
 	]);
 	let expected = [
+		[("s", iri_value(got("Eddard_Stark")))],
 		[("s", iri_value(got("Jon_Snow")))]
 	];
 	

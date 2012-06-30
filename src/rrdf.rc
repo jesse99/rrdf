@@ -12,6 +12,7 @@ use rparse (name = "rparse", vers = "0.4");
 
 mod expression;
 mod functional_forms;
+mod functions_on_strings;
 mod functions_on_terms;
 mod object;
 mod operators;
@@ -24,6 +25,7 @@ mod store;
 mod tests
 {
 	mod test_data;
+	mod test_functions_on_strings;
 	mod test_helpers;
 	mod test_operands;
 	mod test_operators;
