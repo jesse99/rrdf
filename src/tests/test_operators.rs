@@ -25,7 +25,7 @@ fn operator_unary_minus()
 {
 	assert check_operands(op_unary_minus(int_value(23i64)), int_value(-23i64));
 	assert check_operands(op_unary_minus(float_value(2.3f64)), float_value(-2.3f64));
-	assert check_operands(op_unary_minus(string_value("oops", "")), error_value("unary minus: expected numeric value but found string_value(\"oops\", \"\")."));
+	assert check_operands(op_unary_minus(string_value("oops", "")), error_value("unary minus: expected numeric value but found string_value(~\"oops\", ~\"\")."));
 }
 
 #[test]
@@ -121,8 +121,8 @@ fn operator_less_than()
 	assert check_operands(op_less_than(string_value("foo", "en"), string_value("aoo", "en")), bool_value(false));
 	
 	assert check_operands(op_less_than(bool_value(true), bool_value(true)), error_value("<: expected numeric, dateTime, string, or explicitly typed value but found bool_value(1)."));
-	assert check_operands(op_less_than(iri_value("foo"), iri_value("foo")), error_value("<: expected numeric, dateTime, string, or explicitly typed value but found iri_value(\"foo\")."));
-	assert check_operands(op_less_than(blank_value("foo"), blank_value("foo")), error_value("<: expected numeric, dateTime, string, or explicitly typed value but found blank_value(\"foo\")."));
+	assert check_operands(op_less_than(iri_value("foo"), iri_value("foo")), error_value("<: expected numeric, dateTime, string, or explicitly typed value but found iri_value(~\"foo\")."));
+	assert check_operands(op_less_than(blank_value("foo"), blank_value("foo")), error_value("<: expected numeric, dateTime, string, or explicitly typed value but found blank_value(~\"foo\")."));
 	assert check_operands(op_less_than(int_value(3i64), bool_value(true)), error_value("<: expected numeric value but found bool_value(1)."));
 }
 

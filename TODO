@@ -17,12 +17,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 [66] FunctionCall ::= IRIref ArgList
 
 
-* Work on operators:
-	- probably want an expression enum and eval_expr fn
 * Work on more complex matching:
-	- support some simple date filters (i.e. date is no more than 24 hours ago)
-		` no support for subtracting dateTimes so user would have to do it
-		   tho there are now and hours functions
 	- support filter inside of optional
 	- may want to support union
 * Support group by and limit.
