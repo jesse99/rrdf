@@ -453,3 +453,23 @@ fn filter_numeric()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn filter_optional()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?name ?title ?nick
+	WHERE {
+		?s v:fn ?name .
+		OPTIONAL {?s v:nickname ?nick . FILTER CONTAINS(?nick, \" \")}
+	}";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("name", string_value("Eddard Stark", ""))],
+		[("name", string_value("Jon Snow", "")), ("nick", string_value("Lord Snow", ""))],
+		[("name", string_value("Sandor Clegane", "")), ("nick", string_value("The Hound", ""))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
