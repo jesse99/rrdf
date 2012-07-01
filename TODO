@@ -16,6 +16,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 	- may want to support union
 * Select components can be strings?
 	- if not why does triple pattern allow literals?
+* May want to add support for custom functions (see 17.6)
 * Need to make sure solutions are not being copied willy nilly.
 * Check some common parse errors and add tag as needed.
 * Document whats not supported:

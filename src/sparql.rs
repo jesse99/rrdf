@@ -528,7 +528,8 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		
 		// |	'IRI' '(' Expression ')' 
 		// |	'URI' '(' Expression ')' 
-		// |	'BNODE' ( '(' Expression ')' | NIL ) 
+		// |	'BNODE' ( '(' Expression ')' | NIL)
+		 
 		// |	'RAND' NIL 
 		seq2("RAND".liti().ws(), nullary)	{|_f, _a| result::ok(call_expr("rand_fn", []))},
 		
@@ -555,6 +556,7 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		#unary_fn["strlen"],
 		
 		// |	StrReplaceExpression 
+		
 		// |	'UCASE' '(' Expression ')' 
 		#unary_fn["ucase"],
 		
@@ -598,6 +600,7 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		#unary_fn["seconds"],
 		
 		// |	'TIMEZONE' '(' Expression ')' 
+		
 		// |	'TZ' '(' Expression ')' 
 		#unary_fn["tz"],
 		
@@ -609,6 +612,7 @@ fn built_in_call(Expression: parser<expr>, Var: parser<str>) -> parser<expr>
 		// |	'SHA256' '(' Expression ')' 
 		// |	'SHA384' '(' Expression ')' 
 		// |	'SHA512' '(' Expression ')' 
+		
 		// |	'COALESCE' ExpressionList 
 		seq2("COALESCE".liti().ws(), variadic)	{|_f, a| result::ok(call_expr("coalesce_fn", vec::map(a, {|e| @e})))},
 		
@@ -769,7 +773,7 @@ fn make_parser() -> parser<selector>
 	// [99] GraphTerm ::= IRIref | RDFLiteral | NumericLiteral | BooleanLiteral | BlankNode | NIL
 	let GraphTerm = or_v([
 		RDFLiteral.annotate("RDFLiteral"),
-		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))}),
+		IRIref.annotate("IRIref").thene({|v| return(iri_literal(v))}),	// TODO: support BlankNode and NIL
 		NumericLiteral.thene {|v| return(constant(v))},
 		BooleanLiteral
 	]);
