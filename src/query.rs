@@ -512,14 +512,50 @@ fn eval_algebra(store: store, names: [str], context: query_context) -> result::r
 	}
 }
 
+fn eval_order_expr(context: query_context, row: solution_row, expr: expr) -> (bool, object)
+{
+	alt expr
+	{
+		call_expr("!desc", e)
+		{
+			(false, eval_expr(context, row, *e[0]))
+		}
+		call_expr("!asc", e)
+		{
+			(true, eval_expr(context, row, *e[0]))
+		}
+		_
+		{
+			(true, eval_expr(context, row, expr))
+		}
+	}
+}
+
+fn compare_order_values(lhs: (bool, object), rhs: (bool, object)) -> result::result<int, str>
+{
+	assert tuple::first(lhs) == tuple::first(rhs);
+	
+	alt lhs
+	{
+		(true, x)
+		{
+			compare_values("<", x, tuple::second(rhs))		// ascending
+		}
+		(false, x)
+		{
+			compare_values("<", tuple::second(rhs), x)		// descending
+		}
+	}
+}
+
 fn order_by(context: query_context, solution: solution, ordering: [expr]) -> result::result<solution, str>
 {
 	let mut err_mesg = "";
 	
 	let le = {|&e: str, row1, row2|
-		let order1 = vec::map(ordering, {|o| eval_expr(context, row1, o)});
-		let order2 = vec::map(ordering, {|o| eval_expr(context, row2, o)});
-		let order = vec::map2(order1, order2, {|x, y| compare_values("<", x, y)});
+		let order1 = vec::map(ordering, {|o| eval_order_expr(context, row1, o)});
+		let order2 = vec::map(ordering, {|o| eval_order_expr(context, row2, o)});
+		let order = vec::map2(order1, order2, {|x, y| compare_order_values(x, y)});
 		let order = vec::foldl(result::ok(0), order)
 		{|x, y|
 			alt x

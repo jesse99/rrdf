@@ -14,9 +14,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
 * Work on more complex matching:
-	- support filter inside of optional
 	- may want to support union
-* Support group by and limit.
 * Select components can be strings?
 	- if not why does triple pattern allow literals?
 * Need to make sure solutions are not being copied willy nilly.

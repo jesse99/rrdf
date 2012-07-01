@@ -500,3 +500,45 @@ fn order_by()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn bad_order_by()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s ?o
+	WHERE {
+		?s ?p ?o .
+		FILTER (!ISBLANK(?s) && !ISBLANK(?o))
+	} ORDER BY (?s + ?o)";
+	let store = test_data::got_cast3();
+	
+	assert check_solution_err(store, expr, "<: +: expected numeric value but found iri_value(~\"http://awoiaf.westeros.org/index.php/Eddard_Stark\").");
+}
+
+#[test]
+fn order_by_desc()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s ?o
+	WHERE {
+		?s ?p ?o .
+		FILTER (!ISBLANK(?s) && !ISBLANK(?o))
+	} ORDER BY ASC(?s) DESC(?o)";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("s", iri_value(got("Eddard_Stark"))), ("o", string_value("Ned", ""))],
+		[("s", iri_value(got("Eddard_Stark"))), ("o", string_value("Lord", ""))],
+		[("s", iri_value(got("Eddard_Stark"))), ("o", string_value("Eddard Stark", ""))],
+		
+		[("s", iri_value(got("Jon_Snow"))), ("o", string_value("Lord Snow", ""))],
+		[("s", iri_value(got("Jon_Snow"))), ("o", string_value("Jon Snow", ""))],
+		[("s", iri_value(got("Jon_Snow"))), ("o", string_value("Ghost", ""))],
+		
+		[("s", iri_value(got("Sandor_Clegane"))), ("o", string_value("The Hound", ""))],
+		[("s", iri_value(got("Sandor_Clegane"))), ("o", string_value("Sandor Clegane", ""))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}

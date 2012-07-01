@@ -976,7 +976,10 @@ fn make_parser() -> parser<selector>
 	*GroupGraphPattern_ptr = GroupGraphPattern;
 	
 	// [24] OrderCondition ::= (('ASC' | 'DESC') BrackettedExpression) | (Constraint | Var)
-	let OrderCondition = Constraint.or(Var.thene {|v| return(variable_expr(v))});
+	let OrderCondition1 = seq2_ret1("ASC".liti().ws(), BrackettedExpression).thene {|v| return(call_expr("!asc", [@v]))};
+	let OrderCondition2 = seq2_ret1("DESC".liti().ws(), BrackettedExpression).thene {|v| return(call_expr("!desc", [@v]))};
+	let OrderCondition3 = Constraint.or(Var.thene {|v| return(variable_expr(v))});
+	let OrderCondition = or_v([OrderCondition1, OrderCondition2, OrderCondition3]);
 	
 	// [23] OrderClause ::= 'ORDER' 'BY' OrderCondition+
 	let OrderClause = seq3_ret2("ORDER".liti().ws(), "BY".liti().ws(), OrderCondition.r1());
@@ -1010,7 +1013,7 @@ fn make_parser() -> parser<selector>
 		{|p, s| build_parser(p, s)};
 	
 	// [1] QueryUnit ::= Query
-	let QueryUnit = Query;
+	let QueryUnit = Query.everything(return(0).ws());
 	
 	ret QueryUnit;
 }

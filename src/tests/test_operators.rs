@@ -120,9 +120,10 @@ fn operator_less_than()
 	assert check_operands(op_less_than(string_value("foo", "en"), string_value("goo", "en")), bool_value(true));
 	assert check_operands(op_less_than(string_value("foo", "en"), string_value("aoo", "en")), bool_value(false));
 	
+	assert check_operands(op_less_than(iri_value("foo"), iri_value("foo")), bool_value(false));
+	assert check_operands(op_less_than(blank_value("foo"), blank_value("foo")), bool_value(false));
+	
 	assert check_operands(op_less_than(bool_value(true), bool_value(true)), error_value("<: expected numeric, dateTime, string, or explicitly typed value but found bool_value(1)."));
-	assert check_operands(op_less_than(iri_value("foo"), iri_value("foo")), error_value("<: expected numeric, dateTime, string, or explicitly typed value but found iri_value(~\"foo\")."));
-	assert check_operands(op_less_than(blank_value("foo"), blank_value("foo")), error_value("<: expected numeric, dateTime, string, or explicitly typed value but found blank_value(~\"foo\")."));
 	assert check_operands(op_less_than(int_value(3i64), bool_value(true)), error_value("<: expected numeric value but found bool_value(1)."));
 }
 
