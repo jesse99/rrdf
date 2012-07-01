@@ -975,6 +975,15 @@ fn make_parser() -> parser<selector>
 	let GroupGraphPattern = seq3_ret1("{".lit().ws(), GroupGraphPatternSub, "}".lit().ws());
 	*GroupGraphPattern_ptr = GroupGraphPattern;
 	
+	// [24] OrderCondition ::= (('ASC' | 'DESC') BrackettedExpression) | (Constraint | Var)
+	let OrderCondition = Constraint.or(Var.thene {|v| return(variable_expr(v))});
+	
+	// [23] OrderClause ::= 'ORDER' 'BY' OrderCondition+
+	let OrderClause = seq3_ret2("ORDER".liti().ws(), "BY".liti().ws(), OrderCondition.r1());
+	
+	// [18] SolutionModifier ::= GroupClause? HavingClause? OrderClause? LimitOffsetClauses?
+	let SolutionModifier = OrderClause.optional();
+	
 	// [17] WhereClause ::= 'WHERE'? GroupGraphPattern
 	let WhereClause = seq2_ret1(("WHERE".liti().ws()).optional(), GroupGraphPattern);
 	
@@ -986,8 +995,8 @@ fn make_parser() -> parser<selector>
 	let SelectClause = seq2_ret1("SELECT".liti().ws(), select_suffix);
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
-	let SelectQuery = seq2(SelectClause, WhereClause)
-		{|patterns, algebra| result::ok((patterns, algebra))};
+	let SelectQuery = seq3(SelectClause, WhereClause, SolutionModifier)
+		{|patterns, algebra, modifier| result::ok((patterns, algebra, modifier))};
 		
 	// [6] PrefixDecl ::= 'PREFIX' PNAME_NS IRI_REF
 	let PrefixDecl = seq3("PREFIX".liti().ws(), PNAME_NS.ws(), IRI_REF)
@@ -998,7 +1007,7 @@ fn make_parser() -> parser<selector>
 	
 	// [2] Query ::= Prologue (SelectQuery | ConstructQuery | DescribeQuery | AskQuery) BindingsClause
 	let Query = seq2(Prologue, SelectQuery)
-		{|p, s| build_parser(p, tuple::first(s), tuple::second(s))};
+		{|p, s| build_parser(p, s)};
 	
 	// [1] QueryUnit ::= Query
 	let QueryUnit = Query;
@@ -1009,22 +1018,26 @@ fn make_parser() -> parser<selector>
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-fn build_parser(namespaces: [namespace], patterns: [pattern], algebra: algebra) -> result::result<selector, str>
+fn build_parser(namespaces: [namespace], query: ([pattern], algebra, option<[expr]>)) -> result::result<selector, str>
 {
+	let (patterns, algebra, ordering) = query;
+	
 	let variables = vec::filter(patterns) {|p| alt p {variable(_l) {true} _ {false}}};
 	let names = vec::map(variables) {|p| alt p {variable(n) {n} _ {fail}}};
+	
+	let ordering = alt ordering {option::some(x) {x} option::none {[]}};
 	
 	let dupes = find_dupes(names);
 	if vec::is_empty(dupes)
 	{
 		if vec::is_not_empty(namespaces)
 		{
-			let context = {algebra: expand(namespaces, algebra), rng: rand::rng(), timestamp: time::now()};
+			let context = {algebra: expand(namespaces, algebra), order_by: ordering, rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 		else
 		{
-			let context = {algebra: algebra, rng: rand::rng(), timestamp: time::now()};
+			let context = {algebra: algebra, order_by: ordering, rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 	}

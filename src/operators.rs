@@ -3,7 +3,7 @@
 // Operators used within SPARQL FILTER expressions. See 17.2 and related.
 export op_not, op_unary_plus, op_unary_minus, op_or, op_and, op_equals, op_not_equals,
 	op_less_than, op_less_than_or_equal, op_greater_than, op_greater_than_or_equal,
-	op_multiply, op_divide, op_add, op_subtract;
+	op_multiply, op_divide, op_add, op_subtract, compare_values;
 	
 fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool, str>
 {
@@ -136,6 +136,7 @@ fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool,
 	}
 }
 
+// See 15.1
 fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int, str>
 {
 	alt lhs
@@ -152,6 +153,10 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 				{
 					let lvalue = lvalue as f64;
 					result::ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
+				}
+				unbound_value(_) | blank_value(_)
+				{
+					result::ok(1)
 				}
 				_
 				{
@@ -171,6 +176,10 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 				float_value(rvalue)
 				{
 					result::ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
+				}
+				unbound_value(_) | blank_value(_)
+				{
+					result::ok(1)
 				}
 				_
 				{
@@ -192,6 +201,10 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 						else {1}
 					)
 				}
+				unbound_value(_) | blank_value(_)
+				{
+					result::ok(1)
+				}
 				_
 				{
 					result::err(type_error(operator, rhs, "dateTime"))
@@ -212,6 +225,10 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 						else {1}
 					)
 				}
+				unbound_value(_) | blank_value(_)
+				{
+					result::ok(1)
+				}
 				_
 				{
 					result::err(type_error(operator, rhs, "string"))
@@ -230,9 +247,67 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 						else {1}
 					)
 				}
+				unbound_value(_) | blank_value(_)
+				{
+					result::ok(1)
+				}
 				_
 				{
 					result::err(type_error(operator, rhs, ltype))
+				}
+			}
+		}
+		iri_value(lvalue)
+		{
+			alt rhs
+			{
+				iri_value(rvalue)
+				{
+					result::ok(
+						if lvalue < rvalue {-1} 
+						else if lvalue == rvalue {0} 
+						else {1}
+					)
+				}
+				unbound_value(_) | blank_value(_)
+				{
+					result::ok(1)
+				}
+				_
+				{
+					result::err(type_error(operator, rhs, "anyURI"))
+				}
+			}
+		}
+		unbound_value(_)
+		{
+			alt rhs
+			{
+				unbound_value(_)
+				{
+					result::ok(0)
+				}
+				_
+				{
+					result::ok(-1)
+				}
+			}
+		}
+		blank_value(_)
+		{
+			alt rhs
+			{
+				unbound_value(_)
+				{
+					result::ok(1)
+				}
+				blank_value(_)
+				{
+					result::ok(0)
+				}
+				_
+				{
+					result::ok(-1)
 				}
 			}
 		}

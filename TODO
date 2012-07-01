@@ -11,9 +11,6 @@ http://dbpedia.org/sparql
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
-[68] ExpressionList ::= NIL | '(' Expression ( ',' Expression )* ')'
-
-[66] FunctionCall ::= IRIref ArgList
 
 
 * Work on more complex matching:

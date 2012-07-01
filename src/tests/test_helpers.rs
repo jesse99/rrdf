@@ -1,7 +1,6 @@
 import io;
 import io::writer_util;
 import query::*;
-//import operands::*;
 
 export check_bgp, check_strs, check_operands, check_triples, check_solution, check_solution_err;
 
@@ -166,7 +165,7 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 						let row2 = expected[i];
 						if vec::len(row1) != vec::len(row2)
 						{
-							print_failure(#fmt["Row %? had size %? but expected %?.", 
+							print_failure(#fmt["Row %? had size %? but expected %?.",
 								i, vec::len(row1), vec::len(row2)], actual, expected);
 							ret false;
 						}
@@ -181,14 +180,16 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 								{
 									if value1 != value2
 									{
-										print_failure(#fmt["Row %? actual %s was %s but expected %s.", 
+										print_failure(#fmt["Row %? actual %s was %s but expected %s.",
 											i, name1, value1.to_str(), value2.to_str()], actual, expected);
 										ret false;
 									}
 								}
 								option::none
 								{
-									// Actual can have additional bindings.
+									print_failure(#fmt["Row %? had unexpected ?%s.",
+										i, name1], actual, expected);
+									ret false;
 								}
 							}
 						};

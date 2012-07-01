@@ -31,7 +31,13 @@ enum algebra
 	filter(expr)
 }
 
-type query_context = {algebra: algebra, rng: rand::rng, timestamp: tm};
+type query_context =
+	{
+		algebra: algebra,
+		order_by: [expr],
+		rng: rand::rng,		// for RAND
+		timestamp: tm		// for NOW
+	};
 
 fn solution_row_to_str(row: solution_row) -> str
 {
@@ -506,10 +512,64 @@ fn eval_algebra(store: store, names: [str], context: query_context) -> result::r
 	}
 }
 
+fn order_by(context: query_context, solution: solution, ordering: [expr]) -> result::result<solution, str>
+{
+	let mut err_mesg = "";
+	
+	let le = {|&e: str, row1, row2|
+		let order1 = vec::map(ordering, {|o| eval_expr(context, row1, o)});
+		let order2 = vec::map(ordering, {|o| eval_expr(context, row2, o)});
+		let order = vec::map2(order1, order2, {|x, y| compare_values("<", x, y)});
+		let order = vec::foldl(result::ok(0), order)
+		{|x, y|
+			alt x
+			{
+				result::ok(0)	{y}
+				_				{x}
+			}
+		};
+		alt order
+		{
+			result::ok(x)
+			{
+				x < 0
+			}
+			result::err(err)
+			{
+				if str::is_empty(e)
+				{
+					e = err;
+				}
+				false
+			}
+		}
+	};
+	
+	let solution = std::sort::merge_sort({|x, y| le(err_mesg, x, y)}, solution);
+	if str::is_empty(err_mesg)
+	{
+		result::ok(solution)
+	}
+	else
+	{
+		result::err(err_mesg)
+	}
+}
+
 fn eval(names: [str], context: query_context) -> selector
 {
 	{|store: store|
 		#debug["algebra: %?", context.algebra];
-		eval_algebra(store, names, context)
+		eval_algebra(store, names, context).chain()
+		{|solution|
+			if vec::is_not_empty(context.order_by)
+			{
+				order_by(context, solution, context.order_by)
+			}
+			else
+			{
+				result::ok(solution)
+			}
+		}
 	}
 }
