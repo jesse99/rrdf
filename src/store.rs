@@ -186,11 +186,15 @@ impl store_methods for store
 	{
 		self.add_container(subject, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq", values);
 	}
+	
+	fn each_triple(callback: fn (triple) -> bool)
+	{
+		each_triple(self, callback);
+	}
 }
 
-// TODO: may want to make these methods
 #[doc = "Calls the callback for each triple in the store (in an undefined order)."]
-fn each_triple(store: store, callback: fn (triple) -> bool) unsafe
+fn each_triple(store: store, callback: fn (triple) -> bool)
 {
 	for store.subjects.each()
 	{|subject, entries|
