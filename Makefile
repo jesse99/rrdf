@@ -21,7 +21,7 @@ update-libraries:
 
 # Better to use /usr/local/lib but linking it in with -L /usr/local/lib fails because
 # there is a libccore there and in the nested rustc directory.
-install: lib
+install:
 	install -p `find bin -name "librrdf*" -type f -maxdepth 1` /usr/local/lib/rust
 
 # ------------------
