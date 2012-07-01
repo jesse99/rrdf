@@ -26,7 +26,7 @@ fn iteration()
 	let store = got_cast1();
 	
 	let mut actual = [];
-	for each_triple(store)
+	for store.each
 	{|triple|
 		vec::push(actual, triple);
 	};
@@ -57,7 +57,7 @@ fn references()
 	]);
 	
 	let mut actual = [];
-	for each_triple(store)
+	for store.each
 	{|triple|
 		vec::push(actual, triple);
 	};
@@ -79,7 +79,7 @@ fn blank_nodes()
 	let store = got_cast3();
 	
 	let mut actual = [];
-	for each_triple(store)
+	for store.each
 	{|triple|
 		vec::push(actual, triple);
 	};
@@ -114,7 +114,7 @@ fn container()
 	store.add_alt("got:places", [iri_value("got:The_Wall"), iri_value("got:Winterfell")]);
 	
 	let mut actual = [];
-	for each_triple(store)
+	for store.each
 	{|triple|
 		vec::push(actual, triple);
 	};
@@ -135,7 +135,7 @@ fn list0()
 	store.add_list("got:westeros", "got:cities", []);
 	
 	let mut actual = [];
-	for each_triple(store)
+	for store.each
 	{|triple|
 		vec::push(actual, triple);
 	};
@@ -155,7 +155,7 @@ fn list1()
 	store.add_list("got:westeros", "got:cities", [string_value("Lanisport", "")]);
 	
 	let mut actual = [];
-	for each_triple(store)
+	for store.each
 	{|triple|
 		vec::push(actual, triple);
 	};
@@ -179,7 +179,7 @@ fn reify()
 	store.add_reify("got:Eddard_Stark", "got:wife", iri_value("got:Caitlyn_Stark"));
 	
 	let mut actual = [];
-	for each_triple(store)
+	for store.each
 	{|triple|
 		vec::push(actual, triple);
 	};

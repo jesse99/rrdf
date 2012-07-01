@@ -58,6 +58,30 @@ impl of to_str for store
 	}
 }
 
+impl of iter::base_iter<triple> for store
+{
+	#[doc = "Calls the blk for each triple in the store (in an undefined order)."]
+	fn each(blk: fn(triple) -> bool)
+	{
+		for self.subjects.each()
+		{|subject, entries|
+			for (*entries).each()
+			{|entry|
+				let triple = {subject: subject, predicate: entry.predicate, object: entry.object};
+				if !blk(triple)
+				{
+					ret;
+				}
+			}
+		};
+	}
+	
+	fn size_hint() -> option<uint>
+	{
+		option::some(self.subjects.size())
+	}
+}
+
 #[doc = "Initializes a store object.
 
 xsd, rdf, rdfs, and owl namespaces are automatically added."]
@@ -186,27 +210,6 @@ impl store_methods for store
 	{
 		self.add_container(subject, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq", values);
 	}
-	
-	fn each_triple(callback: fn (triple) -> bool)
-	{
-		each_triple(self, callback);
-	}
-}
-
-#[doc = "Calls the callback for each triple in the store (in an undefined order)."]
-fn each_triple(store: store, callback: fn (triple) -> bool)
-{
-	for store.subjects.each()
-	{|subject, entries|
-		for (*entries).each()
-		{|entry|
-			let triple = {subject: subject, predicate: entry.predicate, object: entry.object};
-			if !callback(triple)
-			{
-				ret;
-			}
-		}
-	};
 }
 
 // ---- Private Functions -----------------------------------------------------

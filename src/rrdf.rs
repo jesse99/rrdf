@@ -9,7 +9,7 @@ import query::*;
 import solution::*;
 import store::*;
 
-export subject, predicate, triple, namespace, entry, store, to_str, create_store, each_triple;
+export subject, predicate, triple, namespace, entry, store, to_str, create_store;
 export object;
 export solution_row, solution, selector; 
 export compile;
