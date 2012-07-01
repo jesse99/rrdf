@@ -12,7 +12,6 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
 
-
 * Work on more complex matching:
 	- may want to support union
 * Select components can be strings?

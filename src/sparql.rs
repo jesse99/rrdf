@@ -975,6 +975,13 @@ fn make_parser() -> parser<selector>
 	let GroupGraphPattern = seq3_ret1("{".lit().ws(), GroupGraphPatternSub, "}".lit().ws());
 	*GroupGraphPattern_ptr = GroupGraphPattern;
 	
+	// [26] LimitClause ::= 'LIMIT' INTEGER
+	let LimitClause = seq2_ret1("LIMIT".liti().ws(), INTEGER).thene
+		{|x| alt x {int_value(n) {return(n as uint)} _ {fail("Somehow INTEGER didn't return an int_value")}}};
+	
+	// [25] LimitOffsetClauses	::= LimitClause OffsetClause? | OffsetClause LimitClause?
+	let LimitOffsetClauses = LimitClause;
+	
 	// [24] OrderCondition ::= (('ASC' | 'DESC') BrackettedExpression) | (Constraint | Var)
 	let OrderCondition1 = seq2_ret1("ASC".liti().ws(), BrackettedExpression).thene {|v| return(call_expr("!asc", [@v]))};
 	let OrderCondition2 = seq2_ret1("DESC".liti().ws(), BrackettedExpression).thene {|v| return(call_expr("!desc", [@v]))};
@@ -985,7 +992,8 @@ fn make_parser() -> parser<selector>
 	let OrderClause = seq3_ret2("ORDER".liti().ws(), "BY".liti().ws(), OrderCondition.r1());
 	
 	// [18] SolutionModifier ::= GroupClause? HavingClause? OrderClause? LimitOffsetClauses?
-	let SolutionModifier = OrderClause.optional();
+	let SolutionModifier = seq2(OrderClause.optional(), LimitOffsetClauses.optional())
+		{|a, b| result::ok({order_by: a, limit: b})};
 	
 	// [17] WhereClause ::= 'WHERE'? GroupGraphPattern
 	let WhereClause = seq2_ret1(("WHERE".liti().ws()).optional(), GroupGraphPattern);
@@ -999,7 +1007,7 @@ fn make_parser() -> parser<selector>
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = seq3(SelectClause, WhereClause, SolutionModifier)
-		{|patterns, algebra, modifier| result::ok((patterns, algebra, modifier))};
+		{|patterns, algebra, modifiers| result::ok((patterns, algebra, modifiers))};
 		
 	// [6] PrefixDecl ::= 'PREFIX' PNAME_NS IRI_REF
 	let PrefixDecl = seq3("PREFIX".liti().ws(), PNAME_NS.ws(), IRI_REF)
@@ -1018,29 +1026,31 @@ fn make_parser() -> parser<selector>
 	ret QueryUnit;
 }
 
+type SolutionModifiers = {order_by: option<[expr]>, limit: option<uint>};
+
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-fn build_parser(namespaces: [namespace], query: ([pattern], algebra, option<[expr]>)) -> result::result<selector, str>
+fn build_parser(namespaces: [namespace], query: ([pattern], algebra, SolutionModifiers)) -> result::result<selector, str>
 {
-	let (patterns, algebra, ordering) = query;
+	let (patterns, algebra, modifiers) = query;
 	
 	let variables = vec::filter(patterns) {|p| alt p {variable(_l) {true} _ {false}}};
 	let names = vec::map(variables) {|p| alt p {variable(n) {n} _ {fail}}};
 	
-	let ordering = alt ordering {option::some(x) {x} option::none {[]}};
+	let order_by = alt modifiers.order_by {option::some(x) {x} option::none {[]}};
 	
 	let dupes = find_dupes(names);
 	if vec::is_empty(dupes)
 	{
 		if vec::is_not_empty(namespaces)
 		{
-			let context = {algebra: expand(namespaces, algebra), order_by: ordering, rng: rand::rng(), timestamp: time::now()};
+			let context = {algebra: expand(namespaces, algebra), order_by: order_by, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 		else
 		{
-			let context = {algebra: algebra, order_by: ordering, rng: rand::rng(), timestamp: time::now()};
+			let context = {algebra: algebra, order_by: order_by, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 	}

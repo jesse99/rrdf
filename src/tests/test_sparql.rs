@@ -542,3 +542,52 @@ fn order_by_desc()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn limit()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s ?o
+	WHERE {
+		?s ?p ?o .
+		FILTER (!ISBLANK(?s) && !ISBLANK(?o))
+	} ORDER BY ?s ?o LIMIT 4";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("s", iri_value(got("Eddard_Stark"))), ("o", string_value("Eddard Stark", ""))],
+		[("s", iri_value(got("Eddard_Stark"))), ("o", string_value("Lord", ""))],
+		[("s", iri_value(got("Eddard_Stark"))), ("o", string_value("Ned", ""))],
+		
+		[("s", iri_value(got("Jon_Snow"))), ("o", string_value("Ghost", ""))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn big_limit()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s ?o
+	WHERE {
+		?s ?p ?o .
+		FILTER (!ISBLANK(?s) && !ISBLANK(?o))
+	} ORDER BY ?s ?o LIMIT 400";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("s", iri_value(got("Eddard_Stark"))), ("o", string_value("Eddard Stark", ""))],
+		[("s", iri_value(got("Eddard_Stark"))), ("o", string_value("Lord", ""))],
+		[("s", iri_value(got("Eddard_Stark"))), ("o", string_value("Ned", ""))],
+		
+		[("s", iri_value(got("Jon_Snow"))), ("o", string_value("Ghost", ""))],
+		[("s", iri_value(got("Jon_Snow"))), ("o", string_value("Jon Snow", ""))],
+		[("s", iri_value(got("Jon_Snow"))), ("o", string_value("Lord Snow", ""))],
+		
+		[("s", iri_value(got("Sandor_Clegane"))), ("o", string_value("Sandor Clegane", ""))],
+		[("s", iri_value(got("Sandor_Clegane"))), ("o", string_value("The Hound", ""))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}

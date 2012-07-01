@@ -35,6 +35,7 @@ type query_context =
 	{
 		algebra: algebra,
 		order_by: [expr],
+		limit: option<uint>,
 		rng: rand::rng,		// for RAND
 		timestamp: tm		// for NOW
 	};
@@ -598,13 +599,29 @@ fn eval(names: [str], context: query_context) -> selector
 		#debug["algebra: %?", context.algebra];
 		eval_algebra(store, names, context).chain()
 		{|solution|
-			if vec::is_not_empty(context.order_by)
-			{
-				order_by(context, solution, context.order_by)
-			}
-			else
-			{
-				result::ok(solution)
+			result::chain(
+				// Optionally sort the solution.
+				if vec::is_not_empty(context.order_by)
+				{
+					order_by(context, solution, context.order_by)
+				}
+				else
+				{
+					result::ok(solution)
+				})
+			{|solution|
+				alt context.limit
+				{
+					// Optionally limit the solution.
+					option::some(limit) if limit < vec::len(solution)
+					{
+						result::ok(vec::slice(solution, 0, limit))
+					}
+					_
+					{
+						result::ok(solution)
+					}
+				}
 			}
 		}
 	}
