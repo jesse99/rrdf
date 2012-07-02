@@ -1,6 +1,9 @@
 #[doc = "The type which stores triples."];
 import core::dvec::*;
 
+export subject, predicate, triple, namespace, entry, store, create_store, make_triple_blank, make_triple_str, make_triple_uri, store_methods, to_str, iter::base_iter;
+export expand_uri;			// this should be internal
+
 #[doc = "An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
 or a blank node (_1)."]
 type subject = str;
@@ -31,56 +34,6 @@ type store = {
 	subjects: hashmap<str, @dvec<entry>>,
 	mut next_blank: uint
 };
-
-impl of to_str for triple
-{
-	fn to_str() -> str
-	{
-		#fmt["{%s, %s, %s}", self.subject, self.predicate, self.object.to_str()]
-	}
-}
-
-impl of to_str for store
-{
-	fn to_str() -> str
-	{
-		let mut result = "";
-		
-		for self.subjects.each()
-		{|subject, entries|
-			for (*entries).eachi()
-			{|i, entry|
-				result += #fmt["%?: <%s>  <%s>  %s}\n", i, subject, entry.predicate, entry.object.to_str()];
-			}
-		};
-		
-		ret result;
-	}
-}
-
-impl of iter::base_iter<triple> for store
-{
-	#[doc = "Calls the blk for each triple in the store (in an undefined order)."]
-	fn each(blk: fn(triple) -> bool)
-	{
-		for self.subjects.each()
-		{|subject, entries|
-			for (*entries).each()
-			{|entry|
-				let triple = {subject: subject, predicate: entry.predicate, object: entry.object};
-				if !blk(triple)
-				{
-					ret;
-				}
-			}
-		};
-	}
-	
-	fn size_hint() -> option<uint>
-	{
-		option::some(self.subjects.size())
-	}
-}
 
 #[doc = "Initializes a store object.
 
@@ -209,6 +162,56 @@ impl store_methods for store
 	fn add_seq(subject: str, values: [object])
 	{
 		self.add_container(subject, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq", values);
+	}
+}
+
+impl of iter::base_iter<triple> for store
+{
+	#[doc = "Calls the blk for each triple in the store (in an undefined order)."]
+	fn each(blk: fn(triple) -> bool)
+	{
+		for self.subjects.each()
+		{|subject, entries|
+			for (*entries).each()
+			{|entry|
+				let triple = {subject: subject, predicate: entry.predicate, object: entry.object};
+				if !blk(triple)
+				{
+					ret;
+				}
+			}
+		};
+	}
+	
+	fn size_hint() -> option<uint>
+	{
+		option::some(self.subjects.size())
+	}
+}
+
+impl of to_str for triple
+{
+	fn to_str() -> str
+	{
+		#fmt["{%s, %s, %s}", self.subject, self.predicate, self.object.to_str()]
+	}
+}
+
+impl of to_str for store
+{
+	fn to_str() -> str
+	{
+		let mut result = "";
+		
+		for self.subjects.each()
+		{|subject, entries|
+			for (*entries).eachi()
+			{|i, entry|
+				result += #fmt["%?: <%s>  <%s>  %s}\n", i, subject, entry.predicate, entry.object.to_str()];
+			}
+		};
+		
+		ret result;
 	}
 }
 
@@ -346,4 +349,3 @@ fn after(text: str, ch: char) -> str
 		}
 	}
 }
-
