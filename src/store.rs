@@ -163,6 +163,24 @@ impl store_methods for store
 	{
 		self.add_container(subject, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq", values);
 	}
+	
+	#[doc = "Removes all triples from the store."]
+	fn clear()
+	{
+		// TODO: Replace this awful code once // https://github.com/mozilla/rust/issues/2775 is fixed.
+		// (Tried making subjects mutable but that lead to illegal borrows all over the place).
+		let mut keys = []/~;
+		for self.subjects.each_key
+		{|key|
+			vec::push(keys, key);
+		};
+		
+		for vec::each(keys)
+		{|key|
+			self.subjects.remove(key);
+		};
+		self.next_blank = 0;
+	}
 }
 
 impl of iter::base_iter<triple> for store
