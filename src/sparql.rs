@@ -106,6 +106,10 @@ fn expand(namespaces: [namespace], algebra: algebra) -> algebra
 		{
 			optional(@expand(namespaces, *term))
 		}
+		bind(expr, name)
+		{
+			bind(expand_expr(namespaces, expr), name)
+		}
 		filter(expr)
 		{
 			filter(expand_expr(namespaces, expr))
@@ -918,6 +922,10 @@ fn make_parser() -> parser<selector>
 	// [64] Filter ::= 'FILTER' Constraint
 	let Filter = seq2_ret1("FILTER".liti().ws(), Constraint).thene {|v| return(filter(v))};
 	
+	// [61] Bind ::= 'BIND' '(' Expression 'AS' Var ')'
+	let Bind = seq6("BIND".liti().ws(), "(".lit().ws(), Expression, "AS".liti().ws(), Var, ")".lit().ws())
+		{|_b, _p, e, _a, v, _q| result::ok(bind(e, v))};
+	
 	// [58] OptionalGraphPattern ::= 'OPTIONAL' GroupGraphPattern
 	let GroupGraphPattern_ptr = @mut return(group([]));
 	let GroupGraphPattern_ref = forward_ref(GroupGraphPattern_ptr);
@@ -925,8 +933,9 @@ fn make_parser() -> parser<selector>
 	let OptionalGraphPattern = seq2("OPTIONAL".liti().ws(), GroupGraphPattern_ref)
 		{|_o, a| result::ok(optional(@a))};
 	
-	// [57] GraphPatternNotTriples ::= GroupOrUnionGraphPattern | OptionalGraphPattern | MinusGraphPattern | GraphGraphPattern | ServiceGraphPattern | Filter | Bind
-	let GraphPatternNotTriples = OptionalGraphPattern.or(Filter);
+	// [57] GraphPatternNotTriples ::= GroupOrUnionGraphPattern | OptionalGraphPattern | MinusGraphPattern | 
+	//                                                GraphGraphPattern | ServiceGraphPattern | Filter | Bind
+	let GraphPatternNotTriples = or_v([OptionalGraphPattern, Filter, Bind]);
 	
 	// [56] TriplesBlock ::= TriplesSameSubjectPath ('.' TriplesBlock?)?
 	let TriplesBlock = seq2(list(TriplesSameSubjectPath, ".".lit().ws()), ".".lit().ws().optional())

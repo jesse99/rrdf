@@ -591,3 +591,21 @@ fn big_limit()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn bind()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?d
+	WHERE {
+		got:Eddard_Stark v:honorific-prefix ?o .
+		BIND (CONCAT(?o, ?o) AS ?d)
+	}";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("d", string_value("LordLord", ""))],
+	];
+	
+	assert check_solution(store, expr, expected);
+}

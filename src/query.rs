@@ -28,6 +28,7 @@ enum algebra
 	basic(triple_pattern),
 	group([@algebra]),
 	optional(@algebra),
+	bind(expr, str),
 	filter(expr)
 }
 
@@ -420,27 +421,73 @@ fn filter_solution(context: query_context, names: [str], solution: solution, exp
 	ret result::ok(result);
 }
 
-fn eval_group(store: store, context: query_context, in_names: [str], terms: [@algebra]) -> result::result<solution, str>
+fn bind_solution(context: query_context, names: [str], solution: solution, expr: expr, name: str) -> result::result<solution, str>
 {
-	let mut result = [];
+	let mut result = []/~;
+	vec::reserve(result, vec::len(solution));
+	
+	for vec::each(solution)
+	{|row|
+		let value = eval_expr(context, row, expr);
+		alt value
+		{
+			unbound_value(name)
+			{
+				ret result::err(#fmt["?%s was not bound", name]);
+			}
+			invalid_value(literal, kind)
+			{
+				ret result::err(#fmt["?%s is not a valid %s", literal, kind]);
+			}
+			error_value(mesg)
+			{
+				ret result::err(mesg);
+			}
+			_
+			{
+				vec::push(result, filter_row(names, row + [(name, value)]/~));
+			}
+		}
+	}
+	
+	ret result::ok(result);
+}
+
+fn eval_group(store: store, context: query_context, in_names: [str]/~, terms: [@algebra]/~) -> result::result<solution, str>
+{
+	let mut result = []/~;
 	
 	for vec::eachi(terms)
 	{|i, term|
-	// We can't filter out bindings not in names until we've finished joining bindings.
-	let names =
-		if i == vec::len(terms) - 1u
-		{
-			in_names
-		}
-		else
-		{
-			["*"]
-		};
+		// We can't filter out bindings not in names until we've finished joining bindings.
+		let names =
+			if i == vec::len(terms) - 1u
+			{
+				in_names
+			}
+			else
+			{
+				["*"]/~
+			};
 		alt term 
 		{
 			@filter(expr)
 			{
 				alt filter_solution(context, names, result, expr)
+				{
+					result::ok(solution)
+					{
+						result = solution;
+					}
+					result::err(mesg)
+					{
+						ret result::err(mesg);
+					}
+				}
+			}
+			@bind(expr, name)
+			{
+				alt bind_solution(context, names, result, expr, name)
 				{
 					result::ok(solution)
 					{
@@ -503,7 +550,11 @@ fn eval_algebra(store: store, names: [str], context: query_context) -> result::r
 		{
 			eval_optional(store, names, context, *term)
 		}
-		filter(expr)
+		bind(*)
+		{
+			result::err("BIND should appear in a pattern group.")
+		}
+		filter(*)
 		{
 			// Not sure what's supposed to happen here. According to GroupGraphPatternSub a
 			// group can contain just a FILTER (should be a no-op?) or a filter and then a triple
