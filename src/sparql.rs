@@ -1021,7 +1021,10 @@ fn make_parser() -> parser<selector>
 		(Var.thene({|v| return(variable((v)))})).r1(),
 		"*".lit().ws().thene({|_x| return([variable("*")])})]);
 		
-	let SelectClause = seq2_ret1("SELECT".liti().ws(), select_suffix).note("SelectClause");
+	let select_mid = ("DISTINCT".liti()).or("REDUCED".liti()).ws().optional();
+		
+	let SelectClause = seq3("SELECT".liti().ws(), select_mid, select_suffix,
+		{|_a, b, c| result::ok((option::is_some(b), c))}).note("SelectClause");
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = seq3(SelectClause, WhereClause, SolutionModifier)
@@ -1049,9 +1052,9 @@ type SolutionModifiers = {order_by: option<[expr]>, limit: option<uint>};
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-fn build_parser(namespaces: [namespace], query: ([pattern], algebra, SolutionModifiers)) -> result::result<selector, str>
+fn build_parser(namespaces: [namespace], query: ((bool, [pattern]), algebra, SolutionModifiers)) -> result::result<selector, str>
 {
-	let (patterns, algebra, modifiers) = query;
+	let ((distinct, patterns), algebra, modifiers) = query;
 	
 	let variables = vec::filter(patterns) {|p| alt p {variable(_l) {true} _ {false}}};
 	let names = vec::map(variables) {|p| alt p {variable(n) {n} _ {fail}}};
@@ -1064,12 +1067,12 @@ fn build_parser(namespaces: [namespace], query: ([pattern], algebra, SolutionMod
 		// eval will set namespaces and extensions
 		if vec::is_not_empty(namespaces)
 		{
-			let context = {namespaces: [], extensions: [], algebra: expand(namespaces, algebra), order_by: order_by, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
+			let context = {namespaces: [], extensions: [], algebra: expand(namespaces, algebra), order_by: order_by, distinct: distinct, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 		else
 		{
-			let context = {namespaces: [], extensions: [], algebra: algebra, order_by: order_by, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
+			let context = {namespaces: [], extensions: [], algebra: algebra, order_by: order_by, distinct: distinct, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 	}

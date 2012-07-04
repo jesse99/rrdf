@@ -38,6 +38,7 @@ type query_context =
 		extensions: [(str, fn@ ([namespace], [object]) -> object)],
 		algebra: algebra,
 		order_by: [expr],
+		distinct: bool,
 		limit: option<uint>,
 		rng: rand::rng,		// for RAND
 		timestamp: tm		// for NOW
@@ -646,6 +647,30 @@ fn order_by(context: query_context, solution: solution, ordering: [expr]) -> res
 	}
 }
 
+fn make_distinct(solution: solution) -> result::result<solution, str>
+{
+	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
+	let solution = std::sort::merge_sort({|x, y| x < y}, solution);
+	
+	let mut result = []/~;
+	vec::reserve(result, vec::len(solution));
+	
+	let mut i = 0;
+	while i < vec::len(solution)
+	{
+		let row = solution[i];
+		vec::push(result, row);
+		
+		i = i + 1;
+		while i < vec::len(solution) && row == solution[i]
+		{
+			i += 1;
+		}
+	}
+	
+	ret result::ok(result);
+}
+
 fn eval(names: [str], context: query_context) -> selector
 {
 	{|store: store|
@@ -653,27 +678,23 @@ fn eval(names: [str], context: query_context) -> selector
 		let context = {namespaces: store.namespaces, extensions: store.extensions with context};
 		eval_algebra(store, names, context).chain()
 		{|solution|
-			result::chain(
-				// Optionally sort the solution.
-				if vec::is_not_empty(context.order_by)
-				{
-					order_by(context, solution, context.order_by)
-				}
-				else
-				{
-					result::ok(solution)
-				})
+			// Optionally remove duplicates.
+			result::chain(if context.distinct {make_distinct(solution)} else {result::ok(solution)})
 			{|solution|
-				alt context.limit
-				{
-					// Optionally limit the solution.
-					option::some(limit) if limit < vec::len(solution)
+				// Optionally sort the solution.
+				result::chain(if vec::is_not_empty(context.order_by) {order_by(context, solution, context.order_by)} else {result::ok(solution)})
+				{|solution|
+					alt context.limit
 					{
-						result::ok(vec::slice(solution, 0, limit))
-					}
-					_
-					{
-						result::ok(solution)
+						// Optionally limit the solution.
+						option::some(limit) if limit < vec::len(solution)
+						{
+							result::ok(vec::slice(solution, 0, limit))
+						}
+						_
+						{
+							result::ok(solution)
+						}
 					}
 				}
 			}

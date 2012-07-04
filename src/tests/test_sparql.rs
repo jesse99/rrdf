@@ -627,3 +627,21 @@ fn extensions()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn distinct()
+{
+	let expr = "SELECT DISTINCT ?s
+	WHERE {
+		?s ?p ?o .
+		FILTER (!ISBLANK(?s))
+	}";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("s", iri_value(got("Eddard_Stark")))],
+		[("s", iri_value(got("Jon_Snow")))],
+		[("s", iri_value(got("Sandor_Clegane")))],
+	];
+	
+	assert check_solution(store, expr, expected);
+}
