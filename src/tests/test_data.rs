@@ -9,7 +9,7 @@ fn got_cast1() -> store
 	let store = create_store([
 		{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"},
 		{prefix: "v", path: "http://www.w3.org/2006/vcard/ns#"}
-		]);
+		], []);
 	store.add("got:Eddard_Stark", [
 		("v:fn", string_value("Eddard Stark", "")),
 		("v:nickname", string_value("Ned", ""))
@@ -22,7 +22,7 @@ fn got_cast3() -> store
 	let store = create_store([
 		{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"},
 		{prefix: "v", path: "http://www.w3.org/2006/vcard/ns#"}
-		]);
+		], []);
 	
 	store.add("got:Eddard_Stark", [
 		("v:fn", string_value("Eddard Stark", "")),

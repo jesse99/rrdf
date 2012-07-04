@@ -9,7 +9,7 @@
 #[warn(no_non_implicitly_copyable_typarams, no_vecs_not_implicitly_copyable, no_old_vecs)];
 
 use std;
-use rparse (name = "rparse", vers = "0.4");
+use rparse (name = "rparse", vers = "0.5");
 
 mod expression;
 mod functional_forms;

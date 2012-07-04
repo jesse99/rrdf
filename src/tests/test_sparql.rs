@@ -609,3 +609,21 @@ fn bind()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn extensions()
+{
+	let expr = "SELECT ?sp ?pp
+	WHERE {
+		?s ?p ?o .
+		BIND(rrdf:pname(?s) AS ?sp) .
+		BIND(rrdf:pname(?p) AS ?pp) 
+	}";
+	let store = test_data::got_cast1();
+	let expected = [
+		[("sp", string_value("got:Eddard_Stark", "")), ("pp", string_value("v:fn", ""))],
+		[("sp", string_value("got:Eddard_Stark", "")), ("pp", string_value("v:nickname", ""))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}

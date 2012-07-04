@@ -12,7 +12,8 @@ enum expr
 {
 	constant_expr(object),
 	variable_expr(str),
-	call_expr(str, [@expr])		// function name + arguments
+	call_expr(str, [@expr]),			// function name + arguments
+	extension_expr(str, [@expr])	// function name + arguments
 }
 
 fn eval_expr(context: query_context, bindings: [(str, object)], expr: expr) -> object
@@ -37,6 +38,10 @@ fn eval_expr(context: query_context, bindings: [(str, object)], expr: expr) -> o
 				}
 			}
 		}
+		extension_expr(fname, args)
+		{
+			eval_extension(context, bindings, fname, args)
+		}
 		call_expr("if_fn", args)				// special case this because it is supposed to short circuit
 		{
 			eval_if(context, bindings, args)
@@ -59,6 +64,22 @@ fn eval_expr(context: query_context, bindings: [(str, object)], expr: expr) -> o
 type unary_fn = fn (object) -> object;
 type binary_fn = fn (object, object) -> object;
 type ternary_fn = fn (object, object, object) -> object;
+
+fn eval_extension(context: query_context, bindings: [(str, object)], fname: str, args: [@expr]) -> object
+{
+	let args = vec::map(args) {|a| eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	alt vec::find(context.extensions, {|e| tuple::first(e) == fname})
+	{
+		option::some((_name, f))
+		{
+			f(context.namespaces, args)
+		}
+		option::none
+		{
+			error_value(#fmt["%s wasn't registered with the store as an extension function", fname])
+		}
+	}
+}
 
 fn eval_call(context: query_context, bindings: [(str, object)], fname: str, args: [@expr]) -> object
 {

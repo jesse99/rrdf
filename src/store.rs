@@ -1,7 +1,7 @@
 #[doc = "The type which stores triples."];
 import core::dvec::*;
 
-export subject, predicate, triple, namespace, entry, store, create_store, make_triple_blank, make_triple_str, make_triple_uri, store_methods, to_str, iter::base_iter;
+export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, make_triple_str, make_triple_uri, store_methods, to_str, iter::base_iter;
 export expand_uri;			// this should be internal
 
 #[doc = "An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
@@ -28,21 +28,28 @@ type namespace = {prefix: str, path: str};
 #[doc = "Predicate and object associated with a subject."]
 type entry = {predicate: str, object: object};
 
+#[doc = "SPARQL extension function."]
+type extension_fn = fn@ ([namespace], [object]) -> object;
+
 #[doc = "Stores triples in a more or less efficient format."]
 type store = {
 	namespaces: [namespace],
 	subjects: hashmap<str, @dvec<entry>>,
+	extensions: [(str, extension_fn)],				// not using a hashmap so it can be copied
 	mut next_blank: uint
 };
 
 #[doc = "Initializes a store object.
 
-xsd, rdf, rdfs, and owl namespaces are automatically added."]
-fn create_store(namespaces: [namespace]) -> store
+xsd, rdf, rdfs, and owl namespaces are automatically added. An rrdf:pname extension is
+automatically added which converts an iri_value to a string_value using namespaces (or
+simply stringifies it if none of the namespaces paths match)."]
+fn create_store(namespaces: [namespace], extensions: [(str, extension_fn)]) -> store
 {
 	{
 		namespaces: default_namespaces() + namespaces,
 		subjects: std::map::str_hash(),
+		extensions: extensions + [("rrdf:pname", pname_fn)],
 		mut next_blank: 0u
 	}
 }
@@ -365,5 +372,37 @@ fn after(text: str, ch: char) -> str
 		{
 			text
 		}
+	}
+}
+
+fn pname_fn(namespaces: [namespace], args: [object]) -> object
+{
+	if vec::len(args) == 1u
+	{
+		alt args[0]
+		{
+			iri_value(iri)
+			{
+				alt vec::find(namespaces, {|n| str::starts_with(iri, n.path)})
+				{
+					option::some(ns)
+					{
+						string_value(#fmt["%s:%s", ns.prefix, str::slice(iri, str::len(ns.path), str::len(iri))], "")
+					}
+					option::none
+					{
+						string_value(iri, "")
+					}
+				}
+			}
+			_
+			{
+				error_value(#fmt["rrdf:pname expected an iri_value but was called with %?.", args[0]])
+			}
+		}
+	}
+	else
+	{
+		error_value(#fmt["rrdf:pname accepts 1 argument but was called with %? arguments.", vec::len(args)])
 	}
 }

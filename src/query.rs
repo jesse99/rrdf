@@ -34,6 +34,8 @@ enum algebra
 
 type query_context =
 	{
+		namespaces: [namespace],
+		extensions: [(str, fn@ ([namespace], [object]) -> object)],
 		algebra: algebra,
 		order_by: [expr],
 		limit: option<uint>,
@@ -648,6 +650,7 @@ fn eval(names: [str], context: query_context) -> selector
 {
 	{|store: store|
 		#debug["algebra: %?", context.algebra];
+		let context = {namespaces: store.namespaces, extensions: store.extensions with context};
 		eval_algebra(store, names, context).chain()
 		{|solution|
 			result::chain(
