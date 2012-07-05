@@ -107,12 +107,13 @@ impl store_methods for store
 	
 	#[doc = "Adds a subject statement referencing a new blank node.
 	
-	Label is an arbitrary string useful for debugging."]
-	fn add_aggregate(subject: str, predicate: str, label: str, entries: [(str, object)])
+	Label is an arbitrary string useful for debugging. Returns the name of the blank node."]
+	fn add_aggregate(subject: str, predicate: str, label: str, entries: [(str, object)]) -> str
 	{
 		let blank = get_blank_name(self, label);
 		self.add_triple([], {subject: subject, predicate: predicate, object: blank_value(blank)});
 		self.add(blank, entries);
+		ret blank;
 	}
 	
 	#[doc = "Adds statements representing a choice between alternatives."]
