@@ -397,6 +397,9 @@ impl of to_str for object
 	}
 }
 
+#[doc = "Converts an arbitrary lexical value to an object.
+
+Note that it is usually simplest to simply use the object enum directly."]
 fn literal_to_object(value: str, kind: str, lang: str) -> object
 {
 	alt (value, kind, lang)

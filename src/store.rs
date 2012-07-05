@@ -1,7 +1,7 @@
 #[doc = "The type which stores triples."];
 import core::dvec::*;
 
-export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, make_triple_str, make_triple_uri, store_methods, to_str, iter::base_iter;
+export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, make_triple_str, make_triple_uri, store_methods, to_str, iter::base_iter, get_blank_name;
 export expand_uri;			// this should be internal
 
 #[doc = "An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
@@ -52,6 +52,13 @@ fn create_store(namespaces: [namespace], extensions: [(str, extension_fn)]) -> s
 		extensions: extensions + [("rrdf:pname", pname_fn)],
 		mut next_blank: 0u
 	}
+}
+
+fn get_blank_name(store: store, prefix: str) -> str
+{
+	let name = #fmt["_:%s-%?", prefix, copy(store.next_blank)];
+	store.next_blank += 1u;
+	ret name;
 }
 
 impl store_methods for store
@@ -251,13 +258,6 @@ fn default_namespaces() -> [namespace]
 		{prefix: "rdfs", path: "http://www.w3.org/2000/01/rdf-schema#"},
 		{prefix: "owl", path: "http://www.w3.org/2002/07/owl#"}
 	]
-}
-
-fn get_blank_name(store: store, prefix: str) -> str
-{
-	let name = #fmt["_:%s-%?", prefix, copy(store.next_blank)];
-	store.next_blank += 1u;
-	ret name;
 }
 
 fn expand_uri(namespaces: [namespace], name: str) -> str
