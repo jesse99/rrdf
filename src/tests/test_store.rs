@@ -27,7 +27,8 @@ fn iteration()
 	
 	let mut actual = [];
 	for store.each
-	{|triple|
+	|triple|
+	{
 		vec::push(actual, triple);
 	};
 	
@@ -58,7 +59,8 @@ fn references()
 	
 	let mut actual = [];
 	for store.each
-	{|triple|
+	|triple|
+	{
 		vec::push(actual, triple);
 	};
 	
@@ -80,7 +82,8 @@ fn blank_nodes()
 	
 	let mut actual = [];
 	for store.each
-	{|triple|
+	|triple|
+	{
 		vec::push(actual, triple);
 	};
 	
@@ -115,7 +118,8 @@ fn container()
 	
 	let mut actual = [];
 	for store.each
-	{|triple|
+	|triple|
+	{
 		vec::push(actual, triple);
 	};
 	
@@ -136,7 +140,8 @@ fn list0()
 	
 	let mut actual = [];
 	for store.each
-	{|triple|
+	|triple|
+	{
 		vec::push(actual, triple);
 	};
 	
@@ -156,7 +161,8 @@ fn list1()
 	
 	let mut actual = [];
 	for store.each
-	{|triple|
+	|triple|
+	{
 		vec::push(actual, triple);
 	};
 	
@@ -180,7 +186,8 @@ fn reify()
 	
 	let mut actual = [];
 	for store.each
-	{|triple|
+	|triple|
+	{
 		vec::push(actual, triple);
 	};
 	

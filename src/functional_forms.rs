@@ -53,7 +53,8 @@ fn eval_if(context: query_context, bindings: [(str, object)], args: [@expr]) -> 
 fn eval_coalesce(context: query_context, bindings: [(str, object)], args: [@expr]) -> object
 {
 	for vec::each(args)
-	{|arg|
+	|arg|
+	{
 		let candidate = eval_expr(context, bindings, *arg);
 		alt candidate
 		{

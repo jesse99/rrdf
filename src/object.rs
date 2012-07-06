@@ -437,14 +437,17 @@ fn literal_to_object(value: str, kind: str, lang: str) -> object
 		(v, "http://www.w3.org/2001/XMLSchema#dateTime", "")
 		{
 			// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
-			alt std::time::strptime(v, "%FT%T%z").chain_err
-				{|_err1|
+			alt do std::time::strptime(v, "%FT%T%z").chain_err
+				|_err1|
+				{
 					// Time zone expressed as a name, e.g. EST (technically only Z is supposed to be allowed).
-					std::time::strptime(v, "%FT%T%Z").chain_err
-					{|_err2|
+					do std::time::strptime(v, "%FT%T%Z").chain_err
+					|_err2|
+					{
 						// No time zone (so the time will be considered to be in the local time zone).
 						std::time::strptime(v, "%FT%T")
-					}}
+					}
+				}
 			{
 				result::ok(time)
 				{
@@ -473,8 +476,9 @@ fn literal_to_object(value: str, kind: str, lang: str) -> object
 		(v, "http://www.w3.org/2001/XMLSchema#unsignedByte", "") |
 		(v, "http://www.w3.org/2001/XMLSchema#positiveInteger", "")
 		{
-			str::as_c_str(v)
-			{|vp|
+			do str::as_c_str(v)
+			|vp|
+			{
 				let end = 0 as libc::c_char;
 				let endp = ptr::addr_of(end);
 				let r = libc::strtol(vp, ptr::addr_of(endp), 10 as libc::c_int);
@@ -494,8 +498,9 @@ fn literal_to_object(value: str, kind: str, lang: str) -> object
 		(v, "http://www.w3.org/2001/XMLSchema#float", "") | 
 		(v, "http://www.w3.org/2001/XMLSchema#double", "")
 		{
-			str::as_c_str(v)
-			{|vp|
+			do str::as_c_str(v)
+			|vp|
+			{
 				let end = 0 as libc::c_char;
 				let endp = ptr::addr_of(end);
 				let r = libc::strtod(vp, ptr::addr_of(endp));

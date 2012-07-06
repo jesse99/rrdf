@@ -13,7 +13,7 @@ impl solution_row_methods for solution_row
 {
 	pure fn get(name: str) -> object
 	{
-		alt vec::find(self, {|e| tuple::first(e) == name})
+		alt vec::find(self, |e| {tuple::first(e) == name})
 		{
 			option::some(result)
 			{
@@ -29,7 +29,7 @@ impl solution_row_methods for solution_row
 	// Named search so we don't wind up conflicting with the find vec extension.
 	pure fn search(name: str) -> option<object>
 	{
-		alt vec::find(self, {|e| tuple::first(e) == name})
+		alt vec::find(self, |e| {tuple::first(e) == name})
 		{
 			option::some(result)
 			{

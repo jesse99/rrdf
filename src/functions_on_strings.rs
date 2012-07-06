@@ -176,32 +176,36 @@ fn lcase_fn(operand: object) -> object
 
 fn strstarts_fn(arg1: object, arg2: object) -> object
 {
-	str_str_helper("STRSTARTS", arg1, arg2)
-	{|value1, value2, _lang1, _lang2|
+	do str_str_helper("STRSTARTS", arg1, arg2)
+	|value1, value2, _lang1, _lang2|
+	{
 		bool_value(str::starts_with(value1, value2))
 	}
 }
 
 fn strends_fn(arg1: object, arg2: object) -> object
 {
-	str_str_helper("STRENDS", arg1, arg2)
-	{|value1, value2, _lang1, _lang2|
+	do str_str_helper("STRENDS", arg1, arg2)
+	|value1, value2, _lang1, _lang2|
+	{
 		bool_value(str::ends_with(value1, value2))
 	}
 }
 
 fn contains_fn(arg1: object, arg2: object) -> object
 {
-	str_str_helper("CONTAINS", arg1, arg2)
-	{|value1, value2, _lang1, _lang2|
+	do str_str_helper("CONTAINS", arg1, arg2)
+	|value1, value2, _lang1, _lang2|
+	{
 		bool_value(str::contains(value1, value2))
 	}
 }
 
 fn strbefore_fn(arg1: object, arg2: object) -> object
 {
-	str_str_helper("STRBEFORE", arg1, arg2)
-	{|value1, value2, lang1, _lang2|
+	do str_str_helper("STRBEFORE", arg1, arg2)
+	|value1, value2, lang1, _lang2|
+	{
 		alt str::find_str(value1, value2)
 		{
 			option::some(i)
@@ -218,8 +222,9 @@ fn strbefore_fn(arg1: object, arg2: object) -> object
 
 fn strafter_fn(arg1: object, arg2: object) -> object
 {
-	str_str_helper("STRAFTER", arg1, arg2)
-	{|value1, value2, lang1, _lang2|
+	do str_str_helper("STRAFTER", arg1, arg2)
+	|value1, value2, lang1, _lang2|
+	{
 		alt str::find_str(value1, value2)
 		{
 			option::some(i)
@@ -268,7 +273,8 @@ fn encode_for_uri_fn(operand: object) -> object
 			str::reserve(result, str::len(value));
 			
 			for str::each_char(value)
-			{|ch|
+			|ch|
+			{
 				if is_unreserved(ch)
 				{
 					str::push_char(result, ch);
@@ -294,7 +300,8 @@ fn concat_fn(operand: [object]) -> object
 	let mut languages = [];
 	
 	for vec::eachi(operand)
-	{|i, part|
+	|i, part|
+	{
 		alt part
 		{
 			string_value(value, lang)

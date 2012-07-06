@@ -71,7 +71,7 @@ impl store_methods for store
 		if vec::is_not_empty(entries)
 		{
 			let subject = expand_uri_or_blank(self.namespaces, subject);
-			let entries = vec::map(entries, {|e| expand_entry(self.namespaces, e)});
+			let entries = vec::map(entries, |e| {expand_entry(self.namespaces, e)});
 			alt self.subjects.find(subject)
 			{
 				option::some(list)
@@ -141,7 +141,7 @@ impl store_methods for store
 		let blank = get_blank_name(self, after(subject, ':') + "-items");
 		self.add_triple([], {subject: subject, predicate: kind, object: blank_value(blank)});
 		
-		let predicates = iter::map_to_vec(vec::len(values)) {|i: uint| #fmt["http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u]};
+		let predicates = do iter::map_to_vec(vec::len(values)) |i: uint| {#fmt["http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u]};
 		self.add(blank, vec::zip(predicates, values));
 	}
 	
@@ -152,7 +152,8 @@ impl store_methods for store
 		let mut blank = get_blank_name(self, prefix);
 		self.add_triple([], {subject: subject, predicate: predicate, object: blank_value(blank)});
 		for vec::each(values)
-		{|value|
+		|value|
+		{
 			let next = get_blank_name(self, prefix);
 			self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#first", object: value});
 			self.add_triple([], {subject: blank, predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: blank_value(next)});
@@ -186,12 +187,14 @@ impl store_methods for store
 		// (Tried making subjects mutable but that lead to illegal borrows all over the place).
 		let mut keys = []/~;
 		for self.subjects.each_key
-		{|key|
+		|key|
+		{
 			vec::push(keys, key);
 		};
 		
 		for vec::each(keys)
-		{|key|
+		|key|
+		{
 			self.subjects.remove(key);
 		};
 		self.next_blank = 0;
@@ -204,9 +207,11 @@ impl of iter::base_iter<triple> for store
 	fn each(blk: fn(triple) -> bool)
 	{
 		for self.subjects.each()
-		{|subject, entries|
+		|subject, entries|
+		{
 			for (*entries).each()
-			{|entry|
+			|entry|
+			{
 				let triple = {subject: subject, predicate: entry.predicate, object: entry.object};
 				if !blk(triple)
 				{
@@ -237,9 +242,11 @@ impl of to_str for store
 		let mut result = "";
 		
 		for self.subjects.each()
-		{|subject, entries|
+		|subject, entries|
+		{
 			for (*entries).eachi()
-			{|i, entry|
+			|i, entry|
+			{
 				result += #fmt["%?: <%s>  <%s>  %s}\n", i, subject, entry.predicate, entry.object.to_str()];
 			}
 		};
@@ -264,7 +271,8 @@ fn expand_uri(namespaces: [namespace], name: str) -> str
 {
 	// TODO: need to % escape bogus characters (after converting to utf-8)
 	for vec::each(namespaces)
-	{|namespace|
+	|namespace|
+	{
 		if str::starts_with(name, namespace.prefix + ":")
 		{
 			ret namespace.path + str::slice(name, str::len(namespace.prefix) + 1u, str::len(name));
@@ -384,7 +392,7 @@ fn pname_fn(namespaces: [namespace], args: [object]) -> object
 		{
 			iri_value(iri)
 			{
-				alt vec::find(namespaces, {|n| str::starts_with(iri, n.path)})
+				alt vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
 				{
 					option::some(ns)
 					{

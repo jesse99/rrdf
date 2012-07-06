@@ -31,10 +31,11 @@ fn check_bgp(groups: [solution], expected: solution) -> bool
 {
 	fn convert_bindings(group: solution) -> [str]
 	{
-		vec::map(group)
-		{|row|
+		do vec::map(group)
+		|row|
+		{
 			let mut entries = [];
-			for row.each {|e| vec::push(entries, #fmt["%s=%?", tuple::first(e), tuple::second(e)])};
+			for row.each |e| {vec::push(entries, #fmt["%s=%?", tuple::first(e), tuple::second(e)])};
 			let entries = std::sort::merge_sort({|x, y| x <= y}, entries);
 			str::connect(entries, ", ")
 		}
@@ -44,14 +45,16 @@ fn check_bgp(groups: [solution], expected: solution) -> bool
 	{
 		io::stderr().write_line("Actual bindings:");
 		for vec::eachi(actual)
-		{|i, bindings|
+		|i, bindings|
+		{
 			io::stderr().write_line(#fmt["   %?: %s", i, bindings]);
 		};
 	}
 	
 	let mut actual = [];
 	for vec::each(groups)
-	{|group|
+	|group|
+	{
 		actual = join_solutions(["*"], actual, group, false);
 	};
 	
@@ -70,7 +73,8 @@ fn check_bgp(groups: [solution], expected: solution) -> bool
 	}
 	
 	for vec::eachi(actual)
-	{|i, arow|
+	|i, arow|
+	{
 		let erow = expected[i];
 		
 		if arow != erow
@@ -90,13 +94,14 @@ fn check_triples(actual: [triple], expected: [triple]) -> bool
 	{
 		io::stderr().write_line("Actual triples:");
 		for vec::eachi(actual)
-		{|i, triple|
+		|i, triple|
+		{
 			io::stderr().write_line(#fmt["   %?: %s", i, triple.to_str()]);
 		};
 	}
 	
-	let actual = std::sort::merge_sort({|x, y| x.subject <= y.subject}, actual);
-	let expected = std::sort::merge_sort({|x, y| x.subject <= y.subject}, expected);
+	let actual = std::sort::merge_sort(|x, y| {x.subject <= y.subject}, actual);
+	let expected = std::sort::merge_sort(|x, y| {x.subject <= y.subject}, expected);
 	
 	if vec::len(actual) != vec::len(expected)
 	{
@@ -106,7 +111,8 @@ fn check_triples(actual: [triple], expected: [triple]) -> bool
 	}
 	
 	for vec::eachi(actual)
-	{|i, atriple|
+	|i, atriple|
+	{
 		let etriple = expected[i];
 		
 		if atriple.subject != etriple.subject
@@ -161,7 +167,8 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 					
 					// Actual should have only the expected values.
 					for vec::eachi(actual)
-					{|i, row1|
+					|i, row1|
+					{
 						let row2 = expected[i];
 						if vec::len(row1) != vec::len(row2)
 						{
@@ -171,7 +178,8 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 						}
 						
 						for row1.each
-						{|entry1|
+						|entry1|
+						{
 							let name1 = tuple::first(entry1);
 							let value1 = tuple::second(entry1);
 							alt row2.search(name1)
@@ -259,9 +267,10 @@ fn check_solution_err(store: store, expr: str, expected: str) -> bool
 fn print_result(value: solution)
 {
 	for vec::eachi(value)
-	{|i, row|
+	|i, row|
+	{
 		let mut entries = [];
-		for row.each {|e| vec::push(entries, #fmt["%s = %s", tuple::first(e), tuple::second(e).to_str()])};
+		for row.each |e| {vec::push(entries, #fmt["%s = %s", tuple::first(e), tuple::second(e).to_str()])};
 		io::stderr().write_line(#fmt["   %?: %s", i, str::connect(entries, ", ")]);
 	};
 }

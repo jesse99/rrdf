@@ -47,7 +47,7 @@ type query_context =
 fn solution_row_to_str(row: solution_row) -> str
 {
 	let mut entries = [];
-	for row.each {|entry| vec::push(entries, #fmt["%s: %s", tuple::first(entry), tuple::second(entry).to_str()])};
+	for row.each |entry| {vec::push(entries, #fmt["%s: %s", tuple::first(entry), tuple::second(entry).to_str()])};
 	str::connect(entries, ", ")
 }
 
@@ -56,7 +56,8 @@ fn solution_to_str(solution: solution) -> str
 	let mut result = "";
 	
 	for vec::each(solution)
-	{|row|
+	|row|
+	{
 		result += solution_row_to_str(row);
 		result += "\n";
 	};
@@ -90,7 +91,8 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 	fn compatible_row(row: solution_row, rhs: solution_row) -> bool
 	{
 		for row.each()
-		{|entry|
+		|entry|
+		{
 			if !compatible_binding(tuple::first(entry), tuple::second(entry), rhs)
 			{
 				ret false;
@@ -104,7 +106,8 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 		let mut result = copy(lhs);
 		
 		for rhs.each()
-		{|entry2|
+		|entry2|
+		{
 			alt lhs.search(tuple::first(entry2))
 			{
 				option::some(_)
@@ -126,10 +129,12 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 	if vec::is_not_empty(group1) && vec::is_not_empty(group2)
 	{
 		for vec::each(group1)
-		{|lhs|
+		|lhs|
+		{
 			let count = vec::len(result);
 			for vec::each(group2)
-			{|rhs|
+			|rhs|
+			{
 				#debug["testing [%s] and [%s]", solution_row_to_str(lhs), solution_row_to_str(rhs)];
 				if compatible_row(lhs, rhs)
 				{
@@ -170,7 +175,7 @@ fn filter_row(names: [str], row: solution_row) -> solution_row
 	}
 	else
 	{
-		vec::filter(row) {|e| vec::contains(names, tuple::first(e))}
+		do vec::filter(row) |e| {vec::contains(names, tuple::first(e))}
 	}
 }
 
@@ -332,7 +337,8 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 		_
 		{
 			for store.subjects.each()
-			{|subject, entries|
+			|subject, entries|
+			{
 				#debug["--- matched subject %?", subject];
 				if !invoke(subject, spattern, entries, callback)
 				{
@@ -350,9 +356,11 @@ fn eval_basic(store: store, names: [str], matcher: triple_pattern) -> result::re
 	
 	// Iterate over the matching subjects,
 	for iterate_matches(store, matcher.subject)
-	{|sbinding, entries|
+	|sbinding, entries|
+	{
 		for (*entries).each()
-		{|entry|
+		|entry|
+		{
 			// initialize row,
 			let mut bindings = [];
 			if option::is_some(sbinding)
@@ -362,8 +370,9 @@ fn eval_basic(store: store, names: [str], matcher: triple_pattern) -> result::re
 			}
 			
 			// match an entry,
-			let result = eval_match(bindings, match_predicate(entry.predicate, matcher.predicate)).chain
-			{|matched|
+			let result = do eval_match(bindings, match_predicate(entry.predicate, matcher.predicate)).chain
+			|matched|
+			{
 				if matched
 				{
 					eval_match(bindings, match_object(entry.object, matcher.object))
@@ -402,7 +411,8 @@ fn filter_solution(context: query_context, names: [str], solution: solution, exp
 	vec::reserve(result, vec::len(solution));
 	
 	for vec::each(solution)
-	{|row|
+	|row|
+	{
 		let value = eval_expr(context, row, expr);
 		alt get_ebv(value)
 		{
@@ -430,7 +440,8 @@ fn bind_solution(context: query_context, names: [str], solution: solution, expr:
 	vec::reserve(result, vec::len(solution));
 	
 	for vec::each(solution)
-	{|row|
+	|row|
+	{
 		let value = eval_expr(context, row, expr);
 		alt value
 		{
@@ -461,7 +472,8 @@ fn eval_group(store: store, context: query_context, in_names: [str]/~, terms: [@
 	let mut result = []/~;
 	
 	for vec::eachi(terms)
-	{|i, term|
+	|i, term|
+	{
 		// We can't filter out bindings not in names until we've finished joining bindings.
 		let names =
 			if i == vec::len(terms) - 1u
@@ -607,12 +619,14 @@ fn order_by(context: query_context, solution: solution, ordering: [expr]) -> res
 {
 	let mut err_mesg = "";
 	
-	let le = {|&e: str, row1, row2|
-		let order1 = vec::map(ordering, {|o| eval_order_expr(context, row1, o)});
-		let order2 = vec::map(ordering, {|o| eval_order_expr(context, row2, o)});
-		let order = vec::map2(order1, order2, {|x, y| compare_order_values(x, y)});
-		let order = vec::foldl(result::ok(0), order)
-		{|x, y|
+	let le = |&e: str, row1, row2|
+	{
+		let order1 = vec::map(ordering, |o| {eval_order_expr(context, row1, o)});
+		let order2 = vec::map(ordering, |o| {eval_order_expr(context, row2, o)});
+		let order = vec::map2(order1, order2, |x, y| {compare_order_values(x, y)});
+		let order = do vec::foldl(result::ok(0), order)
+		|x, y|
+		{
 			alt x
 			{
 				result::ok(0)	{y}
@@ -636,7 +650,7 @@ fn order_by(context: query_context, solution: solution, ordering: [expr]) -> res
 		}
 	};
 	
-	let solution = std::sort::merge_sort({|x, y| le(err_mesg, x, y)}, solution);
+	let solution = std::sort::merge_sort(|x, y| {le(err_mesg, x, y)}, solution);
 	if str::is_empty(err_mesg)
 	{
 		result::ok(solution)
@@ -650,7 +664,7 @@ fn order_by(context: query_context, solution: solution, ordering: [expr]) -> res
 fn make_distinct(solution: solution) -> result::result<solution, str>
 {
 	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
-	let solution = std::sort::merge_sort({|x, y| x < y}, solution);
+	let solution = std::sort::merge_sort(|x, y| {x < y}, solution);
 	
 	let mut result = []/~;
 	vec::reserve(result, vec::len(solution));
@@ -673,17 +687,21 @@ fn make_distinct(solution: solution) -> result::result<solution, str>
 
 fn eval(names: [str], context: query_context) -> selector
 {
-	{|store: store|
+	|store: store|
+	{
 		#debug["algebra: %?", context.algebra];
 		let context = {namespaces: store.namespaces, extensions: store.extensions with context};
-		eval_algebra(store, names, context).chain()
-		{|solution|
+		do eval_algebra(store, names, context).chain()
+		|solution|
+		{
 			// Optionally remove duplicates.
-			result::chain(if context.distinct {make_distinct(solution)} else {result::ok(solution)})
-			{|solution|
+			do result::chain(if context.distinct {make_distinct(solution)} else {result::ok(solution)})
+			|solution|
+			{
 				// Optionally sort the solution.
-				result::chain(if vec::is_not_empty(context.order_by) {order_by(context, solution, context.order_by)} else {result::ok(solution)})
-				{|solution|
+				do result::chain(if vec::is_not_empty(context.order_by) {order_by(context, solution, context.order_by)} else {result::ok(solution)})
+				|solution|
+				{
 					alt context.limit
 					{
 						// Optionally limit the solution.

@@ -67,7 +67,7 @@ type ternary_fn = fn (object, object, object) -> object;
 
 fn eval_extension(context: query_context, bindings: [(str, object)], fname: str, args: [@expr]) -> object
 {
-	let args = vec::map(args) {|a| eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	alt vec::find(context.extensions, {|e| tuple::first(e) == fname})
 	{
 		option::some((_name, f))
@@ -83,7 +83,7 @@ fn eval_extension(context: query_context, bindings: [(str, object)], fname: str,
 
 fn eval_call(context: query_context, bindings: [(str, object)], fname: str, args: [@expr]) -> object
 {
-	let args = vec::map(args) {|a| eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	alt fname
 	{
 		// operators
