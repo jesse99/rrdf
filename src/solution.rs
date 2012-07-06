@@ -45,11 +45,6 @@ impl solution_row_methods for solution_row
 
 impl solution_methods for solution
 {
-	pure fn size() -> uint
-	{
-		vec::len(self)
-	}
-	
 	pure fn get(row: uint, name: str) -> object
 	{
 		self[row].get(name)
@@ -60,5 +55,3 @@ impl solution_methods for solution
 		self[row].search(name)
 	}
 }
-
-
