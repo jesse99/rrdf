@@ -6,6 +6,7 @@ http://www.w3.org/TR/2011/WD-rdf11-concepts-20110830	1.1 version
 http://www.w3.org/TR/2004/REC-rdf-concepts-20040210		1.0 version
 http://www.w3.org/TR/2004/REC-rdf-mt-20040210			semantics
 http://www.w3.org/TR/sparql11-query/
+http://schemapedia.com/
 http://dbpedia.org/sparql
 
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
@@ -18,7 +19,6 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 	- may want to support union
 * Select components can be strings?
 	- if not why does triple pattern allow literals?
-* May want to add support for custom functions (see 17.6)
 * Need to make sure solutions are not being copied willy nilly.
 * Check some common parse errors and add tag as needed.
 * Document whats not supported:
@@ -28,23 +28,7 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 * Do we need to be able to match collections?
 * Concepts doc at 307 talks about escaping urls.
 * Support common subjects and common prefixes (4.2.1 and 4.2.2)
-* WHen we support lists we'll also need to support in and not in operators.
-* Add a unit test demonstrating that solutions can be sent across tasks.
-* Add a unit test showing that add_triples args can be sent across threads.
-* Get more queries working:
-	- make sure that the features we have an immediate need for are all supported
-	- 1402 has a nav example
-		` apply second rule to results of the first rule?
-	- can do queries with http://dbpedia.org/sparql
-* Work on more stuff:
-	- remove
-	- clean
-	- add_store
-* May want to update readme.
-* See if we can do a better job now with stuff like date.
-* Add a sparql parser:
-	- don't need the full thing for now
-* May want to add to cargo.
+* When we support lists we'll also need to support in and not in operators.
 
 * Run the w3c tests:
 	- http://www.w3.org/2009/sparql/docs/tests/
@@ -60,7 +44,5 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 * Optimization:
 	- http://users.dcc.uchile.cl/~cgutierr/papers/tods09.pdf
 * Add a turtle parser.
-
-http://schemapedia.com/
 
 /Users/jessejones/Documents/Developer/rust.rtf
