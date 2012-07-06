@@ -1,4 +1,4 @@
-Resource Description Language (RDF) library implemented with the Rust programming language.
+[Resource Description Language](http://www.w3.org/RDF/) (RDF) library implemented with the Rust programming language.
 
 The library contains an implementation of a triple store and a large subset of the [SPARQL 1.1](http://www.w3.org/TR/2012/WD-sparql11-query-20120105/) query language. There is not currently any support for serialization via XML or [Turtle](http://www.w3.org/TR/2011/WD-turtle-20110809/).
 
@@ -104,7 +104,6 @@ Here is a usage example:
         ret store;
     }
     
-    #[test]
     fn query_monsters()
     {
         // Return the names and weights for all land monsters allowed on level 20.
