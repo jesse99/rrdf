@@ -396,9 +396,13 @@ fn pname_fn(namespaces: [namespace], args: [object]) -> object
 					}
 				}
 			}
+			blank_value(name)
+			{
+				string_value(name, "")
+			}
 			_
 			{
-				error_value(#fmt["rrdf:pname expected an iri_value but was called with %?.", args[0]])
+				error_value(#fmt["rrdf:pname expected an iri_value or blank_value but was called with %?.", args[0]])
 			}
 		}
 	}

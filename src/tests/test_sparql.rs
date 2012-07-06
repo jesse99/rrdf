@@ -645,3 +645,26 @@ fn distinct()
 	
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn pname_with_blank()
+{
+	let expr = "
+		SELECT DISTINCT
+			?name
+		WHERE
+		{
+			?subject ?predicate ?object .
+			BIND(rrdf:pname(?subject) AS ?name) .
+		} ORDER BY ?name";
+	let store = test_data::got_cast3();
+	let expected = [
+		[("name", string_value("_:jon-org-1", ""))],
+		[("name", string_value("_:ned-org-0", ""))],
+		[("name", string_value("got:Eddard_Stark", ""))],
+		[("name", string_value("got:Jon_Snow", ""))],
+		[("name", string_value("got:Sandor_Clegane", ""))],
+	];
+	
+	assert check_solution(store, expr, expected);
+}

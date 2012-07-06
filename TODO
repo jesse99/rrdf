@@ -11,7 +11,9 @@ http://dbpedia.org/sparql
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
+* Support AS in select clause.
 
+* SHould be able to support regex functions using regexec.
 * Work on more complex matching:
 	- may want to support union
 * Select components can be strings?
