@@ -10,7 +10,7 @@ import query::*;
 import solution::*;
 import store::*;
 
-// This is the public API. Items not exported here should not be used by clients.
+// This is the public API. Clients should only use the items exported here.
 // TODO: Hopefully we can clean this up a lot when exporting works a bit better.
 import literal_to_object = object::literal_to_object; export literal_to_object;
 import object = object::object; export object;
