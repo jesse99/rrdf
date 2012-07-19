@@ -35,7 +35,7 @@ enum algebra
 type query_context =
 	{
 		namespaces: [namespace],
-		extensions: [(str, fn@ ([namespace], [object]) -> object)],
+		extensions: @hashmap<str, extension_fn>,
 		algebra: algebra,
 		order_by: [expr],
 		distinct: bool,

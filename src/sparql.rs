@@ -1,4 +1,5 @@
 #[doc = "Compiles a SRARQL query into a function that can be applied to a store value."];
+import std::map::*;
 import std::time;
 import rparse::*;
 import query::optional;
@@ -1076,12 +1077,12 @@ fn build_parser(namespaces: [namespace], query: ((bool, [pattern]), algebra, Sol
 		// eval will set namespaces and extensions
 		if vec::is_not_empty(namespaces)
 		{
-			let context = {namespaces: [], extensions: [], algebra: expand(namespaces, algebra), order_by: order_by, distinct: distinct, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
+			let context = {namespaces: [], extensions: @str_hash(), algebra: expand(namespaces, algebra), order_by: order_by, distinct: distinct, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 		else
 		{
-			let context = {namespaces: [], extensions: [], algebra: algebra, order_by: order_by, distinct: distinct, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
+			let context = {namespaces: [], extensions: @str_hash(), algebra: algebra, order_by: order_by, distinct: distinct, limit: modifiers.limit, rng: rand::rng(), timestamp: time::now()};
 			result::ok(eval(names, context))
 		}
 	}

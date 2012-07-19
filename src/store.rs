@@ -35,7 +35,7 @@ type extension_fn = fn@ ([namespace], [object]) -> object;
 type store = {
 	namespaces: [namespace],
 	subjects: hashmap<str, @dvec<entry>>,
-	extensions: [(str, extension_fn)],				// not using a hashmap so it can be copied
+	extensions: @hashmap<str, extension_fn>,
 	mut next_blank: uint
 };
 
@@ -44,12 +44,14 @@ type store = {
 xsd, rdf, rdfs, and owl namespaces are automatically added. An rrdf:pname extension is
 automatically added which converts an iri_value to a string_value using namespaces (or
 simply stringifies it if none of the namespaces paths match)."]
-fn create_store(namespaces: [namespace], extensions: [(str, extension_fn)]) -> store
+fn create_store(namespaces: [namespace], extensions: @hashmap<str, extension_fn>) -> store
 {
+	extensions.insert("rrdf:pname", pname_fn);
+	
 	{
 		namespaces: default_namespaces() + namespaces,
 		subjects: std::map::str_hash(),
-		extensions: extensions + [("rrdf:pname", pname_fn)],
+		extensions: extensions,
 		mut next_blank: 0u
 	}
 }

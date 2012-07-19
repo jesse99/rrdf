@@ -46,7 +46,7 @@ fn references()
 		{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"},
 		{prefix: "v", path: "http://www.w3.org/2006/vcard/ns#"},
 		{prefix: "foo", path: "http://www.whatever.org/"}
-		], []);
+		], @std::map::str_hash());
 		
 	store.add("got:Eddard_Stark", [
 		("v:fn", string_value("Eddard Stark", "")),
@@ -113,7 +113,7 @@ fn blank_nodes()
 #[test]
 fn container() 
 {
-	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}], []);
+	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
 	store.add_alt("got:places", [iri_value("got:The_Wall"), iri_value("got:Winterfell")]);
 	
 	let mut actual = [];
@@ -135,7 +135,7 @@ fn container()
 #[test]
 fn list0() 
 {
-	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}], []);
+	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
 	store.add_list("got:westeros", "got:cities", []);
 	
 	let mut actual = [];
@@ -156,7 +156,7 @@ fn list0()
 #[test]
 fn list1() 
 {
-	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}], []);
+	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
 	store.add_list("got:westeros", "got:cities", [string_value("Lanisport", "")]);
 	
 	let mut actual = [];

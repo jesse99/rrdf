@@ -72,7 +72,7 @@ fn fancy_types() -> store
 	let store = create_store([
 		{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"},
 		{prefix: "x", path: "http://blah#"}
-		], []);
+		], @std::map::str_hash());
 	
 	store.add("x:Hans", [("x:greeting", string_value("guten tag", "de"))]);
 	store.add("x:Jones", [("x:greeting", string_value("guten tag", "en-US"))]);

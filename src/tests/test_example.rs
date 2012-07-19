@@ -12,7 +12,7 @@ fn monsters() -> store
 	// Vector of function name and function pointer tuples. These
 	// represent user defined functions that may be called from
 	// within SPARQL queries.
-	let extensions = ~[];
+	let extensions = @std::map::str_hash();
 	
 	// Create an empty triple store.
 	let store = create_store(namespaces, extensions);
