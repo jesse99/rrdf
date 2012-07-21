@@ -240,6 +240,34 @@ fn filter_constant()
 }
 
 #[test]
+fn filter_typed_literal()
+{
+	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT ?s
+	WHERE {
+		?s v:age ?age .
+		FILTER (?age = \"19\"^^xsd:integer)
+	}";
+	let store = test_data::got_cast3();
+	store.add("got:Eddard_Stark", [
+		("v:age", int_value(45i64))
+	]);
+	store.add("got:Jon_Snow", [
+		("v:age", int_value(19i64))
+	]);
+	store.add("got:Sandor_Clegane", [
+		("v:age", int_value(35i64))
+	]);
+	let expected = [
+		[("s", iri_value(got("Jon_Snow")))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
 fn filter_non_ebv()
 {
 	let expr = "PREFIX got: <http://awoiaf.westeros.org/index.php/>

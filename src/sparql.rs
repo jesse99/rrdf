@@ -60,6 +60,10 @@ fn expand_expr(namespaces: [namespace], expr: expr) -> expr
 		{
 			constant_expr(iri_value(expand_uri(namespaces, value)))
 		}
+		constant_expr(typed_value(value, kind))
+		{
+			constant_expr(literal_to_object(value, expand_uri(namespaces, kind), ""))
+		}
 		call_expr(fname, expressions)
 		{
 			call_expr(fname, vec::map(expressions, |e| {@expand_expr(namespaces, *e)}))
