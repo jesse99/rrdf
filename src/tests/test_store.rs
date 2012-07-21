@@ -91,20 +91,20 @@ fn blank_nodes()
 		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
 		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned"),
 		make_triple_str(store, "got:Eddard_Stark", "v:honorific-prefix", "Lord"),
-		make_triple_blank(store, "got:Eddard_Stark", "v:org", "ned-org-0"),
+		make_triple_blank(store, "got:Eddard_Stark", "v:org", "ned-org-1"),
 		
 		make_triple_str(store, "got:Jon_Snow", "v:fn", "Jon Snow"),
 		make_triple_str(store, "got:Jon_Snow", "v:nickname", "Lord Snow"),
 		make_triple_str(store, "got:Jon_Snow", "v:pet", "Ghost"),
-		make_triple_blank(store, "got:Jon_Snow", "v:org", "jon-org-1"),
+		make_triple_blank(store, "got:Jon_Snow", "v:org", "jon-org-3"),
 		
 		make_triple_str(store, "got:Sandor_Clegane", "v:fn", "Sandor Clegane"),
 		make_triple_str(store, "got:Sandor_Clegane", "v:nickname", "The Hound"),
 		
-		make_triple_str(store, "_:jon-org-1", "v:organisation-name", "Night's Watch"),
-		make_triple_str(store, "_:jon-org-1", "v:organisation-unit", "Stewards"),
-		make_triple_str(store, "_:ned-org-0", "v:organisation-name", "Small Council"),
-		make_triple_str(store, "_:ned-org-0", "v:organisation-unit", "Hand")
+		make_triple_str(store, "_:jon-org-3", "v:organisation-name", "Night's Watch"),
+		make_triple_str(store, "_:jon-org-3", "v:organisation-unit", "Stewards"),
+		make_triple_str(store, "_:ned-org-1", "v:organisation-name", "Small Council"),
+		make_triple_str(store, "_:ned-org-1", "v:organisation-unit", "Hand")
 	];
 	
 	assert check_triples(actual, expected);
@@ -194,10 +194,10 @@ fn reify()
 	let expected = [
 		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
 		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned"),
-		make_triple_uri(store, "_:wife-0", "rdf:type", "rdf:Statement"),
-		make_triple_uri(store, "_:wife-0", "rdf:subject", "got:Eddard_Stark"),
-		make_triple_uri(store, "_:wife-0", "rdf:predicate", "got:wife"),
-		make_triple_uri(store, "_:wife-0", "rdf:object", "got:Caitlyn_Stark")
+		make_triple_uri(store, "_:wife-1", "rdf:type", "rdf:Statement"),
+		make_triple_uri(store, "_:wife-1", "rdf:subject", "got:Eddard_Stark"),
+		make_triple_uri(store, "_:wife-1", "rdf:predicate", "got:wife"),
+		make_triple_uri(store, "_:wife-1", "rdf:object", "got:Caitlyn_Stark")
 	];
 	assert check_triples(actual, expected);
 }

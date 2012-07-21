@@ -659,8 +659,8 @@ fn pname_with_blank()
 		} ORDER BY ?name";
 	let store = test_data::got_cast3();
 	let expected = [
-		[("name", string_value("_:jon-org-1", ""))],
-		[("name", string_value("_:ned-org-0", ""))],
+		[("name", string_value("_:jon-org-3", ""))],
+		[("name", string_value("_:ned-org-1", ""))],
 		[("name", string_value("got:Eddard_Stark", ""))],
 		[("name", string_value("got:Jon_Snow", ""))],
 		[("name", string_value("got:Sandor_Clegane", ""))],
