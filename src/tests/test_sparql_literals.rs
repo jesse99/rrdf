@@ -142,6 +142,25 @@ fn typed_literal_match()
 }
 
 #[test]
+fn typed_literal_match2()
+{
+	let expr = "
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT 
+	?s ?p 
+WHERE 
+{
+	?s ?p \"Ned\"^^xsd:string
+}";
+	let store = test_data::got_cast1();
+	let expected = [
+		[("s", iri_value(got("Eddard_Stark"))), ("p", iri_value(v("nickname")))]
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
 fn int_literal()
 {
 	let expr = "SELECT ?s WHERE {?s ?p 23}";

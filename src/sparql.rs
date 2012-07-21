@@ -79,6 +79,10 @@ fn expand_pattern(namespaces: [namespace], pattern: pattern) -> pattern
 		{
 			constant(iri_value(expand_uri(namespaces, value)))
 		}
+		constant(typed_value(value, kind))
+		{
+			constant(literal_to_object(value, expand_uri(namespaces, kind), ""))
+		}
 		_
 		{
 			pattern
