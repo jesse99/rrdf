@@ -41,6 +41,7 @@ import store = store::store; export store;
 import subject = store::subject; export subject;
 import triple = store::triple; export triple;
 import store_methods = store::store_methods; export store_methods;
+//import base_iter = store::base_iter; export base_iter;	// use `import rrdf::store::base_iter` (doing the export here causes "multiple applicable methods in scope" errors)
 import to_str = store::to_str; export to_str;
 
 import compile = sparql::compile; export compile;

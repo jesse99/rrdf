@@ -1,7 +1,8 @@
 #[doc = "The type which stores triples."];
 import core::dvec::*;
+import iter::base_iter;
 
-export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, make_triple_str, make_triple_uri, store_methods, to_str, iter::base_iter, get_blank_name;
+export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, make_triple_str, make_triple_uri, store_methods, to_str, base_iter, get_blank_name;
 export expand_uri;			// this should be internal
 
 #[doc = "An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
@@ -198,7 +199,7 @@ impl store_methods for store
 	}
 }
 
-impl of iter::base_iter<triple> for store
+impl of base_iter<triple> for store
 {
 	#[doc = "Calls the blk for each triple in the store (in an undefined order)."]
 	fn each(blk: fn(triple) -> bool)
@@ -345,7 +346,7 @@ fn make_triple_uri(store: store, subject: str, predicate: str, value: str) -> tr
 	}
 }
 
-impl of iter::base_iter<uint> for uint
+impl of base_iter<uint> for uint
 {
 	fn each(blk: fn(&&uint) -> bool)
 	{
