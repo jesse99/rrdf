@@ -210,10 +210,9 @@ fn trivial_bgp()
 		[("age", int_value(25i64))],
 		[("age", int_value(18i64))]
 	];
-	let expected = group2;
 	
-	assert check_bgp([group1, group2], expected);
-	assert check_bgp([group2, group1], expected);
+	assert check_bgp([group1, group2], group2);
+	assert check_bgp([group2, group1], []);
 }
 
 #[test]
@@ -346,6 +345,25 @@ fn path_bgp()
 
 #[test]
 fn incompatible_bgp() 
+{
+	let group1 = [
+		[("name", string_value("Bob", "")), ("id", string_value("bbb", ""))],
+		[("name", string_value("Ted", "")), ("id", string_value("ttt", ""))],
+		[("name", string_value("George", "")), ("id", string_value("ggg", ""))]
+	];
+	let group2 = [
+		[("id", string_value("tyt", "")), ("age", int_value(18i64))],
+		[("id", string_value("bxb", "")), ("age", int_value(88i64))],
+		[("id", string_value("zzz", "")), ("age", int_value(38i64))]
+	];
+	let expected = [];
+	
+	assert check_bgp([group1, group2], expected);
+	assert check_bgp([group2, group1], expected);
+}
+
+#[test]
+fn multiple_bgp() 
 {
 	let group1 = [
 		[("name", string_value("Bob", "")), ("id", string_value("bbb", ""))],

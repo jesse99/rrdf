@@ -11,6 +11,11 @@ fn v(s: str) -> str
 	"http://www.w3.org/2006/vcard/ns#" + s
 }
 
+fn wiki(s: str) -> str
+{
+	"http://en.wikipedia.org/wiki/" + s
+}
+
 #[test]
 fn trivial()
 {
@@ -130,6 +135,29 @@ fn simple_path()
 		[("org", string_value("Small Council", ""))]
 	];
 	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn unmatched_path()
+{
+	let expr = "
+	PREFIX wiki: <http://en.wikipedia.org/wiki/>
+	SELECT
+		?subject
+	WHERE
+	{
+		?subject wiki:phylum \"chordata\" .
+		?subject wiki:class \"arachnid\"
+	}";
+	
+	let store = create_store([{prefix: "wiki", path: "http://en.wikipedia.org/wiki/"}], @std::map::str_hash());
+	store.add("wiki:giraffe", [
+		("wiki:phylum", string_value("chordata", "")),
+		("wiki:class", string_value("mammalia", "")),
+	]);
+	
+	let expected = [];
 	assert check_solution(store, expr, expected);
 }
 
@@ -694,5 +722,132 @@ fn pname_with_blank()
 		[("name", string_value("got:Sandor_Clegane", ""))],
 	];
 	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn animals1()
+{
+	let expr = "
+	PREFIX wiki: <http://en.wikipedia.org/wiki/>
+	SELECT
+		?subject
+	WHERE
+	{
+		?subject wiki:phylum \"chordata\" .
+		?subject wiki:family \"ursidae\"
+	}";
+	
+	let store = test_data::animals();
+	
+	let expected = [
+		[("subject", iri_value(wiki("grizzly")))],
+	];
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn animals2()
+{
+	let expr = "
+	PREFIX wiki: <http://en.wikipedia.org/wiki/>
+	SELECT
+		?phylum ?family
+	WHERE
+	{
+		?subject wiki:phylum ?phylum .
+		?subject wiki:family ?family
+	}";
+	
+	let store = test_data::animals();
+	
+	let expected = [
+		[("phylum", string_value("arthropoda", "")), ("family", string_value("theridiidae", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("salmonidae", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("orycteropodidae", ""))],
+		[("phylum", string_value("arthropoda", "")), ("family", string_value("lampyridae", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("giraffidae", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("ursidae", ""))],
+	];
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn animals3()
+{
+	let expr = "
+	PREFIX wiki: <http://en.wikipedia.org/wiki/>
+	SELECT
+		?phylum ?family
+	WHERE
+	{
+		?subject wiki:family ?family .
+		?subject wiki:phylum ?phylum .
+		?subject wiki:class \"mammalia\"
+	}";
+	
+	let store = test_data::animals();
+	
+	let expected = [
+		[("phylum", string_value("chordata", "")), ("family", string_value("orycteropodidae", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("giraffidae", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("ursidae", ""))],
+	];
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn animals4()
+{
+	let expr = "
+	PREFIX wiki: <http://en.wikipedia.org/wiki/>
+	SELECT
+		?phylum ?family ?foo
+	WHERE
+	{
+		?subject wiki:family ?family .
+		?subject wiki:phylum ?phylum .
+		?subject wiki:class \"mammalia\" .
+		OPTIONAL
+		{
+			?subject wiki:foobar ?foo
+		}
+	}";
+	
+	let store = test_data::animals();
+	
+	let expected = [
+		[("phylum", string_value("chordata", "")), ("family", string_value("orycteropodidae", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("giraffidae", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("ursidae", ""))],
+	];
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn animals5()
+{
+	let expr = "
+	PREFIX wiki: <http://en.wikipedia.org/wiki/>
+	SELECT
+		?phylum ?family ?habitat
+	WHERE
+	{
+		?subject wiki:family ?family .
+		?subject wiki:phylum ?phylum .
+		?subject wiki:class \"mammalia\" .
+		OPTIONAL
+		{
+			?subject wiki:habitat ?habitat
+		}
+	}";
+	
+	let store = test_data::animals();
+	
+	let expected = [
+		[("phylum", string_value("chordata", "")), ("family", string_value("orycteropodidae", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("giraffidae", "")), ("habitat", string_value("savannah", ""))],
+		[("phylum", string_value("chordata", "")), ("family", string_value("ursidae", ""))],
+	];
 	assert check_solution(store, expr, expected);
 }

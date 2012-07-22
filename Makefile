@@ -13,7 +13,7 @@ check: bin/test-rrdf
 
 # Logging seems all screwed up: if you want to see rparse logs use r=2
 check1: bin/test-rrdf
-	export RUST_LOG=rrdf::query=3,rrdf::expression=3,rparse=1 && ./bin/test-rrdf filter_typed_literal
+	export RUST_LOG=rrdf::query=3,rrdf::expression=3,rparse=1 && ./bin/test-rrdf animals4
 
 # You can either use this target (assuming that the libraries are in /usr/local/lib/rust)
 # or install them via cargo.

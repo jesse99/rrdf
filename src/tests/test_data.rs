@@ -50,3 +50,47 @@ fn got_cast3() -> store
 	]);
 	ret store;
 }
+
+fn animals() -> store
+{
+	let store = create_store([{prefix: "wiki", path: "http://en.wikipedia.org/wiki/"}], @std::map::str_hash());
+	
+	store.add("wiki:aardvark", [
+		("wiki:phylum", string_value("chordata", "")),
+		("wiki:class", string_value("mammalia", "")),
+		("wiki:family", string_value("orycteropodidae", "")),
+	]);
+		
+	store.add("wiki:black_widow", [
+		("wiki:phylum", string_value("arthropoda", "")),
+		("wiki:class", string_value("arachnida", "")),
+		("wiki:family", string_value("theridiidae", "")),
+	]);
+		
+	store.add("wiki:firefly", [
+		("wiki:phylum", string_value("arthropoda", "")),
+		("wiki:class", string_value("insecta", "")),
+		("wiki:family", string_value("lampyridae", "")),
+	]);
+		
+	store.add("wiki:giraffe", [
+		("wiki:phylum", string_value("chordata", "")),
+		("wiki:class", string_value("mammalia", "")),
+		("wiki:family", string_value("giraffidae", "")),
+		("wiki:habitat", string_value("savannah", "")),
+	]);
+		
+	store.add("wiki:grizzly", [
+		("wiki:phylum", string_value("chordata", "")),
+		("wiki:class", string_value("mammalia", "")),
+		("wiki:family", string_value("ursidae", "")),
+	]);
+		
+	store.add("wiki:salmon", [
+		("wiki:phylum", string_value("chordata", "")),
+		("wiki:class", string_value("actinopterygii", "")),
+		("wiki:family", string_value("salmonidae", "")),
+	]);
+	
+	ret store;
+}

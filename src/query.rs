@@ -126,7 +126,10 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 	}
 	
 	let mut result = [];
-	if vec::is_not_empty(group1) && vec::is_not_empty(group2)
+	#debug["joining:"];
+	#debug["   group1 = %?", group1];
+	#debug["   group2 = %?", group2];
+	if vec::is_not_empty(group1) && (vec::is_not_empty(group2) || optional_join)
 	{
 		for vec::each(group1)
 		|lhs|
@@ -155,12 +158,9 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 			}
 		}
 	}
-	else if vec::is_not_empty(group1)
+	else if vec::is_empty(group1)
 	{
-		result = group1;
-	}
-	else if vec::is_not_empty(group2)
-	{
+		// group1 has no constraint so we can use group2
 		result = group2;
 	}
 	
@@ -467,24 +467,24 @@ fn bind_solution(context: query_context, names: [str], solution: solution, expr:
 	ret result::ok(result);
 }
 
-fn eval_group(store: store, context: query_context, in_names: [str]/~, terms: [@algebra]/~) -> result::result<solution, str>
+fn eval_group(store: store, context: query_context, in_names: ~[str], terms: ~[@algebra]) -> result::result<solution, str>
 {
-	let mut result = []/~;
+	let mut result = ~[];
 	
 	for vec::eachi(terms)
 	|i, term|
 	{
 		// We can't filter out bindings not in names until we've finished joining bindings.
 		let names =
-			if i == vec::len(terms) - 1u
+			if i == vec::len(terms) - 1
 			{
 				in_names
 			}
 			else
 			{
-				["*"]/~
+				~["*"]
 			};
-		alt term 
+		alt term
 		{
 			@filter(expr)
 			{
@@ -516,7 +516,7 @@ fn eval_group(store: store, context: query_context, in_names: [str]/~, terms: [@
 			}
 			_
 			{
-				alt eval_algebra(store, ["*"], {algebra: *term with context})
+				alt eval_algebra(store, ~["*"], {algebra: *term with context})
 				{
 					result::ok(solution)
 					{
