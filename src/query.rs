@@ -2,22 +2,23 @@
 
 // The sparql parser operates by building a sequence of matcher functions and
 // then creating a selector function using the select function.
-import std::map::hashmap;
-import result::extensions;
-import std::time::tm;
+//import std::map::hashmap;
+//import result::extensions;
+//import std::time::tm;
 import expression::*;
 import operators::*;
-import sparql::*;
+//import sparql::*;
 
-export join_solutions, eval, pattern, algebra, triple_pattern, query_context;
+export join_solutions, eval, pattern, variable, constant, algebra, triple_pattern, query_context,
+	basic, group, optional, bind, filter;
 
-type binding = {name: str, value: object};
+type binding = {name: ~str, value: object};
 
 type match = either::either<binding, bool>;	// match succeeded if bindings or true
 
 enum pattern
 {
-	variable(str),
+	variable(~str),
 	constant(object)
 }
 
@@ -26,40 +27,40 @@ type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
 enum algebra
 {
 	basic(triple_pattern),
-	group([@algebra]),
+	group(~[@algebra]),
 	optional(@algebra),
-	bind(expr, str),
+	bind(expr, ~str),
 	filter(expr)
 }
 
 type query_context =
 	{
-		namespaces: [namespace],
-		extensions: @hashmap<str, extension_fn>,
+		namespaces: ~[namespace],
+		extensions: @hashmap<~str, extension_fn>,
 		algebra: algebra,
-		order_by: [expr],
+		order_by: ~[expr],
 		distinct: bool,
 		limit: option<uint>,
 		rng: rand::rng,		// for RAND
 		timestamp: tm		// for NOW
 	};
 
-fn solution_row_to_str(row: solution_row) -> str
+fn solution_row_to_str(row: solution_row) -> ~str
 {
-	let mut entries = [];
-	for row.each |entry| {vec::push(entries, #fmt["%s: %s", tuple::first(entry), tuple::second(entry).to_str()])};
-	str::connect(entries, ", ")
+	let mut entries = ~[];
+	for row.each |entry| {vec::push(entries, #fmt["%s: %s", entry.first(), entry.second().to_str()])};
+	str::connect(entries, ~", ")
 }
 
-fn solution_to_str(solution: solution) -> str
+fn solution_to_str(solution: solution) -> ~str
 {
-	let mut result = "";
+	let mut result = ~"";
 	
 	for vec::each(solution)
 	|row|
 	{
 		result += solution_row_to_str(row);
-		result += "\n";
+		result += ~"\n";
 	};
 	
 	ret result;
@@ -71,9 +72,9 @@ fn solution_to_str(solution: solution) -> str
 //
 // Where a cross product is compatible if, for every identical name, the values
 // are also identical.
-fn join_solutions(names: [str], group1: solution, group2: solution, optional_join: bool) -> solution
+fn join_solutions(names: ~[~str], group1: solution, group2: solution, optional_join: bool) -> solution
 {
-	fn compatible_binding(name1: str, value1: object, rhs: solution_row) -> bool
+	fn compatible_binding(name1: ~str, value1: object, rhs: solution_row) -> bool
 	{
 		alt rhs.search(name1)
 		{
@@ -93,7 +94,7 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 		for row.each()
 		|entry|
 		{
-			if !compatible_binding(tuple::first(entry), tuple::second(entry), rhs)
+			if !compatible_binding(entry.first(), entry.second(), rhs)
 			{
 				ret false;
 			}
@@ -108,7 +109,7 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 		for rhs.each()
 		|entry2|
 		{
-			alt lhs.search(tuple::first(entry2))
+			alt lhs.search(entry2.first())
 			{
 				option::some(_)
 				{
@@ -125,7 +126,7 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 		ret result;
 	}
 	
-	let mut result = [];
+	let mut result = ~[];
 	#debug["joining:"];
 	#debug["   group1 = %?", group1];
 	#debug["   group2 = %?", group2];
@@ -167,15 +168,15 @@ fn join_solutions(names: [str], group1: solution, group2: solution, optional_joi
 	ret result;
 }
 
-fn filter_row(names: [str], row: solution_row) -> solution_row
+fn filter_row(names: ~[~str], row: solution_row) -> solution_row
 {
-	if names == ["*"]
+	if names == ~[~"*"]
 	{
 		row
 	}
 	else
 	{
-		do vec::filter(row) |e| {vec::contains(names, tuple::first(e))}
+		do vec::filter(row) |e| {vec::contains(names, e.first())}
 	}
 }
 
@@ -194,7 +195,7 @@ fn equal_objects(actual: object, expected: object) -> bool
 	}
 }
 
-fn match_subject(actual: str, pattern: pattern) -> match
+fn match_subject(actual: ~str, pattern: pattern) -> match
 {
 	alt pattern
 	{
@@ -214,13 +215,13 @@ fn match_subject(actual: str, pattern: pattern) -> match
 		constant(iri_value(value))
 		{
 			let matched = actual == value;
-			#debug["Actual subject %? %s %?", actual.to_str(), ["did not match", "matched"][matched as uint], value];
+			#debug["Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched"][matched as uint], value];
 			either::right(matched)
 		}
 		constant(blank_value(value))
 		{
 			let matched = actual == value;
-			#debug["Actual subject %? %s %?", actual.to_str(), ["did not match", "matched"][matched as uint], value];
+			#debug["Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched"][matched as uint], value];
 			either::right(matched)
 		}
 		_
@@ -230,7 +231,7 @@ fn match_subject(actual: str, pattern: pattern) -> match
 	}
 }
 
-fn match_predicate(actual: str, pattern: pattern) -> match
+fn match_predicate(actual: ~str, pattern: pattern) -> match
 {
 	alt pattern
 	{
@@ -242,7 +243,7 @@ fn match_predicate(actual: str, pattern: pattern) -> match
 		constant(iri_value(value))
 		{
 			let matched = actual == value;
-			#debug["Actual predicate %? %s %?", actual.to_str(), ["did not match", "matched"][matched as uint], value];
+			#debug["Actual predicate %? %s %?", actual.to_str(), [~"did not match", ~"matched"][matched as uint], value];
 			either::right(matched)
 		}
 		_
@@ -263,13 +264,13 @@ fn match_object(actual: object, pattern: pattern) -> match
 		constant(expected)
 		{
 			let matched = equal_objects(actual, expected);
-			#debug["Actual object %? %s %?", actual.to_str(), ["did not match", "matched"][matched as uint], expected.to_str()];
+			#debug["Actual object %? %s %?", actual.to_str(), [~"did not match", ~"matched"][matched as uint], expected.to_str()];
 			either::right(matched)
 		}
 	}
 }
 
-fn eval_match(&bindings: [(str, object)], match: match) -> result::result<bool, str>
+fn eval_match(&bindings: ~[(~str, object)], match: match) -> result::result<bool, ~str>
 {
 	alt match
 	{
@@ -299,7 +300,7 @@ fn eval_match(&bindings: [(str, object)], match: match) -> result::result<bool, 
 
 fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding>, @dvec<entry>) -> bool)
 {
-	fn invoke(subject: str, pattern: pattern, entries: @dvec<entry>, callback: fn (option<binding>, @dvec<entry>) -> bool) -> bool
+	fn invoke(subject: ~str, pattern: pattern, entries: @dvec<entry>, callback: fn (option<binding>, @dvec<entry>) -> bool) -> bool
 	{
 		alt match_subject(subject, pattern)
 		{
@@ -350,9 +351,9 @@ fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding
 }
 
 // Returns the named bindings.
-fn eval_basic(store: store, names: [str], matcher: triple_pattern) -> result::result<solution, str>
+fn eval_basic(store: store, names: ~[~str], matcher: triple_pattern) -> result::result<solution, ~str>
 {
-	let mut rows: solution = [];
+	let mut rows: solution = ~[];
 	
 	// Iterate over the matching subjects,
 	for iterate_matches(store, matcher.subject)
@@ -362,7 +363,7 @@ fn eval_basic(store: store, names: [str], matcher: triple_pattern) -> result::re
 		|entry|
 		{
 			// initialize row,
-			let mut bindings = [];
+			let mut bindings = ~[];
 			if option::is_some(sbinding)
 			{
 				#debug["Bound %? to %s", option::get(sbinding).value, option::get(sbinding).name];
@@ -405,9 +406,9 @@ fn eval_basic(store: store, names: [str], matcher: triple_pattern) -> result::re
 	result::ok(rows)
 }
 
-fn filter_solution(context: query_context, names: [str], solution: solution, expr: expr) -> result::result<solution, str>
+fn filter_solution(context: query_context, names: ~[~str], solution: solution, expr: expr) -> result::result<solution, ~str>
 {
-	let mut result = [];
+	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
 	
 	for vec::each(solution)
@@ -434,9 +435,9 @@ fn filter_solution(context: query_context, names: [str], solution: solution, exp
 	ret result::ok(result);
 }
 
-fn bind_solution(context: query_context, names: [str], solution: solution, expr: expr, name: str) -> result::result<solution, str>
+fn bind_solution(context: query_context, names: ~[~str], solution: solution, expr: expr, name: ~str) -> result::result<solution, ~str>
 {
-	let mut result = []/~;
+	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
 	
 	for vec::each(solution)
@@ -459,7 +460,7 @@ fn bind_solution(context: query_context, names: [str], solution: solution, expr:
 			}
 			_
 			{
-				vec::push(result, filter_row(names, row + [(name, value)]/~));
+				vec::push(result, filter_row(names, row + ~[(name, value)]));
 			}
 		}
 	}
@@ -467,7 +468,7 @@ fn bind_solution(context: query_context, names: [str], solution: solution, expr:
 	ret result::ok(result);
 }
 
-fn eval_group(store: store, context: query_context, in_names: ~[str], terms: ~[@algebra]) -> result::result<solution, str>
+fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[@algebra]) -> result::result<solution, ~str>
 {
 	let mut result = ~[];
 	
@@ -482,7 +483,7 @@ fn eval_group(store: store, context: query_context, in_names: ~[str], terms: ~[@
 			}
 			else
 			{
-				~["*"]
+				~[~"*"]
 			};
 		alt term
 		{
@@ -516,7 +517,7 @@ fn eval_group(store: store, context: query_context, in_names: ~[str], terms: ~[@
 			}
 			_
 			{
-				alt eval_algebra(store, ~["*"], {algebra: *term with context})
+				alt eval_algebra(store, ~[~"*"], {algebra: *term with context})
 				{
 					result::ok(solution)
 					{
@@ -534,7 +535,7 @@ fn eval_group(store: store, context: query_context, in_names: ~[str], terms: ~[@
 	ret result::ok(result);
 }
 
-fn eval_optional(store: store, names: [str], context: query_context, term: algebra) -> result::result<solution, str>
+fn eval_optional(store: store, names: ~[~str], context: query_context, term: algebra) -> result::result<solution, ~str>
 {
 	alt eval_algebra(store, names, {algebra: term with context})
 	{
@@ -544,12 +545,12 @@ fn eval_optional(store: store, names: [str], context: query_context, term: algeb
 		}
 		result::err(_mesg)
 		{
-			result::ok([])
+			result::ok(~[])
 		}
 	}
 }
 
-fn eval_algebra(store: store, names: [str], context: query_context) -> result::result<solution, str>
+fn eval_algebra(store: store, names: ~[~str], context: query_context) -> result::result<solution, ~str>
 {
 	alt context.algebra
 	{
@@ -567,14 +568,14 @@ fn eval_algebra(store: store, names: [str], context: query_context) -> result::r
 		}
 		bind(*)
 		{
-			result::err("BIND should appear in a pattern group.")
+			result::err(~"BIND should appear in a pattern group.")
 		}
 		filter(*)
 		{
 			// Not sure what's supposed to happen here. According to GroupGraphPatternSub a
 			// group can contain just a FILTER (should be a no-op?) or a filter and then a triple
 			// pattern (filter position doesn't matter?).
-			result::err("FILTER should appear last in a pattern group.")
+			result::err(~"FILTER should appear last in a pattern group.")
 		}
 	}
 }
@@ -583,11 +584,11 @@ fn eval_order_expr(context: query_context, row: solution_row, expr: expr) -> (bo
 {
 	alt expr
 	{
-		call_expr("!desc", e)
+		call_expr(~"!desc", e)
 		{
 			(false, eval_expr(context, row, *e[0]))
 		}
-		call_expr("!asc", e)
+		call_expr(~"!asc", e)
 		{
 			(true, eval_expr(context, row, *e[0]))
 		}
@@ -598,28 +599,28 @@ fn eval_order_expr(context: query_context, row: solution_row, expr: expr) -> (bo
 	}
 }
 
-fn compare_order_values(lhs: (bool, object), rhs: (bool, object)) -> result::result<int, str>
+fn compare_order_values(lhs: (bool, object), rhs: (bool, object)) -> result::result<int, ~str>
 {
-	assert tuple::first(lhs) == tuple::first(rhs);
+	assert lhs.first() == rhs.first();
 	
 	alt lhs
 	{
 		(true, x)
 		{
-			compare_values("<", x, tuple::second(rhs))		// ascending
+			compare_values(~"<", x, rhs.second())		// ascending
 		}
 		(false, x)
 		{
-			compare_values("<", tuple::second(rhs), x)		// descending
+			compare_values(~"<", rhs.second(), x)		// descending
 		}
 	}
 }
 
-fn order_by(context: query_context, solution: solution, ordering: [expr]) -> result::result<solution, str>
+fn order_by(context: query_context, solution: solution, ordering: ~[expr]) -> result::result<solution, ~str>
 {
-	let mut err_mesg = "";
+	let mut err_mesg = ~"";
 	
-	let le = |&e: str, row1, row2|
+	let le = |&e: ~str, row1, row2|
 	{
 		let order1 = vec::map(ordering, |o| {eval_order_expr(context, row1, o)});
 		let order2 = vec::map(ordering, |o| {eval_order_expr(context, row2, o)});
@@ -661,12 +662,12 @@ fn order_by(context: query_context, solution: solution, ordering: [expr]) -> res
 	}
 }
 
-fn make_distinct(solution: solution) -> result::result<solution, str>
+fn make_distinct(solution: solution) -> result::result<solution, ~str>
 {
 	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
 	let solution = std::sort::merge_sort(|x, y| {x < y}, solution);
 	
-	let mut result = []/~;
+	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
 	
 	let mut i = 0;
@@ -685,7 +686,7 @@ fn make_distinct(solution: solution) -> result::result<solution, str>
 	ret result::ok(result);
 }
 
-fn eval(names: [str], context: query_context) -> selector
+fn eval(names: ~[~str], context: query_context) -> selector
 {
 	|store: store|
 	{

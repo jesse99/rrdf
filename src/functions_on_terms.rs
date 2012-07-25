@@ -62,7 +62,7 @@ fn isnumeric_fn(operand: object) -> object
 
 fn str_fn(operand: object) -> object
 {
-	string_value(operand.to_str(), "")
+	string_value(operand.to_str(), ~"")
 }
 
 fn lang_fn(operand: object) -> object
@@ -71,11 +71,11 @@ fn lang_fn(operand: object) -> object
 	{
 		string_value(_value, lang)
 		{
-			string_value(lang, "")
+			string_value(lang, ~"")
 		}
 		_
 		{
-			string_value("", "")
+			string_value(~"", ~"")
 		}
 	}
 }
@@ -86,31 +86,31 @@ fn datatype_fn(operand: object) -> object
 	{
 		bool_value(*)
 		{
-			string_value("http://www.w3.org/2001/XMLSchema#boolean", "")
+			string_value(~"http://www.w3.org/2001/XMLSchema#boolean", ~"")
 		}
 		int_value(*)
 		{
-			string_value("http://www.w3.org/2001/XMLSchema#integer", "")
+			string_value(~"http://www.w3.org/2001/XMLSchema#integer", ~"")
 		}
 		float_value(*)
 		{
-			string_value("http://www.w3.org/2001/XMLSchema#double", "")
+			string_value(~"http://www.w3.org/2001/XMLSchema#double", ~"")
 		}
 		dateTime_value(*)
 		{
-			string_value("http://www.w3.org/2001/XMLSchema#dateTime", "")
+			string_value(~"http://www.w3.org/2001/XMLSchema#dateTime", ~"")
 		}
 		string_value(*)
 		{
-			string_value("http://www.w3.org/2001/XMLSchema#string", "")
+			string_value(~"http://www.w3.org/2001/XMLSchema#string", ~"")
 		}
 		typed_value(_value, kind)
 		{
-			string_value(kind, "")
+			string_value(kind, ~"")
 		}
 		iri_value(*)
 		{
-			string_value("http://www.w3.org/2001/XMLSchema#anyURI", "")
+			string_value(~"http://www.w3.org/2001/XMLSchema#anyURI", ~"")
 		}
 		_
 		{

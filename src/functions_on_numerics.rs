@@ -76,7 +76,7 @@ fn floor_fn(operand: object) -> object
 	}
 }
 
-fn rand_fn(context: query_context, args: [object]) -> object
+fn rand_fn(context: query_context, args: ~[object]) -> object
 {
 	if vec::len(args) == 0u
 	{

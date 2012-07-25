@@ -1,22 +1,22 @@
 #[doc = "SPARQL FILTER expressions."];
-import functional_forms::*;
+import functional_forms::{eval_if, eval_coalesce, bound_fn, sameterm_fn};
 import functions_on_dates::*;
 import functions_on_numerics::*;
 import functions_on_strings::*;
 import functions_on_terms::*;
 import operators::*;
 
-export expr, eval_expr;
+export expr, eval_expr, constant_expr, variable_expr, call_expr, extension_expr;
 
 enum expr
 {
 	constant_expr(object),
-	variable_expr(str),
-	call_expr(str, [@expr]),			// function name + arguments
-	extension_expr(str, [@expr])	// function name + arguments
+	variable_expr(~str),
+	call_expr(~str, ~[@expr]),			// function name + arguments
+	extension_expr(~str, ~[@expr])	// function name + arguments
 }
 
-fn eval_expr(context: query_context, bindings: [(str, object)], expr: expr) -> object
+fn eval_expr(context: query_context, bindings: ~[(~str, object)], expr: expr) -> object
 {
 	let result = alt expr
 	{
@@ -42,11 +42,11 @@ fn eval_expr(context: query_context, bindings: [(str, object)], expr: expr) -> o
 		{
 			eval_extension(context, bindings, fname, args)
 		}
-		call_expr("if_fn", args)				// special case this because it is supposed to short circuit
+		call_expr(~"if_fn", args)				// special case this because it is supposed to short circuit
 		{
 			eval_if(context, bindings, args)
 		}
-		call_expr("coalesce_fn", args)		// special case this because it is variadic
+		call_expr(~"coalesce_fn", args)		// special case this because it is variadic
 		{
 			eval_coalesce(context, bindings, args)
 		}
@@ -65,7 +65,7 @@ type unary_fn = fn (object) -> object;
 type binary_fn = fn (object, object) -> object;
 type ternary_fn = fn (object, object, object) -> object;
 
-fn eval_extension(context: query_context, bindings: [(str, object)], fname: str, args: [@expr]) -> object
+fn eval_extension(context: query_context, bindings: ~[(~str, object)], fname: ~str, args: ~[@expr]) -> object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	alt context.extensions.find(fname)
@@ -81,222 +81,222 @@ fn eval_extension(context: query_context, bindings: [(str, object)], fname: str,
 	}
 }
 
-fn eval_call(context: query_context, bindings: [(str, object)], fname: str, args: [@expr]) -> object
+fn eval_call(context: query_context, bindings: ~[(~str, object)], fname: ~str, args: ~[@expr]) -> object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	alt fname
 	{
 		// operators
-		"op_not"										// macros currently must be expressions so we can't use them here
+		~"op_not"										// macros currently must be expressions so we can't use them here
 		{
 			eval_call1(fname, @op_not, args)
 		}
-		"op_unary_plus"
+		~"op_unary_plus"
 		{
 			eval_call1(fname, @op_unary_plus, args)
 		}
-		"op_unary_minus"
+		~"op_unary_minus"
 		{
 			eval_call1(fname, @op_unary_minus, args)
 		}
-		"op_or"
+		~"op_or"
 		{
 			eval_call2(fname, @op_or, args)
 		}
-		"op_and"
+		~"op_and"
 		{
 			eval_call2(fname, @op_and, args)
 		}
-		"op_equals"
+		~"op_equals"
 		{
 			eval_call2(fname, @op_equals, args)
 		}
-		"op_not_equals"
+		~"op_not_equals"
 		{
 			eval_call2(fname, @op_not_equals, args)
 		}
-		"op_less_than"
+		~"op_less_than"
 		{
 			eval_call2(fname, @op_less_than, args)
 		}
-		"op_less_than_or_equal"
+		~"op_less_than_or_equal"
 		{
 			eval_call2(fname, @op_less_than_or_equal, args)
 		}
-		"op_greater_than"
+		~"op_greater_than"
 		{
 			eval_call2(fname, @op_greater_than, args)
 		}
-		"op_greater_than_or_equal"
+		~"op_greater_than_or_equal"
 		{
 			eval_call2(fname, @op_greater_than_or_equal, args)
 		}
-		"op_multiply"
+		~"op_multiply"
 		{
 			eval_call2(fname, @op_multiply, args)
 		}
-		"op_divide"
+		~"op_divide"
 		{
 			eval_call2(fname, @op_divide, args)
 		}
-		"op_add"
+		~"op_add"
 		{
 			eval_call2(fname, @op_add, args)
 		}
-		"op_subtract"
+		~"op_subtract"
 		{
 			eval_call2(fname, @op_subtract, args)
 		}
 		// functional forms
-		"bound_fn"
+		~"bound_fn"
 		{
 			eval_call1(fname, @bound_fn, args)
 		}
-		"sameterm_fn"
+		~"sameterm_fn"
 		{
 			eval_call2(fname, @sameterm_fn, args)
 		}
 		// functions on terms
-		"isiri_fn"
+		~"isiri_fn"
 		{
 			eval_call1(fname, @isiri_fn, args)
 		}
-		"isblank_fn"
+		~"isblank_fn"
 		{
 			eval_call1(fname, @isblank_fn, args)
 		}
-		"isliteral_fn"
+		~"isliteral_fn"
 		{
 			eval_call1(fname, @isliteral_fn, args)
 		}
-		"isnumeric_fn"
+		~"isnumeric_fn"
 		{
 			eval_call1(fname, @isnumeric_fn, args)
 		}
-		"str_fn"
+		~"str_fn"
 		{
 			eval_call1(fname, @str_fn, args)
 		}
-		"lang_fn"
+		~"lang_fn"
 		{
 			eval_call1(fname, @lang_fn, args)
 		}
-		"datatype_fn"
+		~"datatype_fn"
 		{
 			eval_call1(fname, @datatype_fn, args)
 		}
-		"strdt_fn"
+		~"strdt_fn"
 		{
 			eval_call2(fname, @strdt_fn, args)
 		}
-		"strlang_fn"
+		~"strlang_fn"
 		{
 			eval_call2(fname, @strlang_fn, args)
 		}
 		// functions on strings
-		"strlen_fn"
+		~"strlen_fn"
 		{
 			eval_call1(fname, @strlen_fn, args)
 		}
-		"substr2_fn"
+		~"substr2_fn"
 		{
 			eval_call2(fname, @substr2_fn, args)
 		}
-		"substr3_fn"
+		~"substr3_fn"
 		{
 			eval_call3(fname, @substr3_fn, args)
 		}
-		"ucase_fn"
+		~"ucase_fn"
 		{
 			eval_call1(fname, @ucase_fn, args)
 		}
-		"lcase_fn"
+		~"lcase_fn"
 		{
 			eval_call1(fname, @lcase_fn, args)
 		}
-		"strstarts_fn"
+		~"strstarts_fn"
 		{
 			eval_call2(fname, @strstarts_fn, args)
 		}
-		"strends_fn"
+		~"strends_fn"
 		{
 			eval_call2(fname, @strends_fn, args)
 		}
-		"contains_fn"
+		~"contains_fn"
 		{
 			eval_call2(fname, @contains_fn, args)
 		}
-		"strbefore_fn"
+		~"strbefore_fn"
 		{
 			eval_call2(fname, @strbefore_fn, args)
 		}
-		"strafter_fn"
+		~"strafter_fn"
 		{
 			eval_call2(fname, @strafter_fn, args)
 		}
-		"encode_for_uri_fn"
+		~"encode_for_uri_fn"
 		{
 			eval_call1(fname, @encode_for_uri_fn, args)
 		}
-		"concat_fn"
+		~"concat_fn"
 		{
 			concat_fn(args)
 		}
-		"langmatches_fn"
+		~"langmatches_fn"
 		{
 			eval_call2(fname, @langmatches_fn, args)
 		}
 		// functions on numerics
-		"abs_fn"
+		~"abs_fn"
 		{
 			eval_call1(fname, @abs_fn, args)
 		}
-		"round_fn"
+		~"round_fn"
 		{
 			eval_call1(fname, @round_fn, args)
 		}
-		"ceil_fn"
+		~"ceil_fn"
 		{
 			eval_call1(fname, @ceil_fn, args)
 		}
-		"floor_fn"
+		~"floor_fn"
 		{
 			eval_call1(fname, @floor_fn, args)
 		}
-		"rand_fn"
+		~"rand_fn"
 		{
 			rand_fn(context, args)
 		}
 		// functions on dates
-		"now_fn"
+		~"now_fn"
 		{
 			now_fn(context, args)
 		}
-		"year_fn"
+		~"year_fn"
 		{
 			eval_call1(fname, @year_fn, args)
 		}
-		"month_fn"
+		~"month_fn"
 		{
 			eval_call1(fname, @month_fn, args)
 		}
-		"day_fn"
+		~"day_fn"
 		{
 			eval_call1(fname, @day_fn, args)
 		}
-		"hours_fn"
+		~"hours_fn"
 		{
 			eval_call1(fname, @hours_fn, args)
 		}
-		"minutes_fn"
+		~"minutes_fn"
 		{
 			eval_call1(fname, @minutes_fn, args)
 		}
-		"seconds_fn"
+		~"seconds_fn"
 		{
 			eval_call1(fname, @seconds_fn, args)
 		}
-		"tz_fn"
+		~"tz_fn"
 		{
 			eval_call1(fname, @tz_fn, args)
 		}
@@ -308,7 +308,7 @@ fn eval_call(context: query_context, bindings: [(str, object)], fname: str, args
 	}
 }
 
-fn eval_call1(fname: str, fp: @unary_fn, args: [object]) -> object
+fn eval_call1(fname: ~str, fp: @unary_fn, args: ~[object]) -> object
 {
 	if vec::len(args) == 1u
 	{
@@ -320,7 +320,7 @@ fn eval_call1(fname: str, fp: @unary_fn, args: [object]) -> object
 	}
 }
 
-fn eval_call2(fname: str, fp: @binary_fn, args: [object]) -> object
+fn eval_call2(fname: ~str, fp: @binary_fn, args: ~[object]) -> object
 {
 	if vec::len(args) == 2u
 	{
@@ -339,7 +339,7 @@ fn eval_call2(fname: str, fp: @binary_fn, args: [object]) -> object
 	}
 }
 
-fn eval_call3(fname: str, fp: @ternary_fn, args: [object]) -> object
+fn eval_call3(fname: ~str, fp: @ternary_fn, args: ~[object]) -> object
 {
 	if vec::len(args) == 3u
 	{

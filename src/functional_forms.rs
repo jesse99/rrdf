@@ -1,5 +1,5 @@
 #[doc = "SPARQL functions. Clients will not ordinarily use this."];
-import expression::*;
+import expression::{expr, eval_expr};
 
 fn bound_fn(operand: object) -> object
 {
@@ -16,7 +16,7 @@ fn bound_fn(operand: object) -> object
 	}
 }
 
-fn eval_if(context: query_context, bindings: [(str, object)], args: [@expr]) -> object
+fn eval_if(context: query_context, bindings: ~[(~str, object)], args: ~[@expr]) -> object
 {
 	if vec::len(args) == 3u
 	{
@@ -33,7 +33,7 @@ fn eval_if(context: query_context, bindings: [(str, object)], args: [@expr]) -> 
 			}
 			result::err(err)
 			{
-				error_value("IF: " + err)
+				error_value(~"IF: " + err)
 			}
 		}
 	}
@@ -41,7 +41,7 @@ fn eval_if(context: query_context, bindings: [(str, object)], args: [@expr]) -> 
 	{
 		if vec::len(args) == 1u
 		{
-			error_value("IF accepts 3 arguments but was called with 1 argument.")
+			error_value(~"IF accepts 3 arguments but was called with 1 argument.")
 		}
 		else
 		{
@@ -50,7 +50,7 @@ fn eval_if(context: query_context, bindings: [(str, object)], args: [@expr]) -> 
 	}
 }
 
-fn eval_coalesce(context: query_context, bindings: [(str, object)], args: [@expr]) -> object
+fn eval_coalesce(context: query_context, bindings: ~[(~str, object)], args: ~[@expr]) -> object
 {
 	for vec::each(args)
 	|arg|
@@ -69,7 +69,7 @@ fn eval_coalesce(context: query_context, bindings: [(str, object)], args: [@expr
 		}
 	}
 	
-	ret error_value("COALESCE: all arguments failed to evaluate");
+	ret error_value(~"COALESCE: all arguments failed to evaluate");
 }
 
 fn sameterm_fn(lhs: object, rhs: object) -> object

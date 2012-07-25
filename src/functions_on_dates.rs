@@ -1,6 +1,6 @@
 #[doc = "SPARQL functions. Clients will not ordinarily use this."];
 
-fn now_fn(context: query_context, args: [object]) -> object
+fn now_fn(context: query_context, args: ~[object]) -> object
 {
 	if vec::len(args) == 0u
 	{
@@ -110,7 +110,7 @@ fn tz_fn(operand: object) -> object
 	{
 		dateTime_value(value)
 		{
-			string_value(value.tm_zone, "")		// TODO: doubt this is correct
+			string_value(value.tm_zone, ~"")		// TODO: doubt this is correct
 		}
 		_
 		{

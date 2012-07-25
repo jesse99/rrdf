@@ -5,7 +5,7 @@ export op_not, op_unary_plus, op_unary_minus, op_or, op_and, op_equals, op_not_e
 	op_less_than, op_less_than_or_equal, op_greater_than, op_greater_than_or_equal,
 	op_multiply, op_divide, op_add, op_subtract, compare_values;
 	
-fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool, str>
+fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::result<bool, ~str>
 {
 	alt lhs
 	{
@@ -19,7 +19,7 @@ fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool,
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "boolean"))
+					result::err(type_error(operator, rhs, ~"boolean"))
 				}
 			}
 		}
@@ -37,7 +37,7 @@ fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool,
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "numeric"))
+					result::err(type_error(operator, rhs, ~"numeric"))
 				}
 			}
 		}
@@ -55,7 +55,7 @@ fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool,
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "numeric"))
+					result::err(type_error(operator, rhs, ~"numeric"))
 				}
 			}
 		}
@@ -69,7 +69,7 @@ fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool,
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "dateTime"))
+					result::err(type_error(operator, rhs, ~"dateTime"))
 				}
 			}
 		}
@@ -83,7 +83,7 @@ fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool,
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "string"))
+					result::err(type_error(operator, rhs, ~"string"))
 				}
 			}
 		}
@@ -111,7 +111,7 @@ fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool,
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "IRI"))
+					result::err(type_error(operator, rhs, ~"IRI"))
 				}
 			}
 		}
@@ -125,19 +125,19 @@ fn equal_values(operator: str, lhs: object, rhs: object) -> result::result<bool,
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "blank"))
+					result::err(type_error(operator, rhs, ~"blank"))
 				}
 			}
 		}
 		_
 		{
-			result::err(type_error(operator, lhs, "a"))
+			result::err(type_error(operator, lhs, ~"a"))
 		}
 	}
 }
 
 // See 15.1
-fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int, str>
+fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::result<int, ~str>
 {
 	alt lhs
 	{
@@ -160,7 +160,7 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "numeric"))
+					result::err(type_error(operator, rhs, ~"numeric"))
 				}
 			}
 		}
@@ -183,7 +183,7 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "numeric"))
+					result::err(type_error(operator, rhs, ~"numeric"))
 				}
 			}
 		}
@@ -207,7 +207,7 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "dateTime"))
+					result::err(type_error(operator, rhs, ~"dateTime"))
 				}
 			}
 		}
@@ -231,7 +231,7 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "string"))
+					result::err(type_error(operator, rhs, ~"string"))
 				}
 			}
 		}
@@ -275,7 +275,7 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 				}
 				_
 				{
-					result::err(type_error(operator, rhs, "anyURI"))
+					result::err(type_error(operator, rhs, ~"anyURI"))
 				}
 			}
 		}
@@ -313,7 +313,7 @@ fn compare_values(operator: str, lhs: object, rhs: object) -> result::result<int
 		}
 		_
 		{
-			result::err(type_error(operator, lhs, "numeric, dateTime, string, or explicitly typed"))
+			result::err(type_error(operator, lhs, ~"numeric, dateTime, string, or explicitly typed"))
 		}
 	}
 }
@@ -348,7 +348,7 @@ fn op_unary_plus(operand: object) -> object
 		}
 		_
 		{
-			error_value(type_error("unary plus", operand, "numeric"))
+			error_value(type_error(~"unary plus", operand, ~"numeric"))
 		}
 	}
 }
@@ -367,7 +367,7 @@ fn op_unary_minus(operand: object) -> object
 		}
 		_
 		{
-			error_value(type_error("unary minus", operand, "numeric"))
+			error_value(type_error(~"unary minus", operand, ~"numeric"))
 		}
 	}
 }
@@ -449,7 +449,7 @@ fn op_and(lhs: object, rhs: object) -> object
 
 fn op_equals(lhs: object, rhs: object) -> object
 {
-	alt equal_values("=", lhs, rhs)
+	alt equal_values(~"=", lhs, rhs)
 	{
 		result::ok(value)
 		{
@@ -464,7 +464,7 @@ fn op_equals(lhs: object, rhs: object) -> object
 
 fn op_not_equals(lhs: object, rhs: object) -> object
 {
-	alt equal_values("!=", lhs, rhs)
+	alt equal_values(~"!=", lhs, rhs)
 	{
 		result::ok(value)
 		{
@@ -479,7 +479,7 @@ fn op_not_equals(lhs: object, rhs: object) -> object
 
 fn op_less_than(lhs: object, rhs: object) -> object
 {
-	alt compare_values("<", lhs, rhs)
+	alt compare_values(~"<", lhs, rhs)
 	{
 		result::ok(value)
 		{
@@ -494,7 +494,7 @@ fn op_less_than(lhs: object, rhs: object) -> object
 
 fn op_less_than_or_equal(lhs: object, rhs: object) -> object
 {
-	alt compare_values("<=", lhs, rhs)
+	alt compare_values(~"<=", lhs, rhs)
 	{
 		result::ok(value)
 		{
@@ -509,7 +509,7 @@ fn op_less_than_or_equal(lhs: object, rhs: object) -> object
 
 fn op_greater_than(lhs: object, rhs: object) -> object
 {
-	alt compare_values(">", lhs, rhs)
+	alt compare_values(~">", lhs, rhs)
 	{
 		result::ok(value)
 		{
@@ -524,7 +524,7 @@ fn op_greater_than(lhs: object, rhs: object) -> object
 
 fn op_greater_than_or_equal(lhs: object, rhs: object) -> object
 {
-	alt compare_values(">=", lhs, rhs)
+	alt compare_values(~">=", lhs, rhs)
 	{
 		result::ok(value)
 		{
@@ -556,7 +556,7 @@ fn op_multiply(lhs: object, rhs: object) -> object
 				}
 				_
 				{
-					error_value(type_error("*", rhs, "numeric"))
+					error_value(type_error(~"*", rhs, ~"numeric"))
 				}
 			}
 		}
@@ -575,13 +575,13 @@ fn op_multiply(lhs: object, rhs: object) -> object
 				}
 				_
 				{
-					error_value(type_error("*", rhs, "numeric"))
+					error_value(type_error(~"*", rhs, ~"numeric"))
 				}
 			}
 		}
 		_
 		{
-			error_value(type_error("*", lhs, "numeric"))
+			error_value(type_error(~"*", lhs, ~"numeric"))
 		}
 	}
 }
@@ -596,7 +596,7 @@ fn op_divide(lhs: object, rhs: object) -> object
 			{
 				int_value(0i64)
 				{
-					error_value("Divide by zero.")
+					error_value(~"Divide by zero.")
 				}
 				int_value(rvalue)
 				{
@@ -609,7 +609,7 @@ fn op_divide(lhs: object, rhs: object) -> object
 				}
 				_
 				{
-					error_value(type_error("/", rhs, "numeric"))
+					error_value(type_error(~"/", rhs, ~"numeric"))
 				}
 			}
 		}
@@ -628,13 +628,13 @@ fn op_divide(lhs: object, rhs: object) -> object
 				}
 				_
 				{
-					error_value(type_error("/", rhs, "numeric"))
+					error_value(type_error(~"/", rhs, ~"numeric"))
 				}
 			}
 		}
 		_
 		{
-			error_value(type_error("/", lhs, "numeric"))
+			error_value(type_error(~"/", lhs, ~"numeric"))
 		}
 	}
 }
@@ -658,7 +658,7 @@ fn op_add(lhs: object, rhs: object) -> object
 				}
 				_
 				{
-					error_value(type_error("+", rhs, "numeric"))
+					error_value(type_error(~"+", rhs, ~"numeric"))
 				}
 			}
 		}
@@ -677,13 +677,13 @@ fn op_add(lhs: object, rhs: object) -> object
 				}
 				_
 				{
-					error_value(type_error("+", rhs, "numeric"))
+					error_value(type_error(~"+", rhs, ~"numeric"))
 				}
 			}
 		}
 		_
 		{
-			error_value(type_error("+", lhs, "numeric"))
+			error_value(type_error(~"+", lhs, ~"numeric"))
 		}
 	}
 }
@@ -707,7 +707,7 @@ fn op_subtract(lhs: object, rhs: object) -> object
 				}
 				_
 				{
-					error_value(type_error("-", rhs, "numeric"))
+					error_value(type_error(~"-", rhs, ~"numeric"))
 				}
 			}
 		}
@@ -726,13 +726,13 @@ fn op_subtract(lhs: object, rhs: object) -> object
 				}
 				_
 				{
-					error_value(type_error("-", rhs, "numeric"))
+					error_value(type_error(~"-", rhs, ~"numeric"))
 				}
 			}
 		}
 		_
 		{
-			error_value(type_error("-", lhs, "numeric"))
+			error_value(type_error(~"-", lhs, ~"numeric"))
 		}
 	}
 }

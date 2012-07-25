@@ -1,29 +1,29 @@
 #[doc = "Value component of a triple and associated methods."];
-import result::extensions;
+//import result::extensions;
 
 // Note that the SPARQL error conditions do not always result in an error:
 // 1) Functions like COALESCE accept unbound variables.
 // 2) Boolean functions normally want effective boolean values which are false for invalid values.
 // 3) Functions like op_and do not always propagate errors.
 #[doc = "Value component of a triple."]
-enum object				// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
-{								// TODO: predicate could maybe be enum with type code and uri
+enum object					// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
+{									// TODO: predicate could maybe be enum with type code and uri
 	// literals
 	bool_value(bool),
-	int_value(i64),			// value, xsd:decimal (and derived types)
-	float_value(f64),			// value, xsd:float or xsd:double
-	dateTime_value(tm),	// xsd:dateTime
-	string_value(str, str),	// value + lang
-	typed_value(str, str),	// value + type iri (aka simple literal)
+	int_value(i64),				// value, xsd:decimal (and derived types)
+	float_value(f64),				// value, xsd:float or xsd:double
+	dateTime_value(tm),		// xsd:dateTime
+	string_value(~str, ~str),	// value + lang
+	typed_value(~str, ~str),	// value + type iri (aka simple literal)
 	
 	// other rdf terms
-	iri_value(str),
-	blank_value(str),
+	iri_value(~str),
+	blank_value(~str),
 	
 	// error conditions
-	unbound_value(str),	// binding name
-	invalid_value(str, str),	// literal + type iri
-	error_value(str)			// err mesg
+	unbound_value(~str),		// binding name
+	invalid_value(~str, ~str),	// literal + type iri
+	error_value(~str)			// err mesg
 }
 
 impl object_methods for object
@@ -155,7 +155,7 @@ impl object_methods for object
 		}
 	}
 	
-	fn as_str() -> str
+	fn as_str() -> ~str
 	{
 		alt self
 		{
@@ -170,7 +170,7 @@ impl object_methods for object
 		}
 	}
 	
-	fn as_iri() -> str
+	fn as_iri() -> ~str
 	{
 		alt self
 		{
@@ -312,7 +312,7 @@ impl object_methods for object
 		}
 	}
 	
-	fn as_str_or_default(default: str) -> str
+	fn as_str_or_default(default: ~str) -> ~str
 	{
 		alt self
 		{
@@ -327,7 +327,7 @@ impl object_methods for object
 		}
 	}
 	
-	fn as_iri_or_default(default: str) -> str
+	fn as_iri_or_default(default: ~str) -> ~str
 	{
 		alt self
 		{
@@ -345,13 +345,13 @@ impl object_methods for object
 
 impl of to_str for object
 {
-	fn to_str() -> str
+	fn to_str() -> ~str
 	{
 		alt self
 		{
 			bool_value(value)
 			{
-				if value {"true"} else {"false"}
+				if value {~"true"} else {~"false"}
 			}
 			int_value(value)
 			{
@@ -375,7 +375,7 @@ impl of to_str for object
 			}
 			iri_value(value)
 			{
-				"<" + value + ">"
+				~"<" + value + ~">"
 			}
 			blank_value(value)
 			{
@@ -383,7 +383,7 @@ impl of to_str for object
 			}
 			unbound_value(name)
 			{
-				name + " is not bound"
+				name + ~" is not bound"
 			}
 			invalid_value(literal, kind)
 			{
@@ -400,15 +400,15 @@ impl of to_str for object
 #[doc = "Converts an arbitrary lexical value to an object.
 
 Note that it is usually simplest to simply use the object enum directly."]
-fn literal_to_object(value: str, kind: str, lang: str) -> object
+fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 {
 	alt (value, kind, lang)
 	{
-		(v, "blank", "")
+		(v, ~"blank", ~"")
 		{
 			blank_value(v)
 		}
-		(v, "http://www.w3.org/2001/XMLSchema#anyURI", "")
+		(v, ~"http://www.w3.org/2001/XMLSchema#anyURI", ~"")
 		{
 			if str::starts_with(v, "_:")
 			{
@@ -419,13 +419,13 @@ fn literal_to_object(value: str, kind: str, lang: str) -> object
 				iri_value(v)
 			}
 		}
-		(v, "http://www.w3.org/2001/XMLSchema#boolean", "")
+		(v, ~"http://www.w3.org/2001/XMLSchema#boolean", ~"")
 		{
-			if v == "true" || v == "1"
+			if v == ~"true" || v == ~"1"
 			{
 				bool_value(true)
 			}
-			else if v == "false" || v == "0"
+			else if v == ~"false" || v == ~"0"
 			{
 				bool_value(false)
 			}
@@ -434,18 +434,18 @@ fn literal_to_object(value: str, kind: str, lang: str) -> object
 				invalid_value(v, kind)
 			}
 		}
-		(v, "http://www.w3.org/2001/XMLSchema#dateTime", "")
+		(v, ~"http://www.w3.org/2001/XMLSchema#dateTime", ~"")
 		{
 			// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
-			alt do std::time::strptime(v, "%FT%T%z").chain_err
+			alt do std::time::strptime(v, ~"%FT%T%z").chain_err
 				|_err1|
 				{
 					// Time zone expressed as a name, e.g. EST (technically only Z is supposed to be allowed).
-					do std::time::strptime(v, "%FT%T%Z").chain_err
+					do std::time::strptime(v, ~"%FT%T%Z").chain_err
 					|_err2|
 					{
 						// No time zone (so the time will be considered to be in the local time zone).
-						std::time::strptime(v, "%FT%T")
+						std::time::strptime(v, ~"%FT%T")
 					}
 				}
 			{
@@ -461,20 +461,20 @@ fn literal_to_object(value: str, kind: str, lang: str) -> object
 				}
 			}
 		}
-		(v, "http://www.w3.org/2001/XMLSchema#decimal", "") |	// minimally conformant processors must support at least 18 digits and i64 gives us 19
-		(v, "http://www.w3.org/2001/XMLSchema#integer", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#nonPositiveInteger", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#negativeInteger", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#long", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#int", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#short", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#byte", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#nonNegativeInteger", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#unsignedLong", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#unsignedInt", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#unsignedShort", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#unsignedByte", "") |
-		(v, "http://www.w3.org/2001/XMLSchema#positiveInteger", "")
+		(v, ~"http://www.w3.org/2001/XMLSchema#decimal", ~"") |	// minimally conformant processors must support at least 18 digits and i64 gives us 19
+		(v, ~"http://www.w3.org/2001/XMLSchema#integer", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#nonPositiveInteger", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#negativeInteger", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#long", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#int", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#short", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#byte", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#nonNegativeInteger", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#unsignedLong", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#unsignedInt", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#unsignedShort", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#unsignedByte", ~"") |
+		(v, ~"http://www.w3.org/2001/XMLSchema#positiveInteger", ~"")
 		{
 			do str::as_c_str(v)
 			|vp|
@@ -495,8 +495,8 @@ fn literal_to_object(value: str, kind: str, lang: str) -> object
 				}
 			}
 		}
-		(v, "http://www.w3.org/2001/XMLSchema#float", "") | 
-		(v, "http://www.w3.org/2001/XMLSchema#double", "")
+		(v, ~"http://www.w3.org/2001/XMLSchema#float", ~"") | 
+		(v, ~"http://www.w3.org/2001/XMLSchema#double", ~"")
 		{
 			do str::as_c_str(v)
 			|vp|
@@ -517,17 +517,17 @@ fn literal_to_object(value: str, kind: str, lang: str) -> object
 				}
 			}
 		}
-		(v, "http://www.w3.org/2001/XMLSchema#string", l) |
-		(v, "http://www.w3.org/2001/XMLSchema#normalizedString", l) |
-		(v, "http://www.w3.org/2001/XMLSchema#token", l) |
-		(v, "http://www.w3.org/2001/XMLSchema#language", l) |
-		(v, "http://www.w3.org/2001/XMLSchema#Name", l) |
-		(v, "http://www.w3.org/2001/XMLSchema#NCName", l) |
-		(v, "http://www.w3.org/2001/XMLSchema#ID", l)
+		(v, ~"http://www.w3.org/2001/XMLSchema#string", l) |
+		(v, ~"http://www.w3.org/2001/XMLSchema#normalizedString", l) |
+		(v, ~"http://www.w3.org/2001/XMLSchema#token", l) |
+		(v, ~"http://www.w3.org/2001/XMLSchema#language", l) |
+		(v, ~"http://www.w3.org/2001/XMLSchema#Name", l) |
+		(v, ~"http://www.w3.org/2001/XMLSchema#NCName", l) |
+		(v, ~"http://www.w3.org/2001/XMLSchema#ID", l)
 		{
 			string_value(v, l)
 		}
-		(v, k, "")
+		(v, k, ~"")
 		{
 			typed_value(v, k)
 		}
@@ -539,7 +539,7 @@ fn literal_to_object(value: str, kind: str, lang: str) -> object
 	}
 }
 
-fn get_object(row: solution_row, name: str) -> object
+fn get_object(row: solution_row, name: ~str) -> object
 {
 	alt row.search(name)
 	{
@@ -555,7 +555,7 @@ fn get_object(row: solution_row, name: str) -> object
 }
 
 // Effective boolean value, see 17.2.2
-fn get_ebv(operand: object) -> result::result<bool, str>
+fn get_ebv(operand: object) -> result::result<bool, ~str>
 {
 	alt operand
 	{
@@ -594,7 +594,7 @@ fn get_ebv(operand: object) -> result::result<bool, str>
 	}
 }
 
-fn type_error(fname: str, operand: object, expected: str) -> str
+fn type_error(fname: ~str, operand: object, expected: ~str) -> ~str
 {
 	alt operand
 	{

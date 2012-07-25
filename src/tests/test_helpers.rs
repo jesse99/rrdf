@@ -3,7 +3,7 @@ import query::*;
 
 export check_bgp, check_strs, check_operands, check_triples, check_solution, check_solution_err;
 
-fn check_strs(actual: str, expected: str) -> bool
+fn check_strs(actual: ~str, expected: ~str) -> bool
 {
 	if actual != expected
 	{
@@ -26,21 +26,21 @@ fn check_operands(actual: object, expected: object) -> bool
 	ret true;
 }
 
-fn check_bgp(groups: [solution], expected: solution) -> bool
+fn check_bgp(groups: ~[solution], expected: solution) -> bool
 {
-	fn convert_bindings(group: solution) -> [str]
+	fn convert_bindings(group: solution) -> ~[~str]
 	{
 		do vec::map(group)
 		|row|
 		{
-			let mut entries = [];
-			for row.each |e| {vec::push(entries, #fmt["%s=%?", tuple::first(e), tuple::second(e)])};
+			let mut entries = ~[];
+			for row.each |e| {vec::push(entries, #fmt["%s=%?", e.first(), e.second()])};
 			let entries = std::sort::merge_sort({|x, y| x <= y}, entries);
-			str::connect(entries, ", ")
+			str::connect(entries, ~", ")
 		}
 	}
 	
-	fn dump_bindings(actual: [str])
+	fn dump_bindings(actual: ~[~str])
 	{
 		io::stderr().write_line("Actual bindings:");
 		for vec::eachi(actual)
@@ -50,11 +50,11 @@ fn check_bgp(groups: [solution], expected: solution) -> bool
 		};
 	}
 	
-	let mut actual = [];
+	let mut actual = ~[];
 	for vec::each(groups)
 	|group|
 	{
-		actual = join_solutions(["*"], actual, group, false);
+		actual = join_solutions(~[~"*"], actual, group, false);
 	};
 	
 	// Form this point forward we are dealing with [str] instead of [[binding]].
@@ -87,9 +87,9 @@ fn check_bgp(groups: [solution], expected: solution) -> bool
 	ret true;
 }
 
-fn check_triples(actual: [triple], expected: [triple]) -> bool
+fn check_triples(actual: ~[triple], expected: ~[triple]) -> bool
 {
-	fn dump_triples(actual: [triple])
+	fn dump_triples(actual: ~[triple])
 	{
 		io::stderr().write_line("Actual triples:");
 		for vec::eachi(actual)
@@ -139,7 +139,7 @@ fn check_triples(actual: [triple], expected: [triple]) -> bool
 	ret true;
 }
 
-fn check_solution(store: store, expr: str, expected: solution) -> bool
+fn check_solution(store: store, expr: ~str, expected: solution) -> bool
 {
 	#info["----------------------------------------------------"];
 	alt compile(expr)
@@ -179,8 +179,8 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 						for row1.each
 						|entry1|
 						{
-							let name1 = tuple::first(entry1);
-							let value1 = tuple::second(entry1);
+							let name1 = entry1.first();
+							let value1 = entry1.second();
 							alt row2.search(name1)
 							{
 								option::some(value2)
@@ -219,7 +219,7 @@ fn check_solution(store: store, expr: str, expected: solution) -> bool
 	}
 }
 
-fn check_solution_err(store: store, expr: str, expected: str) -> bool
+fn check_solution_err(store: store, expr: ~str, expected: ~str) -> bool
 {
 	#info["----------------------------------------------------"];
 	alt compile(expr)
@@ -268,13 +268,13 @@ fn print_result(value: solution)
 	for vec::eachi(value)
 	|i, row|
 	{
-		let mut entries = [];
-		for row.each |e| {vec::push(entries, #fmt["%s = %s", tuple::first(e), tuple::second(e).to_str()])};
-		io::stderr().write_line(#fmt["   %?: %s", i, str::connect(entries, ", ")]);
+		let mut entries = ~[];
+		for row.each |e| {vec::push(entries, #fmt["%s = %s", e.first(), e.second().to_str()])};
+		io::stderr().write_line(#fmt["   %?: %s", i, str::connect(entries, ~", ")]);
 	};
 }
 
-fn print_failure(mesg: str, actual: solution, expected: solution)
+fn print_failure(mesg: ~str, actual: solution, expected: solution)
 {
 	io::stderr().write_line(mesg);
 	io::stderr().write_line("Actual:");

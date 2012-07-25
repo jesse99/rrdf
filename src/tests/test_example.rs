@@ -7,7 +7,7 @@ fn monsters() -> store
 {
 	// Namespaces allow subjects and predicates to be added to the 
 	// store using a prefixed name instead of a full URL.
-	let namespaces = [{prefix: "game", path: "http://game/ns#"}];
+	let namespaces = ~[{prefix: ~"game", path: ~"http://game/ns#"}];
 	
 	// Vector of function name and function pointer tuples. These
 	// represent user defined functions that may be called from
@@ -20,61 +20,61 @@ fn monsters() -> store
 	// Start adding statements to the store. Individual triples may be added,
 	// containers, aggregates, reified statements, and predicates/objects
 	// associated with a subject (which is what we use here).
-	store.add("game:snake", ~[
-		("game:name", string_value("King Snake", "")),	// "" is for an optional language
-		("game:min_level", int_value(1)),
-		("game:max_level", int_value(5)),
-		("game:weight", int_value(4)),				// relative probability
-		("game:habitat", string_value("|land|water|", "")),
+	store.add(~"game:snake", ~[
+		(~"game:name", string_value(~"King Snake", ~"")),	// "" is for an optional language
+		(~"game:min_level", int_value(1)),
+		(~"game:max_level", int_value(5)),
+		(~"game:weight", int_value(4)),				// relative probability
+		(~"game:habitat", string_value(~"|land|water|", ~"")),
 	]);
 	
-	store.add("game:bear", ~[
-		("game:name", string_value("Grizzly Bear", "")),
-		("game:min_level", int_value(3)),
-		("game:max_level", int_value(6)),
-		("game:weight", int_value(3)),
-		("game:habitat", string_value("|land|", "")),
+	store.add(~"game:bear", ~[
+		(~"game:name", string_value(~"Grizzly Bear", ~"")),
+		(~"game:min_level", int_value(3)),
+		(~"game:max_level", int_value(6)),
+		(~"game:weight", int_value(3)),
+		(~"game:habitat", string_value(~"|land|", ~"")),
 	]);
 	
-	store.add("game:naga", ~[
-		("game:name", string_value("Naga Warrior", "")),
-		("game:min_level", int_value(7)),
-		("game:max_level", int_value(15)),
-		("game:weight", int_value(2)),
-		("game:habitat", string_value("|land|water|", "")),
+	store.add(~"game:naga", ~[
+		(~"game:name", string_value(~"Naga Warrior", ~"")),
+		(~"game:min_level", int_value(7)),
+		(~"game:max_level", int_value(15)),
+		(~"game:weight", int_value(2)),
+		(~"game:habitat", string_value(~"|land|water|", ~"")),
 	]);
 	
-	store.add("game:shark", ~[
-		("game:name", string_value("Hammerhead Shark", "")),
-		("game:min_level", int_value(5)),
-		("game:max_level", int_value(21)),
-		("game:weight", int_value(1)),
-		("game:habitat", string_value("|water|", "")),
+	store.add(~"game:shark", ~[
+		(~"game:name", string_value(~"Hammerhead Shark", ~"")),
+		(~"game:min_level", int_value(5)),
+		(~"game:max_level", int_value(21)),
+		(~"game:weight", int_value(1)),
+		(~"game:habitat", string_value(~"|water|", ~"")),
 	]);
 	
-	store.add("game:mummy", ~[
-		("game:name", string_value("Mummy", "")),
-		("game:min_level", int_value(10)),
-		("game:max_level", int_value(20)),
-		("game:weight", int_value(2)),
-		("game:habitat", string_value("|land|", "")),
+	store.add(~"game:mummy", ~[
+		(~"game:name", string_value(~"Mummy", ~"")),
+		(~"game:min_level", int_value(10)),
+		(~"game:max_level", int_value(20)),
+		(~"game:weight", int_value(2)),
+		(~"game:habitat", string_value(~"|land|", ~"")),
 	]);
 	
-	store.add("game:lich", ~[
-		("game:name", string_value("Lich", "")),
-		("game:min_level", int_value(15)),
-		("game:max_level", int_value(30)),
-		("game:weight", int_value(3)),
-		("game:habitat", string_value("|land|", "")),
-		("game:announce", string_value("You feel a chill.", "")),	
+	store.add(~"game:lich", ~[
+		(~"game:name", string_value(~"Lich", ~"")),
+		(~"game:min_level", int_value(15)),
+		(~"game:max_level", int_value(30)),
+		(~"game:weight", int_value(3)),
+		(~"game:habitat", string_value(~"|land|", ~"")),
+		(~"game:announce", string_value(~"You feel a chill.", ~"")),	
 	]);
 	
-	store.add("game:necromancer", ~[
-		("game:name", string_value("Necromancer", "")),
-		("game:min_level", int_value(20)),
-		("game:max_level", int_value(30)),
-		("game:weight", int_value(2)),
-		("game:habitat", string_value("|land|", "")),
+	store.add(~"game:necromancer", ~[
+		(~"game:name", string_value(~"Necromancer", ~"")),
+		(~"game:min_level", int_value(20)),
+		(~"game:max_level", int_value(30)),
+		(~"game:weight", int_value(2)),
+		(~"game:habitat", string_value(~"|land|", ~"")),
 	]);
 	
 	ret store;
@@ -85,7 +85,7 @@ fn query_monsters()
 {
 	// Return the names and weights for all land monsters allowed on level 20.
 	// If the monster has an announcement then return that as well
-	let expr = "PREFIX game: <http://game/ns#>
+	let expr = ~"PREFIX game: <http://game/ns#>
 		SELECT
 			?name ?weight ?announcement
 		WHERE
@@ -137,10 +137,10 @@ fn query_monsters()
 		}
 	}
 	
-	let expected = [
-		[("name", string_value("Lich", "")), ("weight", int_value(3)), ("announcement", string_value("You feel a chill.", ""))],
-		[("name", string_value("Mummy", "")), ("weight", int_value(2))],
-		[("name", string_value("Necromancer", "")), ("weight", int_value(2))],
+	let expected = ~[
+		~[(~"name", string_value(~"Lich", ~"")), (~"weight", int_value(3)), (~"announcement", string_value(~"You feel a chill.", ~""))],
+		~[(~"name", string_value(~"Mummy", ~"")), (~"weight", int_value(2))],
+		~[(~"name", string_value(~"Necromancer", ~"")), (~"weight", int_value(2))],
 	];
 	assert check_solution(store, expr, expected);
 }

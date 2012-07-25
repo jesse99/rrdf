@@ -7,17 +7,17 @@ import test_helpers::*;
 #[test]
 fn to_strs()
 {
-	let obj = literal_to_object("some long url", "http://www.w3.org/2001/XMLSchema#anyURI", "");
-	assert check_strs(obj.to_str(), "<some long url>");
+	let obj = literal_to_object(~"some long url", ~"http://www.w3.org/2001/XMLSchema#anyURI", ~"");
+	assert check_strs(obj.to_str(), ~"<some long url>");
 	
-	let obj = literal_to_object("12", "http://www.w3.org/2001/XMLSchema#integer", "");
-	assert check_strs(obj.to_str(), "12");
+	let obj = literal_to_object(~"12", ~"http://www.w3.org/2001/XMLSchema#integer", ~"");
+	assert check_strs(obj.to_str(), ~"12");
 	
-	let obj = literal_to_object("12", "http://www.w3.org/2001/XMLSchema#string", "en");
-	assert check_strs(obj.to_str(), "\"12\"@en");
+	let obj = literal_to_object(~"12", ~"http://www.w3.org/2001/XMLSchema#string", ~"en");
+	assert check_strs(obj.to_str(), ~"\"12\"@en");
 	
-	let obj = literal_to_object("12", "http://www.w3.org/2001/XMLSchema#string", "");
-	assert check_strs(obj.to_str(), "\"12\"");
+	let obj = literal_to_object(~"12", ~"http://www.w3.org/2001/XMLSchema#string", ~"");
+	assert check_strs(obj.to_str(), ~"\"12\"");
 }
 
 #[test]
@@ -25,16 +25,16 @@ fn iteration()
 {
 	let store = got_cast1();
 	
-	let mut actual = [];
+	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
 		vec::push(actual, triple);
 	};
 	
-	let expected = [
-		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
-		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned")
+	let expected = ~[
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned")
 	];
 	assert check_triples(actual, expected);
 }
@@ -42,22 +42,22 @@ fn iteration()
 #[test]
 fn references()
 {
-	let store = create_store([
-		{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"},
-		{prefix: "v", path: "http://www.w3.org/2006/vcard/ns#"},
-		{prefix: "foo", path: "http://www.whatever.org/"}
+	let store = create_store(~[
+		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
+		{prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"},
+		{prefix: ~"foo", path: ~"http://www.whatever.org/"}
 		], @std::map::str_hash());
 		
-	store.add("got:Eddard_Stark", [
-		("v:fn", string_value("Eddard Stark", "")),
-		("v:nickname", string_value("Ned", "")),
-		("foo:child", iri_value("got:Jon_Snow"))
+	store.add(~"got:Eddard_Stark", ~[
+		(~"v:fn", string_value(~"Eddard Stark", ~"")),
+		(~"v:nickname", string_value(~"Ned", ~"")),
+		(~"foo:child", iri_value(~"got:Jon_Snow"))
 	]);
-	store.add("got:Jon_Snow", [
-		("v:fn", string_value("Jon Snow", ""))
+	store.add(~"got:Jon_Snow", ~[
+		(~"v:fn", string_value(~"Jon Snow", ~""))
 	]);
 	
-	let mut actual = [];
+	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
@@ -65,11 +65,11 @@ fn references()
 	};
 	
 	// The store will have full URIs (make_triple_* does the expansion as well).
-	let expected = [
-		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
-		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned"),
-		make_triple_uri(store, "got:Eddard_Stark", "foo:child", "got:Jon_Snow"),
-		make_triple_str(store, "got:Jon_Snow", "v:fn", "Jon Snow")
+	let expected = ~[
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned"),
+		make_triple_uri(store, ~"got:Eddard_Stark", ~"foo:child", ~"got:Jon_Snow"),
+		make_triple_str(store, ~"got:Jon_Snow", ~"v:fn", ~"Jon Snow")
 	];
 	
 	assert check_triples(actual, expected);
@@ -80,31 +80,31 @@ fn blank_nodes()
 {
 	let store = got_cast3();
 	
-	let mut actual = [];
+	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
 		vec::push(actual, triple);
 	};
 	
-	let expected = [
-		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
-		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned"),
-		make_triple_str(store, "got:Eddard_Stark", "v:honorific-prefix", "Lord"),
-		make_triple_blank(store, "got:Eddard_Stark", "v:org", "ned-org-1"),
+	let expected = ~[
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned"),
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:honorific-prefix", ~"Lord"),
+		make_triple_blank(store, ~"got:Eddard_Stark", ~"v:org", ~"ned-org-1"),
 		
-		make_triple_str(store, "got:Jon_Snow", "v:fn", "Jon Snow"),
-		make_triple_str(store, "got:Jon_Snow", "v:nickname", "Lord Snow"),
-		make_triple_str(store, "got:Jon_Snow", "v:pet", "Ghost"),
-		make_triple_blank(store, "got:Jon_Snow", "v:org", "jon-org-3"),
+		make_triple_str(store, ~"got:Jon_Snow", ~"v:fn", ~"Jon Snow"),
+		make_triple_str(store, ~"got:Jon_Snow", ~"v:nickname", ~"Lord Snow"),
+		make_triple_str(store, ~"got:Jon_Snow", ~"v:pet", ~"Ghost"),
+		make_triple_blank(store, ~"got:Jon_Snow", ~"v:org", ~"jon-org-3"),
 		
-		make_triple_str(store, "got:Sandor_Clegane", "v:fn", "Sandor Clegane"),
-		make_triple_str(store, "got:Sandor_Clegane", "v:nickname", "The Hound"),
+		make_triple_str(store, ~"got:Sandor_Clegane", ~"v:fn", ~"Sandor Clegane"),
+		make_triple_str(store, ~"got:Sandor_Clegane", ~"v:nickname", ~"The Hound"),
 		
-		make_triple_str(store, "_:jon-org-3", "v:organisation-name", "Night's Watch"),
-		make_triple_str(store, "_:jon-org-3", "v:organisation-unit", "Stewards"),
-		make_triple_str(store, "_:ned-org-1", "v:organisation-name", "Small Council"),
-		make_triple_str(store, "_:ned-org-1", "v:organisation-unit", "Hand")
+		make_triple_str(store, ~"_:jon-org-3", ~"v:organisation-name", ~"Night's Watch"),
+		make_triple_str(store, ~"_:jon-org-3", ~"v:organisation-unit", ~"Stewards"),
+		make_triple_str(store, ~"_:ned-org-1", ~"v:organisation-name", ~"Small Council"),
+		make_triple_str(store, ~"_:ned-org-1", ~"v:organisation-unit", ~"Hand")
 	];
 	
 	assert check_triples(actual, expected);
@@ -113,20 +113,20 @@ fn blank_nodes()
 #[test]
 fn container() 
 {
-	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
-	store.add_alt("got:places", [iri_value("got:The_Wall"), iri_value("got:Winterfell")]);
+	let store = create_store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
+	store.add_alt(~"got:places", ~[iri_value(~"got:The_Wall"), iri_value(~"got:Winterfell")]);
 	
-	let mut actual = [];
+	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
 		vec::push(actual, triple);
 	};
 	
-	let expected = [
-		make_triple_blank(store, "got:places", "rdf:Alt", "places-items-0"),
-		make_triple_uri(store, "_:places-items-0", "rdf:_1", "got:The_Wall"),
-		make_triple_uri(store, "_:places-items-0", "rdf:_2", "got:Winterfell")
+	let expected = ~[
+		make_triple_blank(store, ~"got:places", ~"rdf:Alt", ~"places-items-0"),
+		make_triple_uri(store, ~"_:places-items-0", ~"rdf:_1", ~"got:The_Wall"),
+		make_triple_uri(store, ~"_:places-items-0", ~"rdf:_2", ~"got:Winterfell")
 	];
 	
 	assert check_triples(actual, expected);
@@ -135,19 +135,19 @@ fn container()
 #[test]
 fn list0() 
 {
-	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
-	store.add_list("got:westeros", "got:cities", []);
+	let store = create_store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
+	store.add_list(~"got:westeros", ~"got:cities", ~[]);
 	
-	let mut actual = [];
+	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
 		vec::push(actual, triple);
 	};
 	
-	let expected = [
-		make_triple_blank(store, "got:westeros", "got:cities", "cities-0"),
-		make_triple_uri(store, "_:cities-0", "rdf:rest", "rdf:nil")
+	let expected = ~[
+		make_triple_blank(store, ~"got:westeros", ~"got:cities", ~"cities-0"),
+		make_triple_uri(store, ~"_:cities-0", ~"rdf:rest", ~"rdf:nil")
 	];
 	
 	assert check_triples(actual, expected);
@@ -156,23 +156,23 @@ fn list0()
 #[test]
 fn list1() 
 {
-	let store = create_store([{prefix: "got", path: "http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
-	store.add_list("got:westeros", "got:cities", [string_value("Lanisport", "")]);
+	let store = create_store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
+	store.add_list(~"got:westeros", ~"got:cities", ~[string_value(~"Lanisport", ~"")]);
 	
-	let mut actual = [];
+	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
 		vec::push(actual, triple);
 	};
 	
-	let expected = [
-		make_triple_blank(store, "got:westeros", "got:cities", "cities-0"),
+	let expected = ~[
+		make_triple_blank(store, ~"got:westeros", ~"got:cities", ~"cities-0"),
 		
-		make_triple_str(store, "_:cities-0", "rdf:first", "Lanisport"),
-		make_triple_blank(store, "_:cities-0", "rdf:rest", "cities-1"),
+		make_triple_str(store, ~"_:cities-0", ~"rdf:first", ~"Lanisport"),
+		make_triple_blank(store, ~"_:cities-0", ~"rdf:rest", ~"cities-1"),
 		
-		make_triple_uri(store, "_:cities-1", "rdf:rest", "rdf:nil")
+		make_triple_uri(store, ~"_:cities-1", ~"rdf:rest", ~"rdf:nil")
 	];
 	
 	assert check_triples(actual, expected);
@@ -182,22 +182,22 @@ fn list1()
 fn reify() 
 {
 	let store = got_cast1();
-	store.add_reify("got:Eddard_Stark", "got:wife", iri_value("got:Caitlyn_Stark"));
+	store.add_reify(~"got:Eddard_Stark", ~"got:wife", iri_value(~"got:Caitlyn_Stark"));
 	
-	let mut actual = [];
+	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
 		vec::push(actual, triple);
 	};
 	
-	let expected = [
-		make_triple_str(store, "got:Eddard_Stark", "v:fn", "Eddard Stark"),
-		make_triple_str(store, "got:Eddard_Stark", "v:nickname", "Ned"),
-		make_triple_uri(store, "_:wife-1", "rdf:type", "rdf:Statement"),
-		make_triple_uri(store, "_:wife-1", "rdf:subject", "got:Eddard_Stark"),
-		make_triple_uri(store, "_:wife-1", "rdf:predicate", "got:wife"),
-		make_triple_uri(store, "_:wife-1", "rdf:object", "got:Caitlyn_Stark")
+	let expected = ~[
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned"),
+		make_triple_uri(store, ~"_:wife-1", ~"rdf:type", ~"rdf:Statement"),
+		make_triple_uri(store, ~"_:wife-1", ~"rdf:subject", ~"got:Eddard_Stark"),
+		make_triple_uri(store, ~"_:wife-1", ~"rdf:predicate", ~"got:wife"),
+		make_triple_uri(store, ~"_:wife-1", ~"rdf:object", ~"got:Caitlyn_Stark")
 	];
 	assert check_triples(actual, expected);
 }
@@ -205,178 +205,178 @@ fn reify()
 #[test]
 fn trivial_bgp() 
 {
-	let group1 = [];
-	let group2 = [
-		[("age", int_value(25i64))],
-		[("age", int_value(18i64))]
+	let group1 = ~[];
+	let group2 = ~[
+		~[(~"age", int_value(25i64))],
+		~[(~"age", int_value(18i64))]
 	];
 	
-	assert check_bgp([group1, group2], group2);
-	assert check_bgp([group2, group1], []);
+	assert check_bgp(~[group1, group2], group2);
+	assert check_bgp(~[group2, group1], ~[]);
 }
 
 #[test]
 fn identical_bgp()
 {
-	let group1 = [
-		[("age", int_value(25i64))],		// TODO: use some fancy regex, remember \1 is atually $1
-		[("age", int_value(18i64))]
+	let group1 = ~[
+		~[(~"age", int_value(25i64))],		// TODO: use some fancy regex, remember \1 is atually $1
+		~[(~"age", int_value(18i64))]
 	];
-	let group2 = [
-		[("age", int_value(25i64))],
-		[("age", int_value(18i64))]
+	let group2 = ~[
+		~[(~"age", int_value(25i64))],
+		~[(~"age", int_value(18i64))]
 	];
 	let expected = group2;
 	
-	assert check_bgp([group1, group2], expected);
-	assert check_bgp([group2, group1], expected);
+	assert check_bgp(~[group1, group2], expected);
+	assert check_bgp(~[group2, group1], expected);
 }
 
 #[test]
 fn disjoint1_bgp()
 {
-	let group1 = [
-		[("age", int_value(25i64))],
-		[("age", int_value(18i64))]
+	let group1 = ~[
+		~[(~"age", int_value(25i64))],
+		~[(~"age", int_value(18i64))]
 	];
-	let group2 = [
-		[("name", string_value("Bob", ""))],
-		[("name", string_value("Ted", ""))]
+	let group2 = ~[
+		~[(~"name", string_value(~"Bob", ~""))],
+		~[(~"name", string_value(~"Ted", ~""))]
 	];
-	let expected = [
-		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
-		[("age", int_value(18i64)), ("name", string_value("Ted", ""))],
-		[("age", int_value(25i64)), ("name", string_value("Bob", ""))],
-		[("age", int_value(25i64)), ("name", string_value("Ted", ""))]
+	let expected = ~[
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))],
+		~[(~"age", int_value(25i64)), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(25i64)), (~"name", string_value(~"Ted", ~""))]
 	];
 	
-	assert check_bgp([group1, group2], expected);
-	assert check_bgp([group2, group1], expected);
+	assert check_bgp(~[group1, group2], expected);
+	assert check_bgp(~[group2, group1], expected);
 }
 
 #[test]
 fn disjoint2_bgp() 
 {
-	let group1 = [
-		[("age", int_value(25i64)), ("job", string_value("cowboy", ""))],
-		[("age", int_value(18i64)), ("job", string_value("muckraker", ""))]
+	let group1 = ~[
+		~[(~"age", int_value(25i64)), (~"job", string_value(~"cowboy", ~""))],
+		~[(~"age", int_value(18i64)), (~"job", string_value(~"muckraker", ~""))]
 	];
-	let group2 = [
-		[("id", string_value("bbb", "")), ("name", string_value("Bob", ""))],
-		[("id", string_value("ttt", "")), ("name", string_value("Ted", ""))]
+	let group2 = ~[
+		~[(~"id", string_value(~"bbb", ~"")), (~"name", string_value(~"Bob", ~""))],
+		~[(~"id", string_value(~"ttt", ~"")), (~"name", string_value(~"Ted", ~""))]
 	];
-	let expected = [
-		[("age", int_value(18i64)), ("id", string_value("bbb", "")), ("job", string_value("muckraker", "")), ("name", string_value("Bob", ""))],
-		[("age", int_value(18i64)), ("id", string_value("ttt", "")), ("job", string_value("muckraker", "")), ("name", string_value("Ted", ""))],
-		[("age", int_value(25i64)), ("id", string_value("bbb", "")), ("job", string_value("cowboy", "")), ("name", string_value("Bob", ""))],
-		[("age", int_value(25i64)), ("id", string_value("ttt", "")), ("job", string_value("cowboy", "")), ("name", string_value("Ted", ""))]
+	let expected = ~[
+		~[(~"age", int_value(18i64)), (~"id", string_value(~"bbb", ~"")), (~"job", string_value(~"muckraker", ~"")), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(18i64)), (~"id", string_value(~"ttt", ~"")), (~"job", string_value(~"muckraker", ~"")), (~"name", string_value(~"Ted", ~""))],
+		~[(~"age", int_value(25i64)), (~"id", string_value(~"bbb", ~"")), (~"job", string_value(~"cowboy", ~"")), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(25i64)), (~"id", string_value(~"ttt", ~"")), (~"job", string_value(~"cowboy", ~"")), (~"name", string_value(~"Ted", ~""))]
 	];
 	
-	assert check_bgp([group1, group2], expected);
-	assert check_bgp([group2, group1], expected);
+	assert check_bgp(~[group1, group2], expected);
+	assert check_bgp(~[group2, group1], expected);
 }
 
 #[test]
 fn asymmetric_bgp() 
 {
-	let group1 = [
-		[("age", int_value(33i64))],
-		[("age", int_value(25i64))],
-		[("age", int_value(18i64))]
+	let group1 = ~[
+		~[(~"age", int_value(33i64))],
+		~[(~"age", int_value(25i64))],
+		~[(~"age", int_value(18i64))]
 	];
-	let group2 = [
-		[("age", int_value(88i64)), ("name", string_value("Bob", ""))],
-		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
-		[("age", int_value(18i64)), ("name", string_value("Ted", ""))]
-	];
-	
-	let expected = [
-		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
-		[("age", int_value(18i64)), ("name", string_value("Ted", ""))]
+	let group2 = ~[
+		~[(~"age", int_value(88i64)), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))]
 	];
 	
-	assert check_bgp([group1, group2], expected);
-	assert check_bgp([group2, group1], expected);
+	let expected = ~[
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))]
+	];
+	
+	assert check_bgp(~[group1, group2], expected);
+	assert check_bgp(~[group2, group1], expected);
 }
 
 #[test]
 fn symmetric_bgp() 
 {
-	let group1 = [
-		[("age", int_value(33i64))],
-		[("age", int_value(25i64))],
-		[("age", int_value(18i64))]
+	let group1 = ~[
+		~[(~"age", int_value(33i64))],
+		~[(~"age", int_value(25i64))],
+		~[(~"age", int_value(18i64))]
 	];
-	let group2 = [
-		[("age", int_value(88i64)), ("name", string_value("Bob", ""))],
-		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
-		[("age", int_value(18i64)), ("name", string_value("Ted", ""))]
+	let group2 = ~[
+		~[(~"age", int_value(88i64)), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))]
 	];
-	let expected = [
-		[("age", int_value(18i64)), ("name", string_value("Bob", ""))],
-		[("age", int_value(18i64)), ("name", string_value("Ted", ""))]
+	let expected = ~[
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))]
 	];
 	
-	assert check_bgp([group1, group2], expected);
-	assert check_bgp([group2, group1], expected);
+	assert check_bgp(~[group1, group2], expected);
+	assert check_bgp(~[group2, group1], expected);
 }
 
 #[test]
 fn path_bgp() 
 {
-	let group1 = [
-		[("name", string_value("Bob", "")), ("id", string_value("bbb", ""))],
-		[("name", string_value("Ted", "")), ("id", string_value("ttt", ""))],
-		[("name", string_value("George", "")), ("id", string_value("ggg", ""))]
+	let group1 = ~[
+		~[(~"name", string_value(~"Bob", ~"")), (~"id", string_value(~"bbb", ~""))],
+		~[(~"name", string_value(~"Ted", ~"")), (~"id", string_value(~"ttt", ~""))],
+		~[(~"name", string_value(~"George", ~"")), (~"id", string_value(~"ggg", ~""))]
 	];
-	let group2 = [
-		[("id", string_value("ttt", "")), ("age", int_value(18i64))],
-		[("id", string_value("bbb", "")), ("age", int_value(88i64))],
-		[("id", string_value("zzz", "")), ("age", int_value(38i64))]
+	let group2 = ~[
+		~[(~"id", string_value(~"ttt", ~"")), (~"age", int_value(18i64))],
+		~[(~"id", string_value(~"bbb", ~"")), (~"age", int_value(88i64))],
+		~[(~"id", string_value(~"zzz", ~"")), (~"age", int_value(38i64))]
 	];
-	let expected = [
-		[("age", int_value(88i64)), ("id", string_value("bbb", "")), ("name", string_value("Bob", ""))],
-		[("age", int_value(18i64)), ("id", string_value("ttt", "")), ("name", string_value("Ted", ""))]
+	let expected = ~[
+		~[(~"age", int_value(88i64)), (~"id", string_value(~"bbb", ~"")), (~"name", string_value(~"Bob", ~""))],
+		~[(~"age", int_value(18i64)), (~"id", string_value(~"ttt", ~"")), (~"name", string_value(~"Ted", ~""))]
 	];
 	
-	assert check_bgp([group1, group2], expected);
-	assert check_bgp([group2, group1], expected);
+	assert check_bgp(~[group1, group2], expected);
+	assert check_bgp(~[group2, group1], expected);
 }
 
 #[test]
 fn incompatible_bgp() 
 {
-	let group1 = [
-		[("name", string_value("Bob", "")), ("id", string_value("bbb", ""))],
-		[("name", string_value("Ted", "")), ("id", string_value("ttt", ""))],
-		[("name", string_value("George", "")), ("id", string_value("ggg", ""))]
+	let group1 = ~[
+		~[(~"name", string_value(~"Bob", ~"")), (~"id", string_value(~"bbb", ~""))],
+		~[(~"name", string_value(~"Ted", ~"")), (~"id", string_value(~"ttt", ~""))],
+		~[(~"name", string_value(~"George", ~"")), (~"id", string_value(~"ggg", ~""))]
 	];
-	let group2 = [
-		[("id", string_value("tyt", "")), ("age", int_value(18i64))],
-		[("id", string_value("bxb", "")), ("age", int_value(88i64))],
-		[("id", string_value("zzz", "")), ("age", int_value(38i64))]
+	let group2 = ~[
+		~[(~"id", string_value(~"tyt", ~"")), (~"age", int_value(18i64))],
+		~[(~"id", string_value(~"bxb", ~"")), (~"age", int_value(88i64))],
+		~[(~"id", string_value(~"zzz", ~"")), (~"age", int_value(38i64))]
 	];
-	let expected = [];
+	let expected = ~[];
 	
-	assert check_bgp([group1, group2], expected);
-	assert check_bgp([group2, group1], expected);
+	assert check_bgp(~[group1, group2], expected);
+	assert check_bgp(~[group2, group1], expected);
 }
 
 #[test]
 fn multiple_bgp() 
 {
-	let group1 = [
-		[("name", string_value("Bob", "")), ("id", string_value("bbb", ""))],
-		[("name", string_value("Ted", "")), ("id", string_value("ttt", ""))],
-		[("name", string_value("George", "")), ("id", string_value("ggg", ""))]
+	let group1 = ~[
+		~[(~"name", string_value(~"Bob", ~"")), (~"id", string_value(~"bbb", ~""))],
+		~[(~"name", string_value(~"Ted", ~"")), (~"id", string_value(~"ttt", ~""))],
+		~[(~"name", string_value(~"George", ~"")), (~"id", string_value(~"ggg", ~""))]
 	];
-	let group2 = [
-		[("id", string_value("tyt", "")), ("age", int_value(18i64))],
-		[("id", string_value("bxb", "")), ("age", int_value(88i64))],
-		[("id", string_value("zzz", "")), ("age", int_value(38i64))]
+	let group2 = ~[
+		~[(~"id", string_value(~"tyt", ~"")), (~"age", int_value(18i64))],
+		~[(~"id", string_value(~"bxb", ~"")), (~"age", int_value(88i64))],
+		~[(~"id", string_value(~"zzz", ~"")), (~"age", int_value(38i64))]
 	];
-	let expected = [];
+	let expected = ~[];
 	
-	assert check_bgp([group1, group2], expected);
-	assert check_bgp([group2, group1], expected);
+	assert check_bgp(~[group1, group2], expected);
+	assert check_bgp(~[group2, group1], expected);
 }
