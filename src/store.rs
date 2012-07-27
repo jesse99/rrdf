@@ -34,6 +34,7 @@ type store = {
 	namespaces: ~[namespace],
 	subjects: hashmap<~str, @dvec<entry>>,
 	extensions: @hashmap<~str, extension_fn>,
+	next_blank: @mut int,
 };
 
 /// Initializes a store object.
@@ -49,12 +50,16 @@ fn create_store(namespaces: ~[namespace], extensions: @hashmap<~str, extension_f
 		namespaces: default_namespaces() + namespaces,
 		subjects: std::map::str_hash(),
 		extensions: extensions,
+		next_blank: @mut 0,
 	}
 }
 
 fn get_blank_name(store: store, prefix: ~str) -> ~str
 {
-	#fmt["_:%s-%?", prefix, store.subjects.size()]
+	let suffix = *store.next_blank;
+	*store.next_blank += 1;
+	
+	#fmt["_:%s-%?", prefix, suffix]
 }
 
 trait store_trait
