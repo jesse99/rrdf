@@ -1,4 +1,4 @@
-#[doc = "SPARQL functions. Clients will not ordinarily use this."];
+//! SPARQL functions. Clients will not ordinarily use this.
 
 fn abs_fn(operand: object) -> object
 {

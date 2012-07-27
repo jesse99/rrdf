@@ -1,4 +1,4 @@
-#[doc = "SPARQL functions. Clients will not ordinarily use this."];
+//! SPARQL functions. Clients will not ordinarily use this.
 
 fn isiri_fn(operand: object) -> object
 {

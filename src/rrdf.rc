@@ -3,7 +3,7 @@
 
 #[author = "Jesse Jones"];
 #[license = "MIT"];
-#[doc = "Resource Description Language (RDF) library"];
+//! Resource Description Language (RDF) library
 
 // TODO: enable these when rustc shakes out more
 #[warn(no_non_implicitly_copyable_typarams, no_vecs_not_implicitly_copyable)];

@@ -1,12 +1,12 @@
-#[doc = "The result of a SPARQL query."];
+//! The result of a SPARQL query.
 
-#[doc = "Result of matching a triple with a SPARQL query."]
+/// Result of matching a triple with a SPARQL query.
 type solution_row = ~[(~str, object)];
 
-#[doc = "Result of a SPARQL query.
-
-Note that the solution_methods impl provides a number of convenience methods
-to simplify result retrieval."]
+/// Result of a SPARQL query.
+/// 
+/// Note that the solution_methods impl provides a number of convenience methods
+/// to simplify result retrieval.
 type solution = ~[solution_row];
 
 trait solution_row_trait

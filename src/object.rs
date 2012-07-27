@@ -1,11 +1,10 @@
-#[doc = "Value component of a triple and associated methods."];
-//import result::extensions;
+//! Value component of a triple and associated methods.
 
 // Note that the SPARQL error conditions do not always result in an error:
 // 1) Functions like COALESCE accept unbound variables.
 // 2) Boolean functions normally want effective boolean values which are false for invalid values.
 // 3) Functions like op_and do not always propagate errors.
-#[doc = "Value component of a triple."]
+/// Value component of a triple.
 enum object					// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
 {									// TODO: predicate could maybe be enum with type code and uri
 	// literals
@@ -397,9 +396,9 @@ impl of to_str for object
 	}
 }
 
-#[doc = "Converts an arbitrary lexical value to an object.
-
-Note that it is usually simplest to simply use the object enum directly."]
+/// Converts an arbitrary lexical value to an object.
+/// 
+/// Note that it is usually simplest to simply use the object enum directly.
 fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 {
 	alt (value, kind, lang)

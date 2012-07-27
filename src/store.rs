@@ -1,49 +1,46 @@
-#[doc = "The type which stores triples."];
-//import core::dvec::*;
-//import iter::base_iter;
-
+//! The type which stores triples.
 export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, make_triple_str, make_triple_uri, store_trait, store_methods, to_str, base_iter, get_blank_name;
 export expand_uri;			// this should be internal
 
-#[doc = "An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
-or a blank node (_1)."]
+/// An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
+/// or a blank node (_1).
 type subject = ~str;
 
-#[doc = "An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)."]
+/// An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date).
 type predicate = ~str;
 
-#[doc = "A relationship between a subject and an object.
-
-* subject identifies a resource, usually via an IRI.
-* predicate is an IRI describing the relationship. Also known as a property.
-* object is a IRI, literal, or blank node containing the value for the relationship.
-
-Here is a psuedo-code example:
-
-('https://github.com/jesse99/rrdf', 'http://purl.org/dc/terms/creator', 'Jesse Jones')"]
+/// A relationship between a subject and an object.
+/// 
+/// * subject identifies a resource, usually via an IRI.
+/// * predicate is an IRI describing the relationship. Also known as a property.
+/// * object is a IRI, literal, or blank node containing the value for the relationship.
+/// 
+/// Here is a psuedo-code example:
+/// 
+/// ('https://github.com/jesse99/rrdf', 'http://purl.org/dc/terms/creator', 'Jesse Jones')
 type triple = {subject: subject, predicate: predicate, object: object};
 
-#[doc = "Name of a namespace plus the IRI it expands to."]
+/// Name of a namespace plus the IRI it expands to.
 type namespace = {prefix: ~str, path: ~str};
 
-#[doc = "Predicate and object associated with a subject."]
+/// Predicate and object associated with a subject.
 type entry = {predicate: ~str, object: object};
 
-#[doc = "SPARQL extension function."]
+/// SPARQL extension function.
 type extension_fn = fn@ (~[namespace], ~[object]) -> object;
 
-#[doc = "Stores triples in a more or less efficient format."]
+/// Stores triples in a more or less efficient format.
 type store = {
 	namespaces: ~[namespace],
 	subjects: hashmap<~str, @dvec<entry>>,
 	extensions: @hashmap<~str, extension_fn>,
 };
 
-#[doc = "Initializes a store object.
-
-xsd, rdf, rdfs, and owl namespaces are automatically added. An rrdf:pname extension is
-automatically added which converts an iri_value to a string_value using namespaces (or
-simply stringifies it if none of the namespaces paths match)."]
+/// Initializes a store object.
+/// 
+/// xsd, rdf, rdfs, and owl namespaces are automatically added. An rrdf:pname extension is
+/// automatically added which converts an iri_value to a string_value using namespaces (or
+/// simply stringifies it if none of the namespaces paths match).
 fn create_store(namespaces: ~[namespace], extensions: @hashmap<~str, extension_fn>) -> store
 {
 	extensions.insert(~"rrdf:pname", pname_fn);
@@ -76,9 +73,9 @@ trait store_trait
 
 impl store_methods of store_trait for store
 {
-	#[doc = "Efficient addition of triples to the store.
-	
-	Typically create_int, create_str, etc functions are used to create objects."]
+	/// Efficient addition of triples to the store.
+	/// 
+	/// Typically create_int, create_str, etc functions are used to create objects.
 	fn add(subject: ~str, entries: ~[(~str, object)])
 	{
 		if vec::is_not_empty(entries)
@@ -101,9 +98,9 @@ impl store_methods of store_trait for store
 		}
 	}
 	
-	#[doc = "Relatively inefficient addition of triples to the store.
-	
-	Qualified names may use the namespaces associated with the store and the supplied namespaces."]
+	/// Relatively inefficient addition of triples to the store.
+	/// 
+	/// Qualified names may use the namespaces associated with the store and the supplied namespaces.
 	fn add_triple(namespaces: ~[namespace], triple: triple)
 	{
 		let namespaces = self.namespaces + namespaces;
@@ -125,9 +122,9 @@ impl store_methods of store_trait for store
 		}
 	}
 	
-	#[doc = "Adds a subject statement referencing a new blank node.
-	
-	Label is an arbitrary string useful for debugging. Returns the name of the blank node."]
+	/// Adds a subject statement referencing a new blank node.
+	/// 
+	/// Label is an arbitrary string useful for debugging. Returns the name of the blank node.
 	fn add_aggregate(subject: ~str, predicate: ~str, label: ~str, entries: ~[(~str, object)]) -> ~str
 	{
 		let blank = get_blank_name(self, label);
@@ -136,19 +133,19 @@ impl store_methods of store_trait for store
 		ret blank;
 	}
 	
-	#[doc = "Adds statements representing a choice between alternatives."]
+	/// Adds statements representing a choice between alternatives.
 	fn add_alt(subject: ~str, values: ~[object])
 	{
 		self.add_container(subject, ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt", values);
 	}
 	
-	#[doc = "Adds statements representing an unordered set of (possibly duplicate) values."]
+	/// Adds statements representing an unordered set of (possibly duplicate) values.
 	fn add_bag(subject: ~str, values: ~[object])
 	{
 		self.add_container(subject, ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag", values);
 	}
 	
-	#[doc = "Adds statements representing an arbitrary open container using 1-based integral keys."]
+	/// Adds statements representing an arbitrary open container using 1-based integral keys.
 	fn add_container(subject: ~str, kind: ~str, values: ~[object])
 	{
 		let blank = get_blank_name(self, after(subject, ':') + "-items");
@@ -158,7 +155,7 @@ impl store_methods of store_trait for store
 		self.add(blank, vec::zip(predicates, values));
 	}
 	
-	#[doc = "Adds a fixed size list of (possibly duplicate) items."]
+	/// Adds a fixed size list of (possibly duplicate) items.
 	fn add_list(subject: ~str, predicate: ~str, values: ~[object])
 	{
 		let prefix = after(predicate, ':');
@@ -175,9 +172,9 @@ impl store_methods of store_trait for store
 		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: iri_value(~"http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")});
 	}
 	
-	#[doc = "Adds a statement about a statement.
-	
-	Often used for meta-data, e.g. a timestamp stating when a statement was added to the store."]
+	/// Adds a statement about a statement.
+	/// 
+	/// Often used for meta-data, e.g. a timestamp stating when a statement was added to the store.
 	fn add_reify(subject: ~str, predicate: ~str, value: object)
 	{
 		let mut blank = get_blank_name(self, after(predicate, ':'));
@@ -187,13 +184,13 @@ impl store_methods of store_trait for store
 		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#object", object: value});
 	}
 	
-	#[doc = "Adds statements representing an ordered set of (possibly duplicate) values."]
+	/// Adds statements representing an ordered set of (possibly duplicate) values.
 	fn add_seq(subject: ~str, values: ~[object])
 	{
 		self.add_container(subject, ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq", values);
 	}
 	
-	#[doc = "Removes all triples from the store."]
+	/// Removes all triples from the store.
 	fn clear()
 	{
 		// TODO: Replace this awful code once // https://github.com/mozilla/rust/issues/2775 is fixed.
@@ -215,7 +212,7 @@ impl store_methods of store_trait for store
 
 impl of base_iter<triple> for store
 {
-	#[doc = "Calls the blk for each triple in the store (in an undefined order)."]
+	/// Calls the blk for each triple in the store (in an undefined order).
 	fn each(blk: fn(triple) -> bool)
 	{
 		for self.subjects.each()

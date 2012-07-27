@@ -1,13 +1,9 @@
-#[doc = "Used when evaluating a SPARQL query. Clients will not ordinarily use this."];
+//! Used when evaluating a SPARQL query. Clients will not ordinarily use this.
 
 // The sparql parser operates by building a sequence of matcher functions and
 // then creating a selector function using the select function.
-//import std::map::hashmap;
-//import result::extensions;
-//import std::time::tm;
 import expression::*;
 import operators::*;
-//import sparql::*;
 
 export join_solutions, eval, pattern, variable, constant, algebra, triple_pattern, query_context,
 	basic, group, optional, bind, filter;

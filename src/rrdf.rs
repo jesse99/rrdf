@@ -1,4 +1,4 @@
-/// API for the rrdf library.
+//! API for the rrdf library.
 import to_str::to_str;
 import core::dvec::*;
 import std::map::hashmap; 

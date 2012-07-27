@@ -1,4 +1,4 @@
-#[doc = "SPARQL functions. Clients will not ordinarily use this."];
+//! SPARQL functions. Clients will not ordinarily use this.
 
 fn now_fn(context: query_context, args: ~[object]) -> object
 {

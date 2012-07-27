@@ -1,4 +1,4 @@
-#[doc = "SPARQL functions. Clients will not ordinarily use this."];
+//! SPARQL functions. Clients will not ordinarily use this.
 import expression::{expr, eval_expr};
 
 fn bound_fn(operand: object) -> object

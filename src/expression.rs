@@ -1,4 +1,4 @@
-#[doc = "SPARQL FILTER expressions."];
+//! SPARQL FILTER expressions.
 import functional_forms::{eval_if, eval_coalesce, bound_fn, sameterm_fn};
 import functions_on_dates::*;
 import functions_on_numerics::*;

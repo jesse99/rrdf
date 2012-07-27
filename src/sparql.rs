@@ -1,8 +1,7 @@
-#[doc = "Compiles a SRARQL query into a function that can be applied to a store value."];
+//! Compiles a SRARQL query into a function that can be applied to a store value.
 import std::map::*;
 import std::time;
 import rparse::*;
-//import query::optional;
 import expression::*;
 import query::*;
 
@@ -1113,14 +1112,14 @@ fn build_parser(namespaces: ~[namespace], query: ((bool, ~[pattern]), algebra, S
 	}
 }
 
-#[doc = "The function returned by compile and invoked to execute a SPARQL query.
-
-Returns a solution or a 'runtime' error."]
+/// The function returned by compile and invoked to execute a SPARQL query.
+/// 
+/// Returns a solution or a 'runtime' error.
 type selector = fn@ (store) -> result::result<solution, ~str>;
 
-#[doc = "Returns either a function capable of matching triples or a parse error.
-
-Expr can be a subset of http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"SPARQL\"."]
+/// Returns either a function capable of matching triples or a parse error.
+/// 
+/// Expr can be a subset of http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"SPARQL\".
 fn compile(expr: ~str) -> result::result<selector, ~str>
 {
 	let parser = make_parser();
