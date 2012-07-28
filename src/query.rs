@@ -517,7 +517,20 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 				{
 					result::ok(solution)
 					{
-						result = join_solutions(names, result, solution, alt *term {optional(_t) {true} _ {false}});
+						alt *term
+						{
+							optional(_t)
+							{
+								if result.is_not_empty()
+								{
+									result = join_solutions(names, result, solution, true);
+								}
+							}
+							_
+							{
+								result = join_solutions(names, result, solution, false);
+							}
+						}
 					}
 					result::err(mesg)
 					{

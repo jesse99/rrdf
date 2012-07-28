@@ -851,3 +851,45 @@ fn animals5()
 	];
 	assert check_solution(store, expr, expected);
 }
+
+#[test]
+fn blank_query1()
+{
+	let expr = ~"
+	PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
+	SELECT
+		?b ?name ?unit
+	WHERE
+	{
+		?b v:organisation-name ?name .
+		?b v:organisation-unit ?unit
+	}";
+	let store = test_data::got_cast3();
+	let expected = ~[
+		~[(~"b", blank_value(~"_:ned-org-0")), (~"name", string_value(~"Small Council", ~"")), (~"unit", string_value(~"Hand", ~""))],
+		~[(~"b", blank_value(~"_:jon-org-1")), (~"name", string_value(~"Night's Watch", ~"")), (~"unit", string_value(~"Stewards", ~""))],
+	];
+	
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
+fn bad_optional()
+{
+	let expr = ~"
+	PREFIX got: <http://awoiaf.westeros.org/index.php/>
+	PREFIX v:    <http://www.w3.org/2006/vcard/ns#>
+	SELECT
+		?name ?bogus ?pet
+	WHERE
+	{
+		?s v:fn ?name .
+		?s v:bogus ?bogus .
+		OPTIONAL {?s v:pet ?pet}
+	}";
+	let store = test_data::got_cast3();
+	let expected = ~[];
+	
+	assert check_solution(store, expr, expected);
+}
