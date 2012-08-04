@@ -74,6 +74,8 @@ trait store_trait
 	fn add_reify(subject: ~str, predicate: ~str, value: object);
 	fn add_seq(subject: ~str, values: ~[object]);
 	fn clear();
+	fn find_object(subject: ~str, predicate: ~str) -> option::option<object>;
+	fn find_objects(subject: ~str, predicate: ~str) -> ~[object];
 	fn replace_triple(namespaces: ~[namespace], triple: triple);
 }
 
@@ -213,6 +215,69 @@ impl store_methods of store_trait for store
 		{
 			self.subjects.remove(key);
 		};
+	}
+	
+	/// Returns the first matching object, or option::none.
+	/// 
+	/// Qualified names may use the namespaces associated with the store.
+	fn find_object(subject: ~str, predicate: ~str) -> option::option<object>
+	{
+		let subject = expand_uri_or_blank(self.namespaces, subject);
+		let predicate = expand_uri(self.namespaces, predicate);
+		
+		alt self.subjects.find(subject)
+		{
+			option::some(entries)
+			{
+				alt entries.position(|candidate| {candidate.predicate == predicate})
+				{
+					option::some(index)
+					{
+						option::some((*entries)[index].object)
+					}
+					option::none
+					{
+						option::none
+					}
+				}
+			}
+			option::none
+			{
+				option::none
+			}
+		}
+	}
+	
+	/// Returns all matching objects.
+	/// 
+	/// Qualified names may use the namespaces associated with the store.
+	fn find_objects(subject: ~str, predicate: ~str) -> ~[object]
+	{
+		let subject = expand_uri_or_blank(self.namespaces, subject);
+		let predicate = expand_uri(self.namespaces, predicate);
+		
+		alt self.subjects.find(subject)
+		{
+			option::some(entries)
+			{
+				do entries.get().filter_map		// TODO: pretty bad to call get, but dvec doesn't have filter_map atm
+				|entry|
+				{
+					if entry.predicate == predicate
+					{
+						option::some(entry.object)
+					}
+					else
+					{
+						option::none
+					}
+				}
+			}
+			option::none
+			{
+				~[]
+			}
+		}
 	}
 	
 	/// Replaces the object of an existing triple or adds a new triple.
