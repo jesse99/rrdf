@@ -74,6 +74,7 @@ trait store_trait
 	fn add_reify(subject: ~str, predicate: ~str, value: object);
 	fn add_seq(subject: ~str, values: ~[object]);
 	fn clear();
+	fn replace_triple(namespaces: ~[namespace], triple: triple);
 }
 
 impl store_methods of store_trait for store
@@ -212,6 +213,40 @@ impl store_methods of store_trait for store
 		{
 			self.subjects.remove(key);
 		};
+	}
+	
+	/// Replaces the object of an existing triple or adds a new triple.
+	/// 
+	/// Qualified names may use the namespaces associated with the store and the supplied namespaces.
+	fn replace_triple(namespaces: ~[namespace], triple: triple)
+	{
+		let namespaces = self.namespaces + namespaces;
+		
+		let subject = expand_uri_or_blank(namespaces, triple.subject);
+		let predicate = expand_uri(namespaces, triple.predicate);
+		let entry = {predicate: predicate, object: expand_object(namespaces, triple.object)};
+		
+		alt self.subjects.find(subject)
+		{
+			option::some(entries)
+			{
+				alt entries.position(|candidate| {candidate.predicate == predicate})
+				{
+					option::some(index)
+					{
+						entries.set_elt(index, entry);
+					}
+					option::none
+					{
+						entries.push(entry);
+					}
+				}
+			}
+			option::none
+			{
+				self.subjects.insert(subject, @dvec::from_vec(~[mut entry]));
+			}
+		}
 	}
 }
 

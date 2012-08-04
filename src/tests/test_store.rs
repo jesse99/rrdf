@@ -203,6 +203,28 @@ fn reify()
 }
 
 #[test]
+fn replace() 
+{
+	let store = got_cast1();
+	store.replace_triple(~[], {subject: ~"got:Eddard_Stark", predicate: ~"v:nickname", object: string_value(~"Ned the Dead", ~"")});
+	store.replace_triple(~[], {subject: ~"got:Arya", predicate: ~"v:nickname", object: string_value(~"Underfoot", ~"")});
+	
+	let mut actual = ~[];
+	for store.each
+	|triple|
+	{
+		vec::push(actual, triple);
+	};
+	
+	let expected = ~[
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned the Dead"),
+		make_triple_str(store, ~"got:Arya", ~"v:nickname", ~"Underfoot"),
+	];
+	assert check_triples(actual, expected);
+}
+
+#[test]
 fn trivial_bgp() 
 {
 	let group1 = ~[];

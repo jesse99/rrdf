@@ -194,3 +194,5 @@ fn sameterm_fn(lhs: object, rhs: object) -> object
 		}
 	}
 }
+
+// TODO: EXISTS and NOT EXISTS
