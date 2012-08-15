@@ -155,11 +155,6 @@ fn join_solutions(names: ~[~str], group1: solution, group2: solution, optional_j
 			}
 		}
 	}
-	else if vec::is_empty(group1)
-	{
-		// group1 has no constraint so we can use group2
-		result = group2;
-	}
 	
 	ret result;
 }
@@ -528,7 +523,18 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 							}
 							_
 							{
-								result = join_solutions(names, result, solution, false);
+								if solution.is_empty()
+								{
+									ret result::ok(~[]);
+								}
+								else if result.is_not_empty()
+								{
+									result = join_solutions(names, result, solution, false);
+								}
+								else
+								{
+									result = solution;
+								}
 							}
 						}
 					}

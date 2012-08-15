@@ -50,12 +50,12 @@ fn check_bgp(groups: ~[solution], expected: solution) -> bool
 		};
 	}
 	
-	let mut actual = ~[];
-	for vec::each(groups)
+	let mut actual = groups[0];
+	for vec::each(vec::slice(groups, 1, groups.len())) 
 	|group|
 	{
 		actual = join_solutions(~[~"*"], actual, group, false);
-	};
+	}
 	
 	// Form this point forward we are dealing with [str] instead of [[binding]].
 	let actual = convert_bindings(actual);

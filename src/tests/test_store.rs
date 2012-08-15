@@ -233,7 +233,7 @@ fn trivial_bgp()
 		~[(~"age", int_value(18i64))]
 	];
 	
-	assert check_bgp(~[group1, group2], group2);
+	assert check_bgp(~[group1, group2], ~[]);
 	assert check_bgp(~[group2, group1], ~[]);
 }
 

@@ -162,6 +162,25 @@ fn unmatched_path()
 }
 
 #[test]
+fn unmatched_path2()
+{
+	let expr = ~"
+	PREFIX wiki: <http://en.wikipedia.org/wiki/>
+	SELECT
+		?subject
+	WHERE
+	{
+		?subject wiki:phylum \"motie\" .
+		?subject wiki:class \"mammalia\"
+	}";
+	
+	let store = test_data::animals();
+	
+	let expected = ~[];
+	assert check_solution(store, expr, expected);
+}
+
+#[test]
 fn select_all()
 {
 	let expr = ~"SELECT *

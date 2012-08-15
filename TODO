@@ -13,6 +13,9 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
 * Support AS in select clause.
+* Might want to add explicit support for annotations
+	- have rdfs:label and rdfs:comment predicates
+* Try and report a decent error for iri literals missing angle brackets.
 
 * SHould be able to support regex functions using regexec.
 * Work on more complex matching:
