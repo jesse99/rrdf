@@ -1,6 +1,8 @@
 //! The result of a SPARQL query.
 
 /// Result of matching a triple with a SPARQL query.
+///
+/// Order of entries in each row will match the order in the SELECT clause.
 type solution_row = ~[(~str, object)];
 
 /// Result of a SPARQL query.
