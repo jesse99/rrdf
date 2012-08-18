@@ -17,6 +17,13 @@ trait solution_trait
 	pure fn search(row: uint, name: ~str) -> option<object>;
 }
 
+trait solution_row_trait
+{
+	pure fn get(name: ~str) -> object;
+	pure fn contains(name: ~str) -> bool;
+	pure fn search(name: ~str) -> option<object>;
+}
+
 impl solution_methods of solution_trait for solution
 {
 	pure fn get(row: uint, name: ~str) -> object
@@ -28,11 +35,6 @@ impl solution_methods of solution_trait for solution
 	{
 		self[row].search(name)
 	}
-}
-trait solution_row_trait
-{
-	pure fn get(name: ~str) -> object;
-	pure fn search(name: ~str) -> option<object>;
 }
 
 impl solution_row_methods of solution_row_trait for solution_row
@@ -50,6 +52,11 @@ impl solution_row_methods of solution_row_trait for solution_row
 				fail(~"Couldn't find " + name)
 			}
 		}
+	}
+	
+	pure fn contains(name: ~str) -> bool
+	{
+		vec::find(self, |e| {e.first() == name}).is_some()
 	}
 	
 	// Named search so we don't wind up conflicting with the find vec extension.
