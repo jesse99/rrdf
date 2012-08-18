@@ -11,6 +11,24 @@ type solution_row = ~[(~str, object)];
 /// to simplify result retrieval.
 type solution = ~[solution_row];
 
+trait solution_trait
+{
+	pure fn get(row: uint, name: ~str) -> object;
+	pure fn search(row: uint, name: ~str) -> option<object>;
+}
+
+impl solution_methods of solution_trait for solution
+{
+	pure fn get(row: uint, name: ~str) -> object
+	{
+		self[row].get(name)
+	}
+	
+	pure fn search(row: uint, name: ~str) -> option<object>
+	{
+		self[row].search(name)
+	}
+}
 trait solution_row_trait
 {
 	pure fn get(name: ~str) -> object;
@@ -48,24 +66,5 @@ impl solution_row_methods of solution_row_trait for solution_row
 				option::none
 			}
 		}
-	}
-}
-
-trait solution_trait
-{
-	pure fn get(row: uint, name: ~str) -> object;
-	pure fn search(row: uint, name: ~str) -> option<object>;
-}
-
-impl solution_methods of solution_trait for solution
-{
-	pure fn get(row: uint, name: ~str) -> object
-	{
-		self[row].get(name)
-	}
-	
-	pure fn search(row: uint, name: ~str) -> option<object>
-	{
-		self[row].search(name)
 	}
 }
