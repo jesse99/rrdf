@@ -6,7 +6,7 @@ import functions_on_strings::*;
 import functions_on_terms::*;
 import operators::*;
 
-export expr, eval_expr, constant_expr, variable_expr, call_expr, extension_expr;
+export expr, expr_to_str, eval_expr, constant_expr, variable_expr, call_expr, extension_expr;
 
 enum expr
 {
@@ -14,6 +14,25 @@ enum expr
 	variable_expr(~str),
 	call_expr(~str, ~[@expr]),			// function name + arguments
 	extension_expr(~str, ~[@expr])	// function name + arguments
+}
+
+fn expr_to_str(store: store, expr: expr) -> ~str
+{
+	alt expr
+	{
+		constant_expr(o)
+		{
+			object_to_str(store, o)
+		}
+		variable_expr(v)
+		{
+			#fmt["?%s", v]
+		}
+		call_expr(n, args) | extension_expr(n, args)
+		{
+			n + str::connect(do args.map |a| {expr_to_str(store, *a)}, ~", ")
+		}
+	}
 }
 
 fn eval_expr(context: query_context, bindings: ~[(~str, object)], expr: expr) -> object

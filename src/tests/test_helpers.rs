@@ -54,7 +54,8 @@ fn check_bgp(groups: ~[solution], expected: solution) -> bool
 	for vec::each(vec::slice(groups, 1, groups.len())) 
 	|group|
 	{
-		actual = join_solutions(~[~"*"], actual, group, false);
+		let store = create_store(~[], @std::map::str_hash());
+		actual = join_solutions(store, ~[~"*"], actual, group, false);
 	}
 	
 	// Form this point forward we are dealing with [str] instead of [[binding]].

@@ -6,11 +6,11 @@
 // 3) Functions like op_and do not always propagate errors.
 /// Value component of a triple.
 enum object					// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
-{									// TODO: predicate could maybe be enum with type code and uri
+{								// TODO: predicate could maybe be enum with type code and uri
 	// literals
 	bool_value(bool),
 	int_value(i64),				// value, xsd:decimal (and derived types)
-	float_value(f64),				// value, xsd:float or xsd:double
+	float_value(f64),			// value, xsd:float or xsd:double
 	dateTime_value(tm),		// xsd:dateTime
 	string_value(~str, ~str),	// value + lang
 	typed_value(~str, ~str),	// value + type iri (aka simple literal)
@@ -338,6 +338,33 @@ impl object_methods for object
 			{
 				default
 			}
+		}
+	}
+}
+
+fn object_to_str(store: store, obj: object) -> ~str
+{
+	alt obj
+	{
+		typed_value(value, kind)
+		{
+			#fmt["\"%s^^\"%s", value, contract_uri(store.namespaces, kind)]
+		}
+		iri_value(iri)
+		{
+			let result = contract_uri(store.namespaces, iri);
+			if result != iri
+			{
+				result
+			}
+			else
+			{
+				~"<" + iri + ~">"
+			}
+		}
+		_
+		{
+			obj.to_str()
 		}
 	}
 }

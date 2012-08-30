@@ -1,5 +1,6 @@
 //! The type which stores triples.
-export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, make_triple_str, make_triple_uri, store_trait, store_methods, to_str, base_iter, get_blank_name;
+export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, 
+	make_triple_str, make_triple_uri, store_trait, store_methods, to_str, base_iter, get_blank_name, contract_uri;
 export expand_uri;			// this should be internal
 
 /// An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
@@ -60,6 +61,22 @@ fn get_blank_name(store: store, prefix: ~str) -> ~str
 	*store.next_blank += 1;
 	
 	#fmt["_:%s-%?", prefix, suffix]
+}
+
+/// Returns either the iri or the prefixed version of the iri.
+fn contract_uri(namespaces: ~[namespace], iri: ~str) -> ~str
+{
+	alt vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
+	{
+		option::some(ns)
+		{
+			#fmt["%s:%s", ns.prefix, str::slice(iri, str::len(ns.path), str::len(iri))]
+		}
+		option::none
+		{
+			iri
+		}
+	}
 }
 
 trait store_trait
@@ -506,17 +523,7 @@ fn pname_fn(namespaces: ~[namespace], args: ~[object]) -> object
 		{
 			iri_value(iri)
 			{
-				alt vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
-				{
-					option::some(ns)
-					{
-						string_value(#fmt["%s:%s", ns.prefix, str::slice(iri, str::len(ns.path), str::len(iri))], ~"")
-					}
-					option::none
-					{
-						string_value(iri, ~"")
-					}
-				}
+				string_value(contract_uri(namespaces, iri), ~"")
 			}
 			blank_value(name)
 			{
