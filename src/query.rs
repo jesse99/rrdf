@@ -554,7 +554,7 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 				{
 					result::ok(solution)
 					{
-						#info["group filter %? matched %?", expr_to_str(store, expr), solution];
+						#info["term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, solution)];
 						result = solution;
 					}
 					result::err(mesg)
@@ -569,7 +569,7 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 				{
 					result::ok(solution)
 					{
-						#info["group bind %?/%? matched %?", expr, name, solution];
+						#info["term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, solution)];
 						result = solution;
 					}
 					result::err(mesg)
@@ -591,24 +591,25 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 								if result.is_not_empty()
 								{
 									result = join_solutions(store, names, result, solution, true);
-									#info["group term %s matched %s", algebra_to_str(store, *term), solution_to_str(store, result)];
+									#info["term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, result)];
 								}
 							}
 							_
 							{
 								if solution.is_empty()
 								{
+									#info["term%? %s matched nothing", i, algebra_to_str(store, *term)];
 									ret result::ok(~[]);
 								}
 								else if result.is_not_empty()
 								{
 									result = join_solutions(store, names, result, solution, false);
-									#info["group term %s matched %s", algebra_to_str(store, *term), solution_to_str(store, result)];
+									#info["term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, result)];
 								}
 								else
 								{
 									result = solution;
-									#info["group term %s matched %s", algebra_to_str(store, *term), solution_to_str(store, result)];
+									#info["term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, result)];
 								}
 							}
 						}
