@@ -536,6 +536,7 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 	for vec::eachi(terms)
 	|i, term|
 	{
+		#info[" "];
 		// We can't filter out bindings not in names until we've finished joining bindings.
 		let names =
 			if i == vec::len(terms) - 1
@@ -606,7 +607,7 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 									result = join_solutions(store, names, result, solution, false);
 									#info["term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, result)];
 								}
-								else
+								else if i == 0		// the very first pattern in the group has nothing to join with
 								{
 									result = solution;
 									#info["term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, result)];
