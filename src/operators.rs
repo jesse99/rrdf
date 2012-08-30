@@ -293,7 +293,7 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::result<in
 				}
 			}
 		}
-		blank_value(_)
+		blank_value(lvalue)
 		{
 			alt rhs
 			{
@@ -301,9 +301,13 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::result<in
 				{
 					result::ok(1)
 				}
-				blank_value(_)
+				blank_value(rvalue)
 				{
-					result::ok(0)
+					result::ok(
+						if lvalue < rvalue {-1} 
+						else if lvalue == rvalue {0} 
+						else {1}
+					)
 				}
 				_
 				{

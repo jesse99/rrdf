@@ -12,6 +12,7 @@ http://dbpedia.org/sparql
 http://jena.sourceforge.net/ARQ/Tutorial/index.html
 
 
+* ASC(?foo) probably isn't supposed to work if ?foo is not selected so emit an error.
 * Support AS in select clause.
 * Might want to add explicit support for annotations
 	- have rdfs:label and rdfs:comment predicates
