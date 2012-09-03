@@ -2,76 +2,76 @@
 
 fn abs_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		int_value(value)
+		int_value(value) =>
 		{
 			int_value(i64::abs(value))
 		}
-		float_value(value)
+		float_value(value) =>
 		{
 			float_value(f64::abs(value))
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["ABS: expected numeric but found %?.", operand])
+			error_value(fmt!("ABS: expected numeric but found %?.", operand))
 		}
 	}
 }
 
 fn round_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		int_value(value)
+		int_value(value) =>
 		{
 			operand
 		}
-		float_value(value)
+		float_value(value) =>
 		{
 			float_value(f64::round(value))
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["ROUND: expected numeric but found %?.", operand])
+			error_value(fmt!("ROUND: expected numeric but found %?.", operand))
 		}
 	}
 }
 
 fn ceil_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		int_value(value)
+		int_value(value) =>
 		{
 			operand
 		}
-		float_value(value)
+		float_value(value) =>
 		{
 			float_value(f64::ceil(value))
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["CEIL: expected numeric but found %?.", operand])
+			error_value(fmt!("CEIL: expected numeric but found %?.", operand))
 		}
 	}
 }
 
 fn floor_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		int_value(value)
+		int_value(value) =>
 		{
 			operand
 		}
-		float_value(value)
+		float_value(value) =>
 		{
 			float_value(f64::floor(value))
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["FLOOR: expected numeric but found %?.", operand])
+			error_value(fmt!("FLOOR: expected numeric but found %?.", operand))
 		}
 	}
 }
@@ -86,6 +86,6 @@ fn rand_fn(context: query_context, args: ~[object]) -> object
 	}
 	else
 	{
-		error_value(#fmt["RAND accepts 0 arguments but was called with %? arguments.", vec::len(args)])
+		error_value(fmt!("RAND accepts 0 arguments but was called with %? arguments.", vec::len(args)))
 	}
 }

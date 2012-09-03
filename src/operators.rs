@@ -5,319 +5,319 @@ export op_not, op_unary_plus, op_unary_minus, op_or, op_and, op_equals, op_not_e
 	op_less_than, op_less_than_or_equal, op_greater_than, op_greater_than_or_equal,
 	op_multiply, op_divide, op_add, op_subtract, compare_values;
 	
-fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::result<bool, ~str>
+fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool, ~str>
 {
-	alt lhs
+	match lhs
 	{
-		bool_value(lvalue)
+		bool_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				bool_value(rvalue)
+				bool_value(rvalue) =>
 				{
-					result::ok(lvalue == rvalue)
+					result::Ok(lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"boolean"))
+					result::Err(type_error(operator, rhs, ~"boolean"))
 				}
 			}
 		}
-		int_value(lvalue)
+		int_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
-					result::ok(lvalue == rvalue)
+					result::Ok(lvalue == rvalue)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
-					result::ok(lvalue as f64 == rvalue)
+					result::Ok(lvalue as f64 == rvalue)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"numeric"))
+					result::Err(type_error(operator, rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue)
+		float_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
-					result::ok(lvalue == rvalue as f64)
+					result::Ok(lvalue == rvalue as f64)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
-					result::ok(lvalue == rvalue)
+					result::Ok(lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"numeric"))
+					result::Err(type_error(operator, rhs, ~"numeric"))
 				}
 			}
 		}
-		dateTime_value(lvalue)
+		dateTime_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				dateTime_value(rvalue)
+				dateTime_value(rvalue) =>
 				{
-					result::ok(lvalue == rvalue)
+					result::Ok(lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"dateTime"))
+					result::Err(type_error(operator, rhs, ~"dateTime"))
 				}
 			}
 		}
-		string_value(lvalue, llang)
+		string_value(lvalue, llang) =>
 		{
-			alt rhs
+			match rhs
 			{
-				string_value(rvalue, rlang)
+				string_value(rvalue, rlang) =>
 				{
-					result::ok(str::to_lower(llang) == str::to_lower(rlang) && lvalue == rvalue)
+					result::Ok(str::to_lower(llang) == str::to_lower(rlang) && lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"string"))
+					result::Err(type_error(operator, rhs, ~"string"))
 				}
 			}
 		}
-		typed_value(lvalue, ltype)
+		typed_value(lvalue, ltype) =>
 		{
-			alt rhs
+			match rhs
 			{
-				typed_value(rvalue, rtype)
+				typed_value(rvalue, rtype) =>
 				{
-					result::ok(ltype == rtype && lvalue == rvalue)
+					result::Ok(ltype == rtype && lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ltype))
+					result::Err(type_error(operator, rhs, ltype))
 				}
 			}
 		}
-		iri_value(lvalue)
+		iri_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				iri_value(rvalue)
+				iri_value(rvalue) =>
 				{
-					result::ok(lvalue == rvalue)
+					result::Ok(lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"IRI"))
+					result::Err(type_error(operator, rhs, ~"IRI"))
 				}
 			}
 		}
-		blank_value(lvalue)
+		blank_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				blank_value(rvalue)
+				blank_value(rvalue) =>
 				{
-					result::ok(lvalue == rvalue)
+					result::Ok(lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"blank"))
+					result::Err(type_error(operator, rhs, ~"blank"))
 				}
 			}
 		}
-		_
+		_ =>
 		{
-			result::err(type_error(operator, lhs, ~"a"))
+			result::Err(type_error(operator, lhs, ~"a"))
 		}
 	}
 }
 
 // See 15.1
-fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::result<int, ~str>
+fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<int, ~str>
 {
-	alt lhs
+	match lhs
 	{
-		int_value(lvalue)
+		int_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
-					result::ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
+					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
-					result::ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
+					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				unbound_value(_) | blank_value(_)
+				unbound_value(_) | blank_value(_) =>
 				{
-					result::ok(1)
+					result::Ok(1)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"numeric"))
+					result::Err(type_error(operator, rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue)
+		float_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
-					result::ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
+					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
-					result::ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
+					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				unbound_value(_) | blank_value(_)
+				unbound_value(_) | blank_value(_) =>
 				{
-					result::ok(1)
+					result::Ok(1)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"numeric"))
+					result::Err(type_error(operator, rhs, ~"numeric"))
 				}
 			}
 		}
-		dateTime_value(lvalue)
+		dateTime_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				dateTime_value(rvalue)
+				dateTime_value(rvalue) =>
 				{
 					let lvalue = lvalue.to_timespec();
 					let rvalue = rvalue.to_timespec();
-					result::ok(
+					result::Ok(
 						if lvalue.sec < rvalue.sec || (lvalue.sec == rvalue.sec && lvalue.nsec < rvalue.nsec) {-1} 
 						else if lvalue.sec == rvalue.sec && lvalue.nsec == rvalue.nsec {0} 
 						else {1}
 					)
 				}
-				unbound_value(_) | blank_value(_)
+				unbound_value(_) | blank_value(_) =>
 				{
-					result::ok(1)
+					result::Ok(1)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"dateTime"))
+					result::Err(type_error(operator, rhs, ~"dateTime"))
 				}
 			}
 		}
-		string_value(lvalue, llang)
+		string_value(lvalue, llang) =>
 		{
-			alt rhs
+			match rhs
 			{
-				string_value(rvalue, rlang)
+				string_value(rvalue, rlang) =>
 				{
 					let llang = str::to_lower(llang);
 					let rlang = str::to_lower(rlang);
-					result::ok(
+					result::Ok(
 						if llang < rlang || (llang == rlang && lvalue < rvalue) {-1} 
 						else if llang == rlang && lvalue == rvalue {0} 
 						else {1}
 					)
 				}
-				unbound_value(_) | blank_value(_)
+				unbound_value(_) | blank_value(_) =>
 				{
-					result::ok(1)
+					result::Ok(1)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"string"))
+					result::Err(type_error(operator, rhs, ~"string"))
 				}
 			}
 		}
-		typed_value(lvalue, ltype)
+		typed_value(lvalue, ltype) =>
 		{
-			alt rhs
+			match rhs
 			{
-				typed_value(rvalue, rtype)
+				typed_value(rvalue, rtype) =>
 				{
-					result::ok(
+					result::Ok(
 						if ltype < rtype || (ltype == rtype && lvalue < rvalue) {-1} 
 						else if ltype == rtype && lvalue == rvalue {0} 
 						else {1}
 					)
 				}
-				unbound_value(_) | blank_value(_)
+				unbound_value(_) | blank_value(_) =>
 				{
-					result::ok(1)
+					result::Ok(1)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ltype))
+					result::Err(type_error(operator, rhs, ltype))
 				}
 			}
 		}
-		iri_value(lvalue)
+		iri_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				iri_value(rvalue)
+				iri_value(rvalue) =>
 				{
-					result::ok(
+					result::Ok(
 						if lvalue < rvalue {-1} 
 						else if lvalue == rvalue {0} 
 						else {1}
 					)
 				}
-				unbound_value(_) | blank_value(_)
+				unbound_value(_) | blank_value(_) =>
 				{
-					result::ok(1)
+					result::Ok(1)
 				}
-				_
+				_ =>
 				{
-					result::err(type_error(operator, rhs, ~"anyURI"))
-				}
-			}
-		}
-		unbound_value(_)
-		{
-			alt rhs
-			{
-				unbound_value(_)
-				{
-					result::ok(0)
-				}
-				_
-				{
-					result::ok(-1)
+					result::Err(type_error(operator, rhs, ~"anyURI"))
 				}
 			}
 		}
-		blank_value(lvalue)
+		unbound_value(_) =>
 		{
-			alt rhs
+			match rhs
 			{
-				unbound_value(_)
+				unbound_value(_) =>
 				{
-					result::ok(1)
+					result::Ok(0)
 				}
-				blank_value(rvalue)
+				_ =>
 				{
-					result::ok(
+					result::Ok(-1)
+				}
+			}
+		}
+		blank_value(lvalue) =>
+		{
+			match rhs
+			{
+				unbound_value(_) =>
+				{
+					result::Ok(1)
+				}
+				blank_value(rvalue) =>
+				{
+					result::Ok(
 						if lvalue < rvalue {-1} 
 						else if lvalue == rvalue {0} 
 						else {1}
 					)
 				}
-				_
+				_ =>
 				{
-					result::ok(-1)
+					result::Ok(-1)
 				}
 			}
 		}
-		_
+		_ =>
 		{
-			result::err(type_error(operator, lhs, ~"numeric, dateTime, string, or explicitly typed"))
+			result::Err(type_error(operator, lhs, ~"numeric, dateTime, string, or explicitly typed"))
 		}
 	}
 }
@@ -325,13 +325,13 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::result<in
 // ---- Unary Operators -------------------------------------------------------
 fn op_not(operand: object) -> object
 {
-	alt get_ebv(operand)
+	match get_ebv(operand)
 	{
-		result::ok(value)
+		result::Ok(value) =>
 		{
 			bool_value(!value)
 		}
-		result::err(err)
+		result::Err(err) =>
 		{
 			error_value(err)
 		}
@@ -340,17 +340,17 @@ fn op_not(operand: object) -> object
 
 fn op_unary_plus(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		int_value(value)
+		int_value(value) =>
 		{
 			operand
 		}
-		float_value(value)
+		float_value(value) =>
 		{
 			operand
 		}
-		_
+		_ =>
 		{
 			error_value(type_error(~"unary plus", operand, ~"numeric"))
 		}
@@ -359,17 +359,17 @@ fn op_unary_plus(operand: object) -> object
 
 fn op_unary_minus(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		int_value(value)
+		int_value(value) =>
 		{
 			int_value(-value)
 		}
-		float_value(value)
+		float_value(value) =>
 		{
 			float_value(-value)
 		}
-		_
+		_ =>
 		{
 			error_value(type_error(~"unary minus", operand, ~"numeric"))
 		}
@@ -410,7 +410,7 @@ fn op_or(lhs: object, rhs: object) -> object
 	}
 	else
 	{
-		error_value(#fmt["%s %s", result::get_err(lvalue), result::get_err(rvalue)])
+		error_value(fmt!("%s %s", result::get_err(lvalue), result::get_err(rvalue)))
 	}
 }
 
@@ -447,19 +447,19 @@ fn op_and(lhs: object, rhs: object) -> object
 	}
 	else
 	{
-		error_value(#fmt["%s %s", result::get_err(lvalue), result::get_err(rvalue)])
+		error_value(fmt!("%s %s", result::get_err(lvalue), result::get_err(rvalue)))
 	}
 }
 
 fn op_equals(lhs: object, rhs: object) -> object
 {
-	alt equal_values(~"=", lhs, rhs)
+	match equal_values(~"=", lhs, rhs)
 	{
-		result::ok(value)
+		result::Ok(value) =>
 		{
 			bool_value(value)
 		}
-		result::err(err)
+		result::Err(err) =>
 		{
 			error_value(err)
 		}
@@ -468,13 +468,13 @@ fn op_equals(lhs: object, rhs: object) -> object
 
 fn op_not_equals(lhs: object, rhs: object) -> object
 {
-	alt equal_values(~"!=", lhs, rhs)
+	match equal_values(~"!=", lhs, rhs)
 	{
-		result::ok(value)
+		result::Ok(value) =>
 		{
 			bool_value(!value)
 		}
-		result::err(err)
+		result::Err(err) =>
 		{
 			error_value(err)
 		}
@@ -483,13 +483,13 @@ fn op_not_equals(lhs: object, rhs: object) -> object
 
 fn op_less_than(lhs: object, rhs: object) -> object
 {
-	alt compare_values(~"<", lhs, rhs)
+	match compare_values(~"<", lhs, rhs)
 	{
-		result::ok(value)
+		result::Ok(value) =>
 		{
 			bool_value(value < 0)
 		}
-		result::err(err)
+		result::Err(err) =>
 		{
 			error_value(err)
 		}
@@ -498,13 +498,13 @@ fn op_less_than(lhs: object, rhs: object) -> object
 
 fn op_less_than_or_equal(lhs: object, rhs: object) -> object
 {
-	alt compare_values(~"<=", lhs, rhs)
+	match compare_values(~"<=", lhs, rhs)
 	{
-		result::ok(value)
+		result::Ok(value) =>
 		{
 			bool_value(value <= 0)
 		}
-		result::err(err)
+		result::Err(err) =>
 		{
 			error_value(err)
 		}
@@ -513,13 +513,13 @@ fn op_less_than_or_equal(lhs: object, rhs: object) -> object
 
 fn op_greater_than(lhs: object, rhs: object) -> object
 {
-	alt compare_values(~">", lhs, rhs)
+	match compare_values(~">", lhs, rhs)
 	{
-		result::ok(value)
+		result::Ok(value) =>
 		{
 			bool_value(value > 0)
 		}
-		result::err(err)
+		result::Err(err) =>
 		{
 			error_value(err)
 		}
@@ -528,13 +528,13 @@ fn op_greater_than(lhs: object, rhs: object) -> object
 
 fn op_greater_than_or_equal(lhs: object, rhs: object) -> object
 {
-	alt compare_values(~">=", lhs, rhs)
+	match compare_values(~">=", lhs, rhs)
 	{
-		result::ok(value)
+		result::Ok(value) =>
 		{
 			bool_value(value >= 0)
 		}
-		result::err(err)
+		result::Err(err) =>
 		{
 			error_value(err)
 		}
@@ -543,47 +543,47 @@ fn op_greater_than_or_equal(lhs: object, rhs: object) -> object
 
 fn op_multiply(lhs: object, rhs: object) -> object
 {
-	alt lhs
+	match lhs
 	{
-		int_value(lvalue)
+		int_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					int_value(lvalue*rvalue)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
 					float_value(lvalue*rvalue)
 				}
-				_
+				_ =>
 				{
 					error_value(type_error(~"*", rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue)
+		float_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
 					float_value(lvalue*rvalue)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					float_value(lvalue*rvalue)
 				}
-				_
+				_ =>
 				{
 					error_value(type_error(~"*", rhs, ~"numeric"))
 				}
 			}
 		}
-		_
+		_ =>
 		{
 			error_value(type_error(~"*", lhs, ~"numeric"))
 		}
@@ -592,51 +592,51 @@ fn op_multiply(lhs: object, rhs: object) -> object
 
 fn op_divide(lhs: object, rhs: object) -> object
 {
-	alt lhs
+	match lhs
 	{
-		int_value(lvalue)
+		int_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(0i64)
+				int_value(0i64) =>
 				{
 					error_value(~"Divide by zero.")
 				}
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					int_value(lvalue/rvalue)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
 					float_value(lvalue/rvalue)
 				}
-				_
+				_ =>
 				{
 					error_value(type_error(~"/", rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue)
+		float_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
 					float_value(lvalue/rvalue)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					float_value(lvalue/rvalue)
 				}
-				_
+				_ =>
 				{
 					error_value(type_error(~"/", rhs, ~"numeric"))
 				}
 			}
 		}
-		_
+		_ =>
 		{
 			error_value(type_error(~"/", lhs, ~"numeric"))
 		}
@@ -645,47 +645,47 @@ fn op_divide(lhs: object, rhs: object) -> object
 
 fn op_add(lhs: object, rhs: object) -> object
 {
-	alt lhs
+	match lhs
 	{
-		int_value(lvalue)
+		int_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					int_value(lvalue+rvalue)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
 					float_value(lvalue+rvalue)
 				}
-				_
+				_ =>
 				{
 					error_value(type_error(~"+", rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue)
+		float_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
 					float_value(lvalue+rvalue)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					float_value(lvalue+rvalue)
 				}
-				_
+				_ =>
 				{
 					error_value(type_error(~"+", rhs, ~"numeric"))
 				}
 			}
 		}
-		_
+		_ =>
 		{
 			error_value(type_error(~"+", lhs, ~"numeric"))
 		}
@@ -694,47 +694,47 @@ fn op_add(lhs: object, rhs: object) -> object
 
 fn op_subtract(lhs: object, rhs: object) -> object
 {
-	alt lhs
+	match lhs
 	{
-		int_value(lvalue)
+		int_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					int_value(lvalue-rvalue)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
 					float_value(lvalue-rvalue)
 				}
-				_
+				_ =>
 				{
 					error_value(type_error(~"-", rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue)
+		float_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
 					float_value(lvalue-rvalue)
 				}
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					float_value(lvalue-rvalue)
 				}
-				_
+				_ =>
 				{
 					error_value(type_error(~"-", rhs, ~"numeric"))
 				}
 			}
 		}
-		_
+		_ =>
 		{
 			error_value(type_error(~"-", lhs, ~"numeric"))
 		}

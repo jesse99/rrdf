@@ -5,13 +5,13 @@ strafter_fn, encode_for_uri_fn, concat_fn, langmatches_fn;
 
 fn str_str_helper(fname: ~str, arg1: object, arg2: object, callback: fn@ (~str, ~str, ~str, ~str) -> object) -> object
 {
-	alt arg1
+	match arg1
 	{
-		string_value(value1, lang1)
+		string_value(value1, lang1) =>
 		{
-			alt arg2
+			match arg2
 			{
-				string_value(value2, lang2)
+				string_value(value2, lang2) =>
 				{
 					if str::to_lower(lang1) == str::to_lower(lang2) || str::is_empty(lang2)
 					{
@@ -19,46 +19,46 @@ fn str_str_helper(fname: ~str, arg1: object, arg2: object, callback: fn@ (~str, 
 					}
 					else
 					{
-						error_value(#fmt["%s: '%s' and '%s' are incompatible languages.", fname, lang1, lang2])
+						error_value(fmt!("%s: '%s' and '%s' are incompatible languages.", fname, lang1, lang2))
 					}
 				}
-				_
+				_ =>
 				{
-					error_value(#fmt["%s: expected string for arg2 but found %?.", fname, arg2])
+					error_value(fmt!("%s: expected string for arg2 but found %?.", fname, arg2))
 				}
 			}
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["%s: expected string for arg1 but found %?.", fname, arg1])
+			error_value(fmt!("%s: expected string for arg1 but found %?.", fname, arg1))
 		}
 	}
 }
 
 fn strlen_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		string_value(value, _lang)
+		string_value(value, _lang) =>
 		{
 			int_value(str::len(value) as i64)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["STRLEN: expected string but found %?.", operand])
+			error_value(fmt!("STRLEN: expected string but found %?.", operand))
 		}
 	}
 }
 
 fn substr2_fn(value: object, loc: object) -> object
 {
-	alt value
+	match value
 	{
-		string_value(source, lang)
+		string_value(source, lang) =>
 		{
-			alt loc
+			match loc
 			{
-				int_value(startingLoc)
+				int_value(startingLoc) =>
 				{
 					let begin = (startingLoc - 1i64) as uint;		// for some stupid reason the indexes are 1-based
 					let end = str::len(source);
@@ -68,43 +68,43 @@ fn substr2_fn(value: object, loc: object) -> object
 					}
 					else if startingLoc == 0i64
 					{
-						error_value(#fmt["SUBSTR: startingLoc should be 1 or larger not %?.", startingLoc])
+						error_value(fmt!("SUBSTR: startingLoc should be 1 or larger not %?.", startingLoc))
 					}
 					else if startingLoc < 0i64
 					{
-						error_value(#fmt["SUBSTR: startingLoc is %?.", startingLoc])
+						error_value(fmt!("SUBSTR: startingLoc is %?.", startingLoc))
 					}
 					else
 					{
-						error_value(#fmt["SUBSTR: startingLoc of %? is past the end of the string.", startingLoc])
+						error_value(fmt!("SUBSTR: startingLoc of %? is past the end of the string.", startingLoc))
 					}
 				}
-				_
+				_ =>
 				{
-					error_value(#fmt["SUBSTR: expected int for startingLoc but found %?.", loc])
+					error_value(fmt!("SUBSTR: expected int for startingLoc but found %?.", loc))
 				}
 			}
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["SUBSTR: expected string for source but found %?.", value])
+			error_value(fmt!("SUBSTR: expected string for source but found %?.", value))
 		}
 	}
 }
 
 fn substr3_fn(value: object, loc: object, len: object) -> object
 {
-	alt value
+	match value
 	{
-		string_value(source, lang)
+		string_value(source, lang) =>
 		{
-			alt loc
+			match loc
 			{
-				int_value(startingLoc)
+				int_value(startingLoc) =>
 				{
-					alt len
+					match len
 					{
-						int_value(length)
+						int_value(length) =>
 						{
 							let begin = (startingLoc - 1i64) as uint;		// for some stupid reason the indexes are 1-based
 							let end = begin + length as uint;
@@ -114,62 +114,62 @@ fn substr3_fn(value: object, loc: object, len: object) -> object
 							}
 							else if startingLoc == 0i64
 							{
-								error_value(#fmt["SUBSTR: startingLoc should be 1 or larger not %?.", startingLoc])
+								error_value(fmt!("SUBSTR: startingLoc should be 1 or larger not %?.", startingLoc))
 							}
 							else if startingLoc < 0i64
 							{
-								error_value(#fmt["SUBSTR: startingLoc is %?.", startingLoc])
+								error_value(fmt!("SUBSTR: startingLoc is %?.", startingLoc))
 							}
 							else
 							{
-								error_value(#fmt["SUBSTR: startingLoc of %? and length %? is past the end of the string.", startingLoc, length])
+								error_value(fmt!("SUBSTR: startingLoc of %? and length %? is past the end of the string.", startingLoc, length))
 							}
 						}
-						_
+						_ =>
 						{
-							error_value(#fmt["SUBSTR: expected int for length but found %?.", len])
+							error_value(fmt!("SUBSTR: expected int for length but found %?.", len))
 						}
 					}
 				}
-				_
+				_ =>
 				{
-					error_value(#fmt["SUBSTR: expected int for startingLoc but found %?.", loc])
+					error_value(fmt!("SUBSTR: expected int for startingLoc but found %?.", loc))
 				}
 			}
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["SUBSTR: expected string for source but found %?.", value])
+			error_value(fmt!("SUBSTR: expected string for source but found %?.", value))
 		}
 	}
 }
 
 fn ucase_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		string_value(value, lang)
+		string_value(value, lang) =>
 		{
 			string_value(str::to_upper(value), lang)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["UCASE: expected string but found %?.", operand])
+			error_value(fmt!("UCASE: expected string but found %?.", operand))
 		}
 	}
 }
 
 fn lcase_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		string_value(value, lang)
+		string_value(value, lang) =>
 		{
 			string_value(str::to_lower(value), lang)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["LCASE: expected string but found %?.", operand])
+			error_value(fmt!("LCASE: expected string but found %?.", operand))
 		}
 	}
 }
@@ -206,13 +206,13 @@ fn strbefore_fn(arg1: object, arg2: object) -> object
 	do str_str_helper(~"STRBEFORE", arg1, arg2)
 	|value1, value2, lang1, _lang2|
 	{
-		alt str::find_str(value1, value2)
+		match str::find_str(value1, value2)
 		{
-			option::some(i)
+			option::Some(i) =>
 			{
 				string_value(str::slice(value1, 0u, i), lang1)
 			}
-			option::none
+			option::None =>
 			{
 				string_value(~"", ~"")		// this changed post 1.1
 			}
@@ -225,13 +225,13 @@ fn strafter_fn(arg1: object, arg2: object) -> object
 	do str_str_helper(~"STRAFTER", arg1, arg2)
 	|value1, value2, lang1, _lang2|
 	{
-		alt str::find_str(value1, value2)
+		match str::find_str(value1, value2)
 		{
-			option::some(i)
+			option::Some(i) =>
 			{
 				string_value(str::slice(value1, i + str::len(value2), str::len(value1)), lang1)
 			}
-			option::none
+			option::None =>
 			{
 				string_value(~"", ~"")	// this changed post 1.1
 			}
@@ -243,31 +243,31 @@ fn is_unreserved(ch: char) -> bool
 {
 	if ch >= 'a' && ch <= 'z'
 	{
-		ret true;
+		return true;
 	}
 	else if ch >= 'A' && ch <= 'Z'
 	{
-		ret true;
+		return true;
 	}
 	else if ch >= '0' && ch <= '9'
 	{
-		ret true;
+		return true;
 	}
 	else if ch == '-' || ch == '_' || ch == '.' || ch == '~'
 	{
-		ret true;
+		return true;
 	}
 	else
 	{
-		ret false;
+		return false;
 	}
 }
 
 fn encode_for_uri_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		string_value(value, lang)
+		string_value(value, lang) =>
 		{
 			let mut result = ~"";
 			str::reserve(result, str::len(value));
@@ -281,15 +281,15 @@ fn encode_for_uri_fn(operand: object) -> object
 				}
 				else
 				{
-					result += #fmt["%%%0X", ch as uint];
+					result += fmt!("%%%0X", ch as uint);
 				}
 			}
 			
 			string_value(result, lang)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["ENCODE_FOR_URI: expected string but found %?.", operand])
+			error_value(fmt!("ENCODE_FOR_URI: expected string but found %?.", operand))
 		}
 	}
 }
@@ -302,9 +302,9 @@ fn concat_fn(operand: ~[object]) -> object
 	for vec::eachi(operand)
 	|i, part|
 	{
-		alt part
+		match part
 		{
-			string_value(value, lang)
+			string_value(value, lang) =>
 			{
 				result += value;
 				if !vec::contains(languages, lang)
@@ -312,9 +312,9 @@ fn concat_fn(operand: ~[object]) -> object
 					vec::push(languages, lang);
 				}
 			}
-			_
+			_ =>
 			{
-				ret error_value(#fmt["CONCAT: expected string for argument %? but found %?.", i, part]);
+				return error_value(fmt!("CONCAT: expected string for argument %? but found %?.", i, part));
 			}
 		}
 	}
@@ -331,25 +331,25 @@ fn concat_fn(operand: ~[object]) -> object
 
 fn langmatches_fn(arg1: object, arg2: object) -> object
 {
-	alt arg1
+	match arg1
 	{
-		string_value(_value1, lang1)
+		string_value(_value1, lang1) =>
 		{
-			alt arg2
+			match arg2
 			{
-				string_value(_value2, lang2)
+				string_value(_value2, lang2) =>
 				{
 					bool_value(str::to_lower(lang1) == str::to_lower(lang2))
 				}
-				_
+				_ =>
 				{
-					error_value(#fmt["LANGMATCHES: expected string for arg2 but found %?.", arg2])
+					error_value(fmt!("LANGMATCHES: expected string for arg2 but found %?.", arg2))
 				}
 			}
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["LANGMATCHES: expected string for arg1 but found %?.", arg1])
+			error_value(fmt!("LANGMATCHES: expected string for arg1 but found %?.", arg1))
 		}
 	}
 }

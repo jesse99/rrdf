@@ -24,7 +24,7 @@ trait solution_row_trait
 	pure fn search(name: ~str) -> option<object>;
 }
 
-impl solution_methods of solution_trait for solution
+impl  solution: solution_trait 
 {
 	pure fn get(row: uint, name: ~str) -> object
 	{
@@ -37,17 +37,17 @@ impl solution_methods of solution_trait for solution
 	}
 }
 
-impl solution_row_methods of solution_row_trait for solution_row
+impl  solution_row: solution_row_trait 
 {
 	pure fn get(name: ~str) -> object
 	{
-		alt vec::find(self, |e| {e.first() == name})
+		match vec::find(self, |e| {e.first() == name})
 		{
-			option::some(result)
+			option::Some(result) =>
 			{
 				result.second()
 			}
-			option::none
+			option::None =>
 			{
 				fail(~"Couldn't find " + name)
 			}
@@ -62,15 +62,15 @@ impl solution_row_methods of solution_row_trait for solution_row
 	// Named search so we don't wind up conflicting with the find vec extension.
 	pure fn search(name: ~str) -> option<object>
 	{
-		alt vec::find(self, |e| {e.first() == name})
+		match vec::find(self, |e| {e.first() == name})
 		{
-			option::some(result)
+			option::Some(result) =>
 			{
-				option::some(result.second())
+				option::Some(result.second())
 			}
-			option::none
+			option::None =>
 			{
-				option::none
+				option::None
 			}
 		}
 	}

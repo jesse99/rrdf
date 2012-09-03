@@ -1,15 +1,12 @@
+//! Resource Description Language (RDF) library
 #[link(name = "rrdf", vers = "0.2", uuid = "04400014-FB9C-44DD-B5DD-A49BE5613BD7")];
 #[crate_type = "lib"];
 
 #[author = "Jesse Jones"];
 #[license = "MIT"];
-//! Resource Description Language (RDF) library
-
-// TODO: enable these when rustc shakes out more
-#[warn(no_non_implicitly_copyable_typarams, no_vecs_not_implicitly_copyable)];
 
 use std;
-use rparse (name = "rparse", vers = "0.5");
+use rparse (name = "rparse", vers = "0.6");
 
 mod expression;
 mod functional_forms;

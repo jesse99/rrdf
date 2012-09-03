@@ -1,8 +1,8 @@
 import io;
-import io::writer_util;
-import std::map::*;
-import test_data::*;
-import test_helpers::*;
+use io::WriterUtil;
+use std::map::*;
+use test_data::*;
+use test_helpers::*;
 
 #[test]
 fn to_strs()

@@ -1,15 +1,15 @@
 //! SPARQL functions. Clients will not ordinarily use this.
-import expression::{expr, eval_expr};
+use expression::{expr, eval_expr};
 
 fn bound_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		unbound_value(_name)
+		unbound_value(_name) =>
 		{
 			bool_value(false)
 		}
-		_
+		_ =>
 		{
 			bool_value(true)
 		}
@@ -21,17 +21,17 @@ fn eval_if(context: query_context, bindings: ~[(~str, object)], args: ~[@expr]) 
 	if vec::len(args) == 3u
 	{
 		let predicate = eval_expr(context, bindings, *args[0]);
-		alt get_ebv(predicate)
+		match get_ebv(predicate)
 		{
-			result::ok(true)
+			result::Ok(true) =>
 			{
 				eval_expr(context, bindings, *args[1])
 			}
-			result::ok(false)
+			result::Ok(false) =>
 			{
 				eval_expr(context, bindings, *args[2])
 			}
-			result::err(err)
+			result::Err(err) =>
 			{
 				error_value(~"IF: " + err)
 			}
@@ -45,7 +45,7 @@ fn eval_if(context: query_context, bindings: ~[(~str, object)], args: ~[@expr]) 
 		}
 		else
 		{
-			error_value(#fmt["IF accepts 3 arguments but was called with %? arguments.", vec::len(args)])
+			error_value(fmt!("IF accepts 3 arguments but was called with %? arguments.", vec::len(args)))
 		}
 	}
 }
@@ -56,139 +56,139 @@ fn eval_coalesce(context: query_context, bindings: ~[(~str, object)], args: ~[@e
 	|arg|
 	{
 		let candidate = eval_expr(context, bindings, *arg);
-		alt candidate
+		match candidate
 		{
-			unbound_value(*) | invalid_value(*) | error_value(*)
+			unbound_value(*) | invalid_value(*) | error_value(*) =>
 			{
 				// try the next argument
 			}
-			_
+			_ =>
 			{
-				ret candidate;
+				return candidate;
 			}
 		}
 	}
 	
-	ret error_value(~"COALESCE: all arguments failed to evaluate");
+	return error_value(~"COALESCE: all arguments failed to evaluate");
 }
 
 fn sameterm_fn(lhs: object, rhs: object) -> object
 {
-	alt lhs
+	match lhs
 	{
-		bool_value(lvalue)
+		bool_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				bool_value(rvalue)
+				bool_value(rvalue) =>
 				{
 					bool_value(lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
 					bool_value(false)
 				}
 			}
 		}
-		int_value(lvalue)
+		int_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				int_value(rvalue)
+				int_value(rvalue) =>
 				{
 					bool_value(lvalue == rvalue)	// TODO: when we introduce type codes we'll need to check them here
 				}
-				_
+				_ =>
 				{
 					bool_value(false)
 				}
 			}
 		}
-		float_value(lvalue)
+		float_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				float_value(rvalue)
+				float_value(rvalue) =>
 				{
 					bool_value(lvalue == rvalue)	// TODO: when we introduce type codes we'll need to check them here
 				}
-				_
+				_ =>
 				{
 					bool_value(false)
 				}
 			}
 		}
-		dateTime_value(lvalue)
+		dateTime_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				dateTime_value(rvalue)
+				dateTime_value(rvalue) =>
 				{
 					bool_value(lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
 					bool_value(false)
 				}
 			}
 		}
-		string_value(lvalue, llang)
+		string_value(lvalue, llang) =>
 		{
-			alt rhs
+			match rhs
 			{
-				string_value(rvalue, rlang)		// TODO: when we introduce type codes we'll need to check them here
+				string_value(rvalue, rlang) =>		// TODO: when we introduce type codes we'll need to check them here
 				{
 					bool_value(str::to_lower(llang) == str::to_lower(rlang) && lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
 					bool_value(false)
 				}
 			}
 		}
-		typed_value(lvalue, ltype)
+		typed_value(lvalue, ltype) =>
 		{
-			alt rhs
+			match rhs
 			{
-				typed_value(rvalue, rtype)
+				typed_value(rvalue, rtype) =>
 				{
 					bool_value(ltype == rtype && lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
 					bool_value(false)
 				}
 			}
 		}
-		iri_value(lvalue)
+		iri_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				iri_value(rvalue)
+				iri_value(rvalue) =>
 				{
 					bool_value(lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
 					bool_value(false)
 				}
 			}
 		}
-		blank_value(lvalue)
+		blank_value(lvalue) =>
 		{
-			alt rhs
+			match rhs
 			{
-				blank_value(rvalue)
+				blank_value(rvalue) =>
 				{
 					bool_value(lvalue == rvalue)
 				}
-				_
+				_ =>
 				{
 					bool_value(false)
 				}
 			}
 		}
-		_
+		_ =>
 		{
 			bool_value(false)
 		}

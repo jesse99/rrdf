@@ -1,5 +1,5 @@
-import io::writer_util;
-import query::*;
+import io::WriterUtil;
+use query::*;
 
 export check_bgp, check_strs, check_operands, check_triples, check_solution, check_solution_err;
 
@@ -7,10 +7,10 @@ fn check_strs(actual: ~str, expected: ~str) -> bool
 {
 	if actual != expected
 	{
-		io::stderr().write_line(#fmt["Found '%s', but expected '%s'", actual, expected]);
-		ret false;
+		io::stderr().write_line(fmt!("Found '%s', but expected '%s'", actual, expected));
+		return false;
 	}
-	ret true;
+	return true;
 }
 
 fn check_operands(actual: object, expected: object) -> bool
@@ -18,12 +18,12 @@ fn check_operands(actual: object, expected: object) -> bool
 	if actual != expected
 	{
 		io::stderr().write_line("Found:");
-		io::stderr().write_line(#fmt["   %?", actual]);
+		io::stderr().write_line(fmt!("   %?", actual));
 		io::stderr().write_line("but expected:");
-		io::stderr().write_line(#fmt["   %?", expected]);
-		ret false;
+		io::stderr().write_line(fmt!("   %?", expected));
+		return false;
 	}
-	ret true;
+	return true;
 }
 
 fn check_bgp(groups: ~[solution], expected: solution) -> bool
@@ -34,7 +34,7 @@ fn check_bgp(groups: ~[solution], expected: solution) -> bool
 		|row|
 		{
 			let mut entries = ~[];
-			for row.each |e| {vec::push(entries, #fmt["%s=%?", e.first(), e.second()])};
+			for row.each |e| {vec::push(entries, fmt!("%s=%?", e.first(), e.second()))};
 			let entries = std::sort::merge_sort({|x, y| x <= y}, entries);
 			str::connect(entries, ~", ")
 		}
@@ -46,7 +46,7 @@ fn check_bgp(groups: ~[solution], expected: solution) -> bool
 		for vec::eachi(actual)
 		|i, bindings|
 		{
-			io::stderr().write_line(#fmt["   %?: %s", i, bindings]);
+			io::stderr().write_line(fmt!("   %?: %s", i, bindings));
 		};
 	}
 	
@@ -67,9 +67,9 @@ fn check_bgp(groups: ~[solution], expected: solution) -> bool
 	
 	if vec::len(actual) != vec::len(expected)
 	{
-		io::stderr().write_line(#fmt["Actual length is %?, but expected %?", vec::len(actual), vec::len(expected)]);
+		io::stderr().write_line(fmt!("Actual length is %?, but expected %?", vec::len(actual), vec::len(expected)));
 		dump_bindings(actual);
-		ret false;
+		return false;
 	}
 	
 	for vec::eachi(actual)
@@ -79,13 +79,13 @@ fn check_bgp(groups: ~[solution], expected: solution) -> bool
 		
 		if arow != erow
 		{
-			io::stderr().write_line(#fmt["Row #%? is %s, but expected %s", i, arow, erow]);
+			io::stderr().write_line(fmt!("Row #%? is %s, but expected %s", i, arow, erow));
 			dump_bindings(actual);
-			ret false;
+			return false;
 		}
 	}
 	
-	ret true;
+	return true;
 }
 
 fn check_triples(actual: ~[triple], expected: ~[triple]) -> bool
@@ -96,7 +96,7 @@ fn check_triples(actual: ~[triple], expected: ~[triple]) -> bool
 		for vec::eachi(actual)
 		|i, triple|
 		{
-			io::stderr().write_line(#fmt["   %?: %s", i, triple.to_str()]);
+			io::stderr().write_line(fmt!("   %?: %s", i, triple.to_str()));
 		};
 	}
 	
@@ -105,9 +105,9 @@ fn check_triples(actual: ~[triple], expected: ~[triple]) -> bool
 	
 	if vec::len(actual) != vec::len(expected)
 	{
-		io::stderr().write_line(#fmt["Actual length is %?, but expected %?", vec::len(actual), vec::len(expected)]);
+		io::stderr().write_line(fmt!("Actual length is %?, but expected %?", vec::len(actual), vec::len(expected)));
 		dump_triples(actual);
-		ret false;
+		return false;
 	}
 	
 	for vec::eachi(actual)
@@ -117,44 +117,44 @@ fn check_triples(actual: ~[triple], expected: ~[triple]) -> bool
 		
 		if atriple.subject != etriple.subject
 		{
-			io::stderr().write_line(#fmt["Subject #%? is %?, but expected %?", i, atriple.subject, etriple.subject]);
+			io::stderr().write_line(fmt!("Subject #%? is %?, but expected %?", i, atriple.subject, etriple.subject));
 			dump_triples(actual);
-			ret false;
+			return false;
 		}
 		
 		if atriple.predicate != etriple.predicate
 		{
-			io::stderr().write_line(#fmt["Predicate #%? is %?, but expected %?", i, atriple.predicate, etriple.predicate]);
+			io::stderr().write_line(fmt!("Predicate #%? is %?, but expected %?", i, atriple.predicate, etriple.predicate));
 			dump_triples(actual);
-			ret false;
+			return false;
 		}
 		
 		if atriple.object != etriple.object
 		{
-			io::stderr().write_line(#fmt["Object #%? is %s, but expected %s", i, atriple.object.to_str(), etriple.object.to_str()]);
+			io::stderr().write_line(fmt!("Object #%? is %s, but expected %s", i, atriple.object.to_str(), etriple.object.to_str()));
 			dump_triples(actual);
-			ret false;
+			return false;
 		}
 	}
 	
-	ret true;
+	return true;
 }
 
 fn check_solution(store: store, expr: ~str, expected: solution) -> bool
 {
-	#info["----------------------------------------------------"];
-	alt compile(expr)
+	info!("----------------------------------------------------");
+	match compile(expr)
 	{
-		result::ok(selector)
+		result::Ok(selector) =>
 		{
-			alt selector(store)
+			match selector(store)
 			{
-				result::ok(actual)
+				result::Ok(actual) =>
 				{
 					// OK if they are both empty.
 					if vec::is_empty(actual) && vec::is_empty(expected)
 					{
-						ret true;
+						return true;
 					}
 					
 					// Both sides should have the same number of rows.
@@ -162,7 +162,7 @@ fn check_solution(store: store, expr: ~str, expected: solution) -> bool
 					{
 						print_failure(#fmt["Actual result had %? rows but expected %? rows.", 
 							vec::len(actual), vec::len(expected)], actual, expected);
-						ret false;
+						return false;
 					}
 					
 					// Actual should have only the expected values.
@@ -174,7 +174,7 @@ fn check_solution(store: store, expr: ~str, expected: solution) -> bool
 						{
 							print_failure(#fmt["Row %? had size %? but expected %?.",
 								i, vec::len(row1), vec::len(row2)], actual, expected);
-							ret false;
+							return false;
 						}
 						
 						for row1.each
@@ -182,82 +182,82 @@ fn check_solution(store: store, expr: ~str, expected: solution) -> bool
 						{
 							let name1 = entry1.first();
 							let value1 = entry1.second();
-							alt row2.search(name1)
+							match row2.search(name1)
 							{
-								option::some(value2)
+								option::Some(value2) =>
 								{
 									if value1 != value2
 									{
 										print_failure(#fmt["Row %? actual %s was %s but expected %s.",
 											i, name1, value1.to_str(), value2.to_str()], actual, expected);
-										ret false;
+										return false;
 									}
 								}
-								option::none
+								option::None =>
 								{
 									print_failure(#fmt["Row %? had unexpected ?%s.",
 										i, name1], actual, expected);
-									ret false;
+									return false;
 								}
 							}
 						};
 					};
 					
-					ret true;
+					return true;
 				}
-				result::err(mesg)
+				result::Err(mesg) =>
 				{
-					io::stderr().write_line(#fmt["Eval error: %s", mesg]);
-					ret false;
+					io::stderr().write_line(fmt!("Eval error: %s", mesg));
+					return false;
 				}
 			}
 		}
-		result::err(mesg)
+		result::Err(mesg) =>
 		{
-			io::stderr().write_line(#fmt["Parse error: %s", mesg]);
-			ret false;
+			io::stderr().write_line(fmt!("Parse error: %s", mesg));
+			return false;
 		}
 	}
 }
 
 fn check_solution_err(store: store, expr: ~str, expected: ~str) -> bool
 {
-	#info["----------------------------------------------------"];
-	alt compile(expr)
+	info!("----------------------------------------------------");
+	match compile(expr)
 	{
-		result::ok(selector)
+		result::Ok(selector) =>
 		{
-			alt selector(store)
+			match selector(store)
 			{
-				result::ok(actual)
+				result::Ok(actual) =>
 				{
-					io::stderr().write_line(#fmt["Expr evaluated but expected to find error '%s'.", expected]);
-					ret false;
+					io::stderr().write_line(fmt!("Expr evaluated but expected to find error '%s'.", expected));
+					return false;
 				}
-				result::err(mesg)
+				result::Err(mesg) =>
 				{
 					if str::contains(mesg, expected)
 					{
-						ret true;
+						return true;
 					}
 					else
 					{
-						io::stderr().write_line(#fmt["Actual eval error was '%s' but expected to find '%s'.", mesg, expected]);
-						ret false;
+						io::stderr().write_line(fmt!("Actual eval error was '%s' but expected to find '%s'.", mesg, expected));
+						return false;
 					}
 				}
 			}
 		}
-		result::err(mesg)
+		result::Err(mesg) =>
 		{
 			if str::contains(mesg, expected)
 			{
-				ret true;
+				return true;
 			}
 			else
 			{
-				io::stderr().write_line(#fmt["Actual parse error was '%s' but expected to find '%s'.", mesg, expected]);
-				ret false;
+				io::stderr().write_line(fmt!("Actual parse error was '%s' but expected to find '%s'.", mesg, expected));
+				return false;
 			}
 		}
 	}
@@ -270,8 +270,8 @@ fn print_result(value: solution)
 	|i, row|
 	{
 		let mut entries = ~[];
-		for row.each |e| {vec::push(entries, #fmt["%s = %s", e.first(), e.second().to_str()])};
-		io::stderr().write_line(#fmt["   %?: %s", i, str::connect(entries, ~", ")]);
+		for row.each |e| {vec::push(entries, fmt!("%s = %s", e.first(), e.second().to_str()))};
+		io::stderr().write_line(fmt!("   %?: %s", i, str::connect(entries, ~", ")));
 	};
 }
 

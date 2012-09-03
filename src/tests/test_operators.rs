@@ -1,6 +1,6 @@
 //import operands::*;
-import operators::*;
-import test_helpers::*;
+use operators::*;
+use test_helpers::*;
 
 // Also tests get_ebv.
 #[test]

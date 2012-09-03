@@ -29,24 +29,24 @@ impl object_methods for object
 {
 	fn as_bool() -> bool
 	{
-		alt self
+		match self
 		{
-			bool_value(value)
+			bool_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
-				fail(#fmt["Expected a bool_value but found %?", self]);
+				fail(fmt!("Expected a bool_value but found %?", self));
 			}
 		}
 	}
 	
 	fn as_int() -> int
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				if value >= int::min_value as i64 && value <= int::max_value as i64
 				{
@@ -54,21 +54,21 @@ impl object_methods for object
 				}
 				else
 				{
-					fail(#fmt["Can't convert %? to an int", self]);
+					fail(fmt!("Can't convert %? to an int", self));
 				}
 			}
-			_
+			_ =>
 			{
-				fail(#fmt["Expected an int_value but found %?", self]);
+				fail(fmt!("Expected an int_value but found %?", self));
 			}
 		}
 	}
 	
 	fn as_uint() -> uint
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				if value >= uint::min_value as i64 && value <= uint::max_value as i64
 				{
@@ -76,123 +76,123 @@ impl object_methods for object
 				}
 				else
 				{
-					fail(#fmt["Can't convert %? to a uint", self]);
+					fail(fmt!("Can't convert %? to a uint", self));
 				}
 			}
-			_
+			_ =>
 			{
-				fail(#fmt["Expected an int_value but found %?", self]);
+				fail(fmt!("Expected an int_value but found %?", self));
 			}
 		}
 	}
 	
 	fn as_i64() -> i64
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
-				fail(#fmt["Expected an int_value but found %?", self]);
+				fail(fmt!("Expected an int_value but found %?", self));
 			}
 		}
 	}
 	
 	fn as_float() -> float
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				value as float
 			}
-			float_value(value)
+			float_value(value) =>
 			{
 				value as float
 			}
-			_
+			_ =>
 			{
-				fail(#fmt["Expected int_value or float_value but found %?", self]);
+				fail(fmt!("Expected int_value or float_value but found %?", self));
 			}
 		}
 	}
 	
 	fn as_f64() -> f64
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				value as f64
 			}
-			float_value(value)
+			float_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
-				fail(#fmt["Expected int_value or float_value but found %?", self]);
+				fail(fmt!("Expected int_value or float_value but found %?", self));
 			}
 		}
 	}
 	
 	fn as_tm() -> tm
 	{
-		alt self
+		match self
 		{
-			dateTime_value(value)
+			dateTime_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
-				fail(#fmt["Expected a dateTime_value but found %?", self]);
+				fail(fmt!("Expected a dateTime_value but found %?", self));
 			}
 		}
 	}
 	
 	fn as_str() -> ~str
 	{
-		alt self
+		match self
 		{
-			string_value(value, _lang)
+			string_value(value, _lang) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
-				fail(#fmt["Expected a string_value but found %?", self]);
+				fail(fmt!("Expected a string_value but found %?", self));
 			}
 		}
 	}
 	
 	fn as_iri() -> ~str
 	{
-		alt self
+		match self
 		{
-			iri_value(value)
+			iri_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
-				fail(#fmt["Expected an iri_value but found %?", self]);
+				fail(fmt!("Expected an iri_value but found %?", self));
 			}
 		}
 	}
 	
 	fn as_bool_or_default(default:bool) -> bool
 	{
-		alt self
+		match self
 		{
-			bool_value(value)
+			bool_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
 				default
 			}
@@ -201,9 +201,9 @@ impl object_methods for object
 	
 	fn as_int_or_default(default: int) -> int
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				if value >= int::min_value as i64 && value <= int::max_value as i64
 				{
@@ -211,10 +211,10 @@ impl object_methods for object
 				}
 				else
 				{
-					fail(#fmt["Can't convert %? to an int", self]);
+					fail(fmt!("Can't convert %? to an int", self));
 				}
 			}
-			_
+			_ =>
 			{
 				default
 			}
@@ -223,9 +223,9 @@ impl object_methods for object
 	
 	fn as_uint_or_default(default: uint) -> uint
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				if value >= uint::min_value as i64 && value <= uint::max_value as i64
 				{
@@ -233,10 +233,10 @@ impl object_methods for object
 				}
 				else
 				{
-					fail(#fmt["Can't convert %? to a uint", self]);
+					fail(fmt!("Can't convert %? to a uint", self));
 				}
 			}
-			_
+			_ =>
 			{
 				default
 			}
@@ -245,13 +245,13 @@ impl object_methods for object
 	
 	fn as_i64_or_default(default: i64) -> i64
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
 				default
 			}
@@ -260,17 +260,17 @@ impl object_methods for object
 	
 	fn as_float_or_default(default:float) -> float
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				value as float
 			}
-			float_value(value)
+			float_value(value) =>
 			{
 				value as float
 			}
-			_
+			_ =>
 			{
 				default
 			}
@@ -279,17 +279,17 @@ impl object_methods for object
 	
 	fn as_f64_or_default(default: f64) -> f64
 	{
-		alt self
+		match self
 		{
-			int_value(value)
+			int_value(value) =>
 			{
 				value as f64
 			}
-			float_value(value)
+			float_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
 				default
 			}
@@ -298,13 +298,13 @@ impl object_methods for object
 	
 	fn as_tm_or_default(default: tm) -> tm
 	{
-		alt self
+		match self
 		{
-			dateTime_value(value)
+			dateTime_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
 				default
 			}
@@ -313,13 +313,13 @@ impl object_methods for object
 	
 	fn as_str_or_default(default: ~str) -> ~str
 	{
-		alt self
+		match self
 		{
-			string_value(value, _lang)
+			string_value(value, _lang) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
 				default
 			}
@@ -328,13 +328,13 @@ impl object_methods for object
 	
 	fn as_iri_or_default(default: ~str) -> ~str
 	{
-		alt self
+		match self
 		{
-			iri_value(value)
+			iri_value(value) =>
 			{
 				value
 			}
-			_
+			_ =>
 			{
 				default
 			}
@@ -344,13 +344,13 @@ impl object_methods for object
 
 fn object_to_str(store: store, obj: object) -> ~str
 {
-	alt obj
+	match obj
 	{
-		typed_value(value, kind)
+		typed_value(value, kind) =>
 		{
-			#fmt["\"%s^^\"%s", value, contract_uri(store.namespaces, kind)]
+			fmt!("\"%s^^\"%s", value, contract_uri(store.namespaces, kind))
 		}
-		iri_value(iri)
+		iri_value(iri) =>
 		{
 			let result = contract_uri(store.namespaces, iri);
 			if result != iri
@@ -362,60 +362,60 @@ fn object_to_str(store: store, obj: object) -> ~str
 				~"<" + iri + ~">"
 			}
 		}
-		_
+		_ =>
 		{
 			obj.to_str()
 		}
 	}
 }
 
-impl of to_str for object
+impl  object: to_str 
 {
 	fn to_str() -> ~str
 	{
-		alt self
+		match self
 		{
-			bool_value(value)
+			bool_value(value) =>
 			{
 				if value {~"true"} else {~"false"}
 			}
-			int_value(value)
+			int_value(value) =>
 			{
-				#fmt["%?", value]
+				fmt!("%?", value)
 			}
-			float_value(value)
+			float_value(value) =>
 			{
-				#fmt["%?", value]
+				fmt!("%?", value)
 			}
-			dateTime_value(value)
+			dateTime_value(value) =>
 			{
 				value.rfc3339()
 			}
-			string_value(value, lang)
+			string_value(value, lang) =>
 			{
-				if str::is_not_empty(lang) {#fmt["\"%s\"@%s", value, lang]} else {#fmt["\"%s\"", value]}
+				if str::is_not_empty(lang) {fmt!("\"%s\"@%s", value, lang)} else {fmt!("\"%s\"", value)}
 			}
-			typed_value(value, kind)
+			typed_value(value, kind) =>
 			{
-				#fmt["\"%s^^\"%s", value, kind]
+				fmt!("\"%s^^\"%s", value, kind)
 			}
-			iri_value(value)
+			iri_value(value) =>
 			{
 				~"<" + value + ~">"
 			}
-			blank_value(value)
+			blank_value(value) =>
 			{
 				value
 			}
-			unbound_value(name)
+			unbound_value(name) =>
 			{
 				name + ~" is not bound"
 			}
-			invalid_value(literal, kind)
+			invalid_value(literal, kind) =>
 			{
-				#fmt["'%s' is not a valid %s", literal, kind]
+				fmt!("'%s' is not a valid %s", literal, kind)
 			}
-			error_value(err)
+			error_value(err) =>
 			{
 				err
 			}
@@ -428,13 +428,13 @@ impl of to_str for object
 /// Note that it is usually simplest to simply use the object enum directly.
 fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 {
-	alt (value, kind, lang)
+	match (value, kind, lang)
 	{
-		(v, ~"blank", ~"")
+		(v, ~"blank", ~"") =>
 		{
 			blank_value(v)
 		}
-		(v, ~"http://www.w3.org/2001/XMLSchema#anyURI", ~"")
+		(v, ~"http://www.w3.org/2001/XMLSchema#anyURI", ~"") =>
 		{
 			if str::starts_with(v, "_:")
 			{
@@ -445,7 +445,7 @@ fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 				iri_value(v)
 			}
 		}
-		(v, ~"http://www.w3.org/2001/XMLSchema#boolean", ~"")
+		(v, ~"http://www.w3.org/2001/XMLSchema#boolean", ~"") =>
 		{
 			if v == ~"true" || v == ~"1"
 			{
@@ -460,10 +460,10 @@ fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 				invalid_value(v, kind)
 			}
 		}
-		(v, ~"http://www.w3.org/2001/XMLSchema#dateTime", ~"")
+		(v, ~"http://www.w3.org/2001/XMLSchema#dateTime", ~"") =>
 		{
 			// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
-			alt do std::time::strptime(v, ~"%FT%T%z").chain_err
+			match do std::time::strptime(v, ~"%FT%T%z").chain_err
 				|_err1|
 				{
 					// Time zone expressed as a name, e.g. EST (technically only Z is supposed to be allowed).
@@ -475,15 +475,15 @@ fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 					}
 				}
 			{
-				result::ok(time)
+				result::Ok(time) =>
 				{
 					dateTime_value(time)
 				}
-				result::err(_)
+				result::Err(_) =>
 				{
 					// invalid_value would seem more sensible, but the standard explicitly
 					// reserves that for bool and numeric.
-					error_value(#fmt["'%s' is not an ISO 8601 dateTime.", v])
+					error_value(fmt!("'%s' is not an ISO 8601 dateTime.", v))
 				}
 			}
 		}
@@ -559,21 +559,21 @@ fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 		}
 		_
 		{
-			#error["object_to_operand unsupported type: %s.", kind];
-			error_value(#fmt["object_to_operand unsupported type: %s.", kind])
+			error!("object_to_operand unsupported type: %s.", kind);
+			error_value(fmt!("object_to_operand unsupported type: %s.", kind))
 		}
 	}
 }
 
 fn get_object(row: solution_row, name: ~str) -> object
 {
-	alt row.search(name)
+	match row.search(name)
 	{
-		option::some(value)
+		option::Some(value) =>
 		{
 			value
 		}
-		option::none
+		option::None =>
 		{
 			unbound_value(name)
 		}
@@ -581,64 +581,64 @@ fn get_object(row: solution_row, name: ~str) -> object
 }
 
 // Effective boolean value, see 17.2.2
-fn get_ebv(operand: object) -> result::result<bool, ~str>
+fn get_ebv(operand: object) -> result::Result<bool, ~str>
 {
-	alt operand
+	match operand
 	{
-		invalid_value(_literal, _type)
+		invalid_value(_literal, _type) =>
 		{
-			result::ok(false)
+			result::Ok(false)
 		}
-		bool_value(value)
+		bool_value(value) =>
 		{
-			result::ok(value)
+			result::Ok(value)
 		}
-		string_value(value, _) | typed_value(value, _)
+		string_value(value, _) | typed_value(value, _) =>
 		{
-			result::ok(str::is_not_empty(value))
+			result::Ok(str::is_not_empty(value))
 		}
-		int_value(value)
+		int_value(value) =>
 		{
-			result::ok(value != 0i64)
+			result::Ok(value != 0i64)
 		}
-		float_value(value)
+		float_value(value) =>
 		{
-			result::ok(!f64::is_NaN(value) && value != 0f64)
+			result::Ok(!f64::is_NaN(value) && value != 0f64)
 		}
-		unbound_value(name)
+		unbound_value(name) =>
 		{
-			result::err(#fmt["?%s is not bound.", name])
+			result::Err(fmt!("?%s is not bound.", name))
 		}
-		error_value(err)
+		error_value(err) =>
 		{
-			result::err(err)
+			result::Err(err)
 		}
-		_
+		_ =>
 		{
-			result::err(#fmt["%? cannot be converted into an effective boolean value.", operand])
+			result::Err(fmt!("%? cannot be converted into an effective boolean value.", operand))
 		}
 	}
 }
 
 fn type_error(fname: ~str, operand: object, expected: ~str) -> ~str
 {
-	alt operand
+	match operand
 	{
-		unbound_value(name)
+		unbound_value(name) =>
 		{
-			#fmt["%s: ?%s was not bound.", fname, name]
+			fmt!("%s: ?%s was not bound.", fname, name)
 		}
-		invalid_value(literal, kind)
+		invalid_value(literal, kind) =>
 		{
-			#fmt["%s: '%s' is not a valid %s", fname, literal, kind]
+			fmt!("%s: '%s' is not a valid %s", fname, literal, kind)
 		}
-		error_value(err)
+		error_value(err) =>
 		{
-			#fmt["%s: %s", fname, err]
+			fmt!("%s: %s", fname, err)
 		}
-		_
+		_ =>
 		{
-			#fmt["%s: expected %s value but found %?.", fname, expected, operand]
+			fmt!("%s: expected %s value but found %?.", fname, expected, operand)
 		}
 	}
 }

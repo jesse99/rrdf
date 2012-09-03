@@ -14,7 +14,7 @@ fn got_cast1() -> store
 		(~"v:fn", string_value(~"Eddard Stark", ~"")),
 		(~"v:nickname", string_value(~"Ned", ~""))
 	]);
-	ret store;
+	return store;
 }
 
 fn got_cast3() -> store
@@ -48,7 +48,7 @@ fn got_cast3() -> store
 		(~"v:fn", string_value(~"Sandor Clegane", ~"")),
 		(~"v:nickname", string_value(~"The Hound", ~""))
 	]);
-	ret store;
+	return store;
 }
 
 fn animals() -> store
@@ -92,5 +92,5 @@ fn animals() -> store
 		(~"wiki:family", string_value(~"salmonidae", ~"")),
 	]);
 	
-	ret store;
+	return store;
 }

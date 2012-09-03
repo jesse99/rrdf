@@ -1,5 +1,5 @@
 import std::map::*;
-import test_helpers::*;
+use test_helpers::*;
 
 fn got(s: ~str) -> ~str
 {

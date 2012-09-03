@@ -8,96 +8,96 @@ fn now_fn(context: query_context, args: ~[object]) -> object
 	}
 	else
 	{
-		error_value(#fmt["NOW accepts 0 arguments but was called with %? arguments.", vec::len(args)])
+		error_value(fmt!("NOW accepts 0 arguments but was called with %? arguments.", vec::len(args)))
 	}
 }
 
 fn year_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		dateTime_value(value)
+		dateTime_value(value) =>
 		{
 			int_value((1900i32 + value.tm_year) as i64)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["YEAR: expected dateTime but found %?.", operand])
+			error_value(fmt!("YEAR: expected dateTime but found %?.", operand))
 		}
 	}
 }
 
 fn month_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		dateTime_value(value)
+		dateTime_value(value) =>
 		{
 			int_value((1i32 + value.tm_mon) as i64)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["MONTH: expected dateTime but found %?.", operand])
+			error_value(fmt!("MONTH: expected dateTime but found %?.", operand))
 		}
 	}
 }
 
 fn day_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		dateTime_value(value)
+		dateTime_value(value) =>
 		{
 			int_value(value.tm_mday as i64)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["DAY: expected dateTime but found %?.", operand])
+			error_value(fmt!("DAY: expected dateTime but found %?.", operand))
 		}
 	}
 }
 
 fn hours_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		dateTime_value(value)
+		dateTime_value(value) =>
 		{
 			int_value(value.tm_hour as i64)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["HOURS: expected dateTime but found %?.", operand])
+			error_value(fmt!("HOURS: expected dateTime but found %?.", operand))
 		}
 	}
 }
 
 fn minutes_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		dateTime_value(value)
+		dateTime_value(value) =>
 		{
 			int_value(value.tm_min as i64)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["MINUTES: expected dateTime but found %?.", operand])
+			error_value(fmt!("MINUTES: expected dateTime but found %?.", operand))
 		}
 	}
 }
 
 fn seconds_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		dateTime_value(value)
+		dateTime_value(value) =>
 		{
 			int_value(value.tm_sec as i64)
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["SECONDS: expected dateTime but found %?.", operand])
+			error_value(fmt!("SECONDS: expected dateTime but found %?.", operand))
 		}
 	}
 }
@@ -106,15 +106,15 @@ fn seconds_fn(operand: object) -> object
 
 fn tz_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		dateTime_value(value)
+		dateTime_value(value) =>
 		{
 			string_value(value.tm_zone, ~"")		// TODO: doubt this is correct
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["SECONDS: expected dateTime but found %?.", operand])
+			error_value(fmt!("SECONDS: expected dateTime but found %?.", operand))
 		}
 	}
 }

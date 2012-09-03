@@ -2,13 +2,13 @@
 
 fn isiri_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		iri_value(_name)
+		iri_value(_name) =>
 		{
 			bool_value(true)
 		}
-		_
+		_ =>
 		{
 			bool_value(false)
 		}
@@ -17,13 +17,13 @@ fn isiri_fn(operand: object) -> object
 
 fn isblank_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		blank_value(_name)
+		blank_value(_name) =>
 		{
 			bool_value(true)
 		}
-		_
+		_ =>
 		{
 			bool_value(false)
 		}
@@ -32,13 +32,13 @@ fn isblank_fn(operand: object) -> object
 
 fn isliteral_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		bool_value(*) |  int_value(*) | float_value(*) | dateTime_value(*) |string_value(*) | typed_value(*)
+		bool_value(*) |  int_value(*) | float_value(*) | dateTime_value(*) |string_value(*) | typed_value(*) =>
 		{
 			bool_value(true)
 		}
-		_
+		_ =>
 		{
 			bool_value(false)
 		}
@@ -47,13 +47,13 @@ fn isliteral_fn(operand: object) -> object
 
 fn isnumeric_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		int_value(*) | float_value(*)
+		int_value(*) | float_value(*) =>
 		{
 			bool_value(true)
 		}
-		_
+		_ =>
 		{
 			bool_value(false)
 		}
@@ -67,13 +67,13 @@ fn str_fn(operand: object) -> object
 
 fn lang_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		string_value(_value, lang)
+		string_value(_value, lang) =>
 		{
 			string_value(lang, ~"")
 		}
-		_
+		_ =>
 		{
 			string_value(~"", ~"")
 		}
@@ -82,39 +82,39 @@ fn lang_fn(operand: object) -> object
 
 fn datatype_fn(operand: object) -> object
 {
-	alt operand
+	match operand
 	{
-		bool_value(*)
+		bool_value(*) =>
 		{
 			string_value(~"http://www.w3.org/2001/XMLSchema#boolean", ~"")
 		}
-		int_value(*)
+		int_value(*) =>
 		{
 			string_value(~"http://www.w3.org/2001/XMLSchema#integer", ~"")
 		}
-		float_value(*)
+		float_value(*) =>
 		{
 			string_value(~"http://www.w3.org/2001/XMLSchema#double", ~"")
 		}
-		dateTime_value(*)
+		dateTime_value(*) =>
 		{
 			string_value(~"http://www.w3.org/2001/XMLSchema#dateTime", ~"")
 		}
-		string_value(*)
+		string_value(*) =>
 		{
 			string_value(~"http://www.w3.org/2001/XMLSchema#string", ~"")
 		}
-		typed_value(_value, kind)
+		typed_value(_value, kind) =>
 		{
 			string_value(kind, ~"")
 		}
-		iri_value(*)
+		iri_value(*) =>
 		{
 			string_value(~"http://www.w3.org/2001/XMLSchema#anyURI", ~"")
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["DATATYPE: can't get a type for %?", operand])
+			error_value(fmt!("DATATYPE: can't get a type for %?", operand))
 		}
 	}
 }
@@ -124,50 +124,50 @@ fn datatype_fn(operand: object) -> object
 
 fn strdt_fn(lexical: object, kind: object) -> object
 {
-	alt lexical
+	match lexical
 	{
-		bool_value(*) | int_value(*) | float_value(*) | dateTime_value(*) | string_value(*)
+		bool_value(*) | int_value(*) | float_value(*) | dateTime_value(*) | string_value(*) =>
 		{
-			alt kind
+			match kind
 			{
-				iri_value(value)
+				iri_value(value) =>
 				{
 					typed_value(lexical.to_str(), value)
 				}
-				_
+				_ =>
 				{
-					error_value(#fmt["STRDT: expected an IRI for the second argument found %?", kind])
+					error_value(fmt!("STRDT: expected an IRI for the second argument found %?", kind))
 				}
 			}
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["STRDT: expected a simple literal for the first argument but found %?", lexical])
+			error_value(fmt!("STRDT: expected a simple literal for the first argument but found %?", lexical))
 		}
 	}
 }
 
 fn strlang_fn(lexical: object, tag: object) -> object
 {
-	alt lexical
+	match lexical
 	{
-		bool_value(*) | int_value(*) | float_value(*) | dateTime_value(*) | string_value(*)
+		bool_value(*) | int_value(*) | float_value(*) | dateTime_value(*) | string_value(*) =>
 		{
-			alt tag
+			match tag
 			{
-				bool_value(*) | int_value(*) | float_value(*) | dateTime_value(*) | string_value(*)
+				bool_value(*) | int_value(*) | float_value(*) | dateTime_value(*) | string_value(*) =>
 				{
 					string_value(lexical.to_str(), tag.to_str())
 				}
-				_
+				_ =>
 				{
-					error_value(#fmt["STRLANG: expected a simple literal for the second argument found %?", tag])
+					error_value(fmt!("STRLANG: expected a simple literal for the second argument found %?", tag))
 				}
 			}
 		}
-		_
+		_ =>
 		{
-			error_value(#fmt["STRLANG: expected a simple literal for the first argument but found %?", lexical])
+			error_value(fmt!("STRLANG: expected a simple literal for the first argument but found %?", lexical))
 		}
 	}
 }

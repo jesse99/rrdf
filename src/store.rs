@@ -60,19 +60,19 @@ fn get_blank_name(store: store, prefix: ~str) -> ~str
 	let suffix = *store.next_blank;
 	*store.next_blank += 1;
 	
-	#fmt["_:%s-%?", prefix, suffix]
+	fmt!("_:%s-%?", prefix, suffix)
 }
 
 /// Returns either the iri or the prefixed version of the iri.
 fn contract_uri(namespaces: ~[namespace], iri: ~str) -> ~str
 {
-	alt vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
+	match vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
 	{
-		option::some(ns)
+		option::Some(ns) =>
 		{
-			#fmt["%s:%s", ns.prefix, str::slice(iri, str::len(ns.path), str::len(iri))]
+			fmt!("%s:%s", ns.prefix, str::slice(iri, str::len(ns.path), str::len(iri)))
 		}
-		option::none
+		option::None =>
 		{
 			iri
 		}
@@ -91,12 +91,12 @@ trait store_trait
 	fn add_reify(subject: ~str, predicate: ~str, value: object);
 	fn add_seq(subject: ~str, values: ~[object]);
 	fn clear();
-	fn find_object(subject: ~str, predicate: ~str) -> option::option<object>;
+	fn find_object(subject: ~str, predicate: ~str) -> option::Option<object>;
 	fn find_objects(subject: ~str, predicate: ~str) -> ~[object];
 	fn replace_triple(namespaces: ~[namespace], triple: triple);
 }
 
-impl store_methods of store_trait for store
+impl  store: store_trait 
 {
 	/// Efficient addition of triples to the store.
 	/// 
@@ -107,15 +107,15 @@ impl store_methods of store_trait for store
 		{
 			let subject = expand_uri_or_blank(self.namespaces, subject);
 			let entries = vec::map(entries, |e| {expand_entry(self.namespaces, e)});
-			alt self.subjects.find(subject)
+			match self.subjects.find(subject)
 			{
-				option::some(list)
+				option::Some(list) =>
 				{
 					(*list).push_all(entries);
 				}
-				option::none
+				option::None =>
 				{
-					let list = @dvec();
+					let list = @DVec();
 					self.subjects.insert(subject, list);
 					(*list).push_all(entries);
 				}
@@ -134,13 +134,13 @@ impl store_methods of store_trait for store
 		let predicate = expand_uri(namespaces, triple.predicate);
 		let entry = {predicate: predicate, object: expand_object(namespaces, triple.object)};
 		
-		alt self.subjects.find(subject)
+		match self.subjects.find(subject)
 		{
-			option::some(entries)
+			option::Some(entries) =>
 			{
 				(*entries).push(entry);
 			}
-			option::none
+			option::None =>
 			{
 				self.subjects.insert(subject, @dvec::from_vec(~[mut entry]));
 			}
@@ -155,7 +155,7 @@ impl store_methods of store_trait for store
 		let blank = get_blank_name(self, label);
 		self.add_triple(~[], {subject: subject, predicate: predicate, object: blank_value(blank)});
 		self.add(blank, entries);
-		ret blank;
+		return blank;
 	}
 	
 	/// Adds statements representing a choice between alternatives.
@@ -176,7 +176,7 @@ impl store_methods of store_trait for store
 		let blank = get_blank_name(self, after(subject, ':') + "-items");
 		self.add_triple(~[], {subject: subject, predicate: kind, object: blank_value(blank)});
 		
-		let predicates = do iter::map_to_vec(vec::len(values)) |i: uint| {#fmt["http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u]};
+		let predicates = do iter::map_to_vec(vec::len(values)) |i: uint| {fmt!("http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u)};
 		self.add(blank, vec::zip(predicates, values));
 	}
 	
@@ -237,30 +237,30 @@ impl store_methods of store_trait for store
 	/// Returns the first matching object, or option::none.
 	/// 
 	/// Qualified names may use the namespaces associated with the store.
-	fn find_object(subject: ~str, predicate: ~str) -> option::option<object>
+	fn find_object(subject: ~str, predicate: ~str) -> option::Option<object>
 	{
 		let subject = expand_uri_or_blank(self.namespaces, subject);
 		let predicate = expand_uri(self.namespaces, predicate);
 		
-		alt self.subjects.find(subject)
+		match self.subjects.find(subject)
 		{
-			option::some(entries)
+			option::Some(entries) =>
 			{
-				alt entries.position(|candidate| {candidate.predicate == predicate})
+				match entries.position(|candidate| {candidate.predicate == predicate})
 				{
-					option::some(index)
+					option::Some(index) =>
 					{
-						option::some((*entries)[index].object)
+						option::Some((*entries)[index].object)
 					}
-					option::none
+					option::None =>
 					{
-						option::none
+						option::None
 					}
 				}
 			}
-			option::none
+			option::None =>
 			{
-				option::none
+				option::None
 			}
 		}
 	}
@@ -273,24 +273,24 @@ impl store_methods of store_trait for store
 		let subject = expand_uri_or_blank(self.namespaces, subject);
 		let predicate = expand_uri(self.namespaces, predicate);
 		
-		alt self.subjects.find(subject)
+		match self.subjects.find(subject)
 		{
-			option::some(entries)
+			option::Some(entries) =>
 			{
 				do entries.get().filter_map		// TODO: pretty bad to call get, but dvec doesn't have filter_map atm
 				|entry|
 				{
 					if entry.predicate == predicate
 					{
-						option::some(entry.object)
+						option::Some(entry.object)
 					}
 					else
 					{
-						option::none
+						option::None
 					}
 				}
 			}
-			option::none
+			option::None =>
 			{
 				~[]
 			}
@@ -308,23 +308,23 @@ impl store_methods of store_trait for store
 		let predicate = expand_uri(namespaces, triple.predicate);
 		let entry = {predicate: predicate, object: expand_object(namespaces, triple.object)};
 		
-		alt self.subjects.find(subject)
+		match self.subjects.find(subject)
 		{
-			option::some(entries)
+			option::Some(entries) =>
 			{
-				alt entries.position(|candidate| {candidate.predicate == predicate})
+				match entries.position(|candidate| {candidate.predicate == predicate})
 				{
-					option::some(index)
+					option::Some(index)
 					{
 						entries.set_elt(index, entry);
 					}
-					option::none
+					option::None
 					{
 						entries.push(entry);
 					}
 				}
 			}
-			option::none
+			option::None =>
 			{
 				self.subjects.insert(subject, @dvec::from_vec(~[mut entry]));
 			}
@@ -346,7 +346,7 @@ impl of base_iter<triple> for store
 				let triple = {subject: subject, predicate: entry.predicate, object: entry.object};
 				if !blk(triple)
 				{
-					ret;
+					return;
 				}
 			}
 		};
@@ -354,19 +354,19 @@ impl of base_iter<triple> for store
 	
 	fn size_hint() -> option<uint>
 	{
-		option::some(self.subjects.size())
+		option::Some(self.subjects.size())
 	}
 }
 
-impl of to_str for triple
+impl  triple: to_str 
 {
 	fn to_str() -> ~str
 	{
-		#fmt["{%s, %s, %s}", self.subject, self.predicate, self.object.to_str()]
+		fmt!("{%s, %s, %s}", self.subject, self.predicate, self.object.to_str())
 	}
 }
 
-impl of to_str for store
+impl  store: to_str 
 {
 	fn to_str() -> ~str
 	{
@@ -378,11 +378,11 @@ impl of to_str for store
 			for (*entries).eachi()
 			|i, entry|
 			{
-				result += #fmt["%?: <%s>  <%s>  %s}\n", i, subject, entry.predicate, entry.object.to_str()];
+				result += fmt!("%?: <%s>  <%s>  %s}\n", i, subject, entry.predicate, entry.object.to_str());
 			}
 		};
 		
-		ret result;
+		return result;
 	}
 }
 
@@ -406,10 +406,10 @@ fn expand_uri(namespaces: ~[namespace], name: ~str) -> ~str
 	{
 		if str::starts_with(name, namespace.prefix + ":")
 		{
-			ret namespace.path + str::slice(name, str::len(namespace.prefix) + 1u, str::len(name));
+			return namespace.path + str::slice(name, str::len(namespace.prefix) + 1u, str::len(name));
 		}
 	};
-	ret name;
+	return name;
 }
 
 fn expand_uri_or_blank(namespaces: ~[namespace], name: ~str) -> ~str
@@ -426,21 +426,21 @@ fn expand_uri_or_blank(namespaces: ~[namespace], name: ~str) -> ~str
 
 fn expand_object(namespaces: ~[namespace], obj: object) -> object
 {
-	alt obj
+	match obj
 	{
-		typed_value(value, kind)
+		typed_value(value, kind) =>
 		{
 			typed_value(value, expand_uri(namespaces, kind))
 		}
-		iri_value(value)
+		iri_value(value) =>
 		{
 			iri_value(expand_uri(namespaces, value))
 		}
-		blank_value(value)
+		blank_value(value) =>
 		{
 			blank_value(expand_uri(namespaces, value))
 		}
-		_
+		_ =>
 		{
 			obj
 		}
@@ -457,7 +457,7 @@ fn make_triple_blank(store: store, subject: ~str, predicate: ~str, value: ~str) 
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
 		predicate: expand_uri(store.namespaces, predicate), 
-		object: blank_value(#fmt["_:%s", value])
+		object: blank_value(fmt!("_:%s", value))
 	}
 }
 
@@ -488,7 +488,7 @@ impl of base_iter<uint> for uint
 		{
 			if (!blk(i))
 			{
-				ret;
+				return;
 			}
 			i += 1u;
 		}
@@ -496,19 +496,19 @@ impl of base_iter<uint> for uint
 	
 	fn size_hint() -> option<uint>
 	{
-		option::some(self)
+		option::Some(self)
 	}
 }
 
 fn after(text: ~str, ch: char) -> ~str
 {
-	alt str::rfind_char(text, ch)
+	match str::rfind_char(text, ch)
 	{
-		option::some(i)
+		option::Some(i) =>
 		{
 			str::slice(text, i+1u, str::len(text))
 		}
-		option::none
+		option::None =>
 		{
 			text
 		}
@@ -519,24 +519,24 @@ fn pname_fn(namespaces: ~[namespace], args: ~[object]) -> object
 {
 	if vec::len(args) == 1u
 	{
-		alt args[0]
+		match args[0]
 		{
-			iri_value(iri)
+			iri_value(iri) =>
 			{
 				string_value(contract_uri(namespaces, iri), ~"")
 			}
-			blank_value(name)
+			blank_value(name) =>
 			{
 				string_value(name, ~"")
 			}
-			_
+			_ =>
 			{
-				error_value(#fmt["rrdf:pname expected an iri_value or blank_value but was called with %?.", args[0]])
+				error_value(fmt!("rrdf:pname expected an iri_value or blank_value but was called with %?.", args[0)])
 			}
 		}
 	}
 	else
 	{
-		error_value(#fmt["rrdf:pname accepts 1 argument but was called with %? arguments.", vec::len(args)])
+		error_value(fmt!("rrdf:pname accepts 1 argument but was called with %? arguments.", vec::len(args)))
 	}
 }

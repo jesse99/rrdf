@@ -1,6 +1,6 @@
 /// This is the example code we drop into the readme.
-import io::writer_util;
-import test_helpers::*;
+use io::WriterUtil;
+use test_helpers::*;
 
 // Creates a triple store and adds monsters to it.
 fn monsters() -> store
@@ -77,7 +77,7 @@ fn monsters() -> store
 		(~"game:habitat", string_value(~"|land|", ~"")),
 	]);
 	
-	ret store;
+	return store;
 }
 
 #[test]
@@ -105,15 +105,15 @@ fn query_monsters()
 	// Parse the query expression and return a result with either a function
 	// that will run the query against a store or parse error.
 	let store = monsters();
-	alt compile(expr)
+	match compile(expr)
 	{
-		result::ok(selector)
+		result::Ok(selector) =>
 		{
 			// Run the query function against the store. This will either return
 			// a row for each monster that matched the query or an eval error.
-			alt selector(store)
+			match selector(store)
 			{
-				result::ok(solution)
+				result::Ok(solution) =>
 				{
 					// This will print:
 					// 0: [(name, "Lich"), (weight, 3), (announcement, "You feel a chill.")]
@@ -122,18 +122,18 @@ fn query_monsters()
 					for vec::eachi(solution)
 					|i, row|
 					{
-						io::println(#fmt["%?: %s", i, row.to_str()]);
+						io::println(fmt!("%?: %s", i, row.to_str()));
 					};
 				}
-				result::err(err)
+				result::Err(err) =>
 				{
-					io::stderr().write_line(#fmt["Eval error: %s", err]);
+					io::stderr().write_line(fmt!("Eval error: %s", err));
 				}
 			}
 		}
-		result::err(err)
+		result::Err(err) =>
 		{
-			io::stderr().write_line(#fmt["Parse error: expected %s", err]);
+			io::stderr().write_line(fmt!("Parse error: expected %s", err));
 		}
 	}
 	

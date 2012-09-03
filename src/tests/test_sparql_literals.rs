@@ -1,5 +1,5 @@
 import std::map::*;
-import test_helpers::*;
+use test_helpers::*;
 
 fn got(s: ~str) -> ~str
 {
@@ -76,7 +76,7 @@ fn fancy_types() -> store
 	
 	store.add(~"x:Hans", ~[(~"x:greeting", string_value(~"guten tag", ~"de"))]);
 	store.add(~"x:Jones", ~[(~"x:greeting", string_value(~"guten tag", ~"en-US"))]);
-	ret store;
+	return store;
 }
 
 #[test]

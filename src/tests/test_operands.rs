@@ -1,5 +1,5 @@
 //import operands::*;
-import test_helpers::*;
+use test_helpers::*;
 
 #[test]
 fn invalid_values()
