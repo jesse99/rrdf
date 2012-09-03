@@ -21,6 +21,10 @@ http://jena.sourceforge.net/ARQ/Tutorial/index.html
 * SHould be able to support regex functions using regexec.
 * Work on more complex matching:
 	- may want to support union
+* Would be nice to add some more built-in extensions:
+	http://jena.sourceforge.net/ARQ/library-function.html
+	http://www.spinrdf.org/spin.html#spin-functions
+	http://blog.ldodds.com/2009/12/21/sparql-extension-function-survey-summary/
 * Select components can be strings?
 	- if not why does triple pattern allow literals?
 * Need to make sure solutions are not being copied willy nilly.
