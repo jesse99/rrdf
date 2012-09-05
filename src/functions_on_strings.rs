@@ -1,4 +1,5 @@
 //! SPARQL functions. Clients will not ordinarily use this.
+use object::*;
 
 export strlen_fn, substr2_fn, substr3_fn, ucase_fn, lcase_fn, strstarts_fn, strends_fn, contains_fn, strbefore_fn, 
 strafter_fn, encode_for_uri_fn, concat_fn, langmatches_fn;

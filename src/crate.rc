@@ -5,6 +5,13 @@
 #[author = "Jesse Jones"];
 #[license = "MIT"];
 
+#[allow(implicit_copies)];
+#[allow(non_implicitly_copyable_typarams)];
+#[allow(deprecated_pattern)];
+#[allow(deprecated_mode)];
+#[allow(unused_imports)];
+#[allow(non_camel_case_types)];
+
 use std;
 use rparse (name = "rparse", vers = "0.6");
 

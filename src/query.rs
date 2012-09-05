@@ -1,45 +1,25 @@
 //! Used when evaluating a SPARQL query. Clients will not ordinarily use this.
-
 // The sparql parser operates by building a sequence of matcher functions and
 // then creating a selector function using the select function.
+use dvec::*;
 use expression::*;
+use object::*;
 use operators::*;
+use solution::*;
+//use sparql::*;
+use store::*;
 
 export join_solutions, eval, pattern, variable, constant, algebra, triple_pattern, query_context,
-	basic, group, optional, bind, filter;
+	basic, group, optional, bind, filter, selector;
+
+/// The function returned by compile and invoked to execute a SPARQL query.
+/// 
+/// Returns a solution or a 'runtime' error.
+type selector = fn@ (store) -> result::Result<solution, ~str>;
 
 type binding = {name: ~str, value: object};
 
-type Match = either::either<binding, bool>;	// match succeeded if bindings or true
-
-enum pattern
-{
-	variable(~str),
-	constant(object)
-}
-
-type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
-
-enum algebra
-{
-	basic(triple_pattern),
-	group(~[@algebra]),
-	optional(@algebra),
-	bind(expr, ~str),
-	filter(expr)
-}
-
-type query_context =
-	{
-		namespaces: ~[namespace],
-		extensions: @hashmap<~str, extension_fn>,
-		algebra: algebra,
-		order_by: ~[expr],
-		distinct: bool,
-		limit: option<uint>,
-		rng: rand::rng,		// for RAND
-		timestamp: tm		// for NOW
-	};
+type Match = either::Either<binding, bool>;	// match succeeded if bindings or true
 
 fn pattern_to_str(store: store, pattern: pattern) -> ~str
 {
@@ -61,29 +41,29 @@ fn triple_pattern_to_str(store: store, pattern: triple_pattern) -> ~str
 	fmt!("{subject: %s, predicate: %s, object: %s}", pattern_to_str(store, pattern.subject), pattern_to_str(store, pattern.predicate), pattern_to_str(store, pattern.object))
 }
 	
-fn algebra_to_str(store: store, algebra: algebra) -> ~str
+fn algebra_to_str(store: &store, algebra: &algebra) -> ~str
 {
-	match algebra
+	match *algebra
 	{
 		basic(p) =>
 		{
-			triple_pattern_to_str(store, p)
+			triple_pattern_to_str(*store, p)
 		}
 		group(args) =>
 		{
-			fmt!("[%s)", str::connect(do args.map |a| {algebra_to_str(store, *a)}, ~", ")]
+			fmt!("[%s]", str::connect(do args.map |a| {algebra_to_str(store, a)}, ~", "))
 		}
 		optional(a) =>
 		{
-			~"optional " + algebra_to_str(store, *a)
+			~"optional " + algebra_to_str(store, a)
 		}
 		bind(e, n) =>
 		{
-			fmt!("%s = %s", n, expr_to_str(store, e))
+			fmt!("%s = %s", n, expr_to_str(*store, e))
 		}
 		filter(e) =>
 		{
-			~"filter " + expr_to_str(store, e)
+			~"filter " + expr_to_str(*store, e)
 		}
 	}
 }
@@ -351,9 +331,9 @@ fn eval_match(&bindings: ~[(~str, object)], m: Match) -> result::Result<bool, ~s
 	}
 }
 
-fn iterate_matches(store: store, spattern: pattern, callback: fn (option<binding>, @dvec<entry>) -> bool)
+fn iterate_matches(store: store, spattern: pattern, callback: fn (Option<binding>, @DVec<entry>) -> bool)
 {
-	fn invoke(subject: ~str, pattern: pattern, entries: @dvec<entry>, callback: fn (option<binding>, @dvec<entry>) -> bool) -> bool
+	fn invoke(subject: ~str, pattern: pattern, entries: @DVec<entry>, callback: fn (option::Option<binding>, @DVec<entry>) -> bool) -> bool
 	{
 		match match_subject(subject, pattern)
 		{
@@ -555,7 +535,7 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 				{
 					result::Ok(solution) =>
 					{
-						info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, solution));
+						info!("term%? %s matched %s", i, algebra_to_str(&store, term), solution_to_str(store, solution));
 						result = solution;
 					}
 					result::Err(mesg) =>
@@ -570,7 +550,7 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 				{
 					result::Ok(solution) =>
 					{
-						info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, solution));
+						info!("term%? %s matched %s", i, algebra_to_str(&store, term), solution_to_str(store, solution));
 						result = solution;
 					}
 					result::Err(mesg) =>
@@ -592,25 +572,25 @@ fn eval_group(store: store, context: query_context, in_names: ~[~str], terms: ~[
 								if result.is_not_empty()
 								{
 									result = join_solutions(store, names, result, solution, true);
-									info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, result));
+									info!("term%? %s matched %s", i, algebra_to_str(&store, term), solution_to_str(store, result));
 								}
 							}
 							_ =>
 							{
 								if solution.is_empty()
 								{
-									info!("term%? %s matched nothing", i, algebra_to_str(store, *term));
+									info!("term%? %s matched nothing", i, algebra_to_str(&store, term));
 									return result::Ok(~[]);
 								}
 								else if result.is_not_empty()
 								{
 									result = join_solutions(store, names, result, solution, false);
-									info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, result));
+									info!("term%? %s matched %s", i, algebra_to_str(&store, term), solution_to_str(store, result));
 								}
 								else if i == 0		// the very first pattern in the group has nothing to join with
 								{
 									result = solution;
-									info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, result));
+									info!("term%? %s matched %s", i, algebra_to_str(&store, term), solution_to_str(store, result));
 								}
 							}
 						}
@@ -678,7 +658,7 @@ fn eval_order_expr(context: query_context, row: solution_row, expr: expr) -> (bo
 	{
 		call_expr(~"!desc", e) =>
 		{
-			(false, eval_expr(context, row, *e[0]))
+			(false, eval_expr(context, row, *e[0])) 
 		}
 		call_expr(~"!asc", e) =>
 		{
@@ -710,54 +690,63 @@ fn compare_order_values(lhs: (bool, object), rhs: (bool, object)) -> result::Res
 
 fn order_by(context: query_context, solution: solution, ordering: ~[expr]) -> result::Result<solution, ~str>
 {
-	let mut err_mesg = ~"";
-	
-	let le = |&e: ~str, row1, row2|
+	// TODO: Might have to do this in multiple passes:
+	// 1) see if the rows are comparable (how would they not be? predicate objects aren't guaranteed to be the same...)
+	// 2) sort the rows
+	//
+	// Probably more efficient to do the evaluation in a pre-pass. Looks like rust requires 2N comparisons in the worst case.
+	// http://www.codecodex.com/wiki/Merge_sort#Analysis
+	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[expr], context: query_context, row1: solution_row, row2: solution_row) -> bool
 	{
-		let order1 = vec::map(ordering, |o| {eval_order_expr(context, row1, o)});
-		let order2 = vec::map(ordering, |o| {eval_order_expr(context, row2, o)});
-		let order = vec::map2(order1, order2, |x, y| {compare_order_values(x, y)});
-		let order = do vec::foldl(result::Ok(0), order)
-		|x, y|
+		unchecked
 		{
-			match x
+			let order1 = vec::map(ordering, |o| {eval_order_expr(context, row1, o)});
+			let order2 = vec::map(ordering, |o| {eval_order_expr(context, row2, o)});
+			let order = vec::map2(order1, order2, |x, y| {compare_order_values(x, y)});
+			let order = do vec::foldl(result::Ok(0), order)
+			|x, y|
 			{
-				result::Ok(0) =>	y
-				_			 => x
-			}
-		};
-		match order
-		{
-			result::Ok(x) =>
-			{
-				x < 0
-			}
-			result::Err(err) =>
-			{
-				if str::is_empty(e)
+				match x
 				{
-					e = err;
+					result::Ok(0)	=>	y,
+					_			 	=> x,
 				}
-				false
+			};
+			match order
+			{
+				result::Ok(x) =>
+				{
+					x < 0
+				}
+				result::Err(err) =>
+				{
+					if str::is_empty(*err_mesg)
+					{
+						*err_mesg = err;
+					}
+					false
+				}
 			}
 		}
-	};
+	}
 	
-	let solution = std::sort::merge_sort(|x, y| {le(err_mesg, x, y)}, solution);
-	if str::is_empty(err_mesg)
+	let err_mesg = @mut ~"";
+	
+	let solution = std::sort::merge_sort(|x, y| {compare_rows(err_mesg, ordering, context, *x, *y)}, solution);	// TODO: probably dont want to de-reference the pointers
+	if str::is_empty(*err_mesg)
 	{
 		result::Ok(solution)
 	}
 	else
 	{
-		result::Err(err_mesg)
+		result::Err(*err_mesg)
 	}
 }
 
 fn make_distinct(solution: solution) -> result::Result<solution, ~str>
 {
 	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
-	let solution = std::sort::merge_sort(|x, y| {x < y}, solution);
+	let solution = std::sort::merge_sort(|x, y| {*x < *y}, solution);	// TODO: probably dont want to de-reference the pointers
 	
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
@@ -782,7 +771,8 @@ fn eval(names: ~[~str], context: query_context) -> selector
 {
 	|store: store|
 	{
-		info!("algebra: %s", algebra_to_str(store, context.algebra));
+		info!("algebra: %s", algebra_to_str(&store, 
+			&context.algebra));
 		let context = {namespaces: store.namespaces, extensions: store.extensions ,.. context};
 		do eval_algebra(store, names, context).chain()
 		|solution|

@@ -1,5 +1,9 @@
-import io::WriterUtil;
+use io::WriterUtil;
+use object::*;
 use query::*;
+use solution::*;
+use sparql::*;
+use store::*;
 
 export check_bgp, check_strs, check_operands, check_triples, check_solution, check_solution_err;
 
@@ -35,7 +39,7 @@ fn check_bgp(groups: ~[solution], expected: solution) -> bool
 		{
 			let mut entries = ~[];
 			for row.each |e| {vec::push(entries, fmt!("%s=%?", e.first(), e.second()))};
-			let entries = std::sort::merge_sort({|x, y| x <= y}, entries);
+			let entries = std::sort::merge_sort(|x, y| *x <= *y, entries);
 			str::connect(entries, ~", ")
 		}
 	}
@@ -62,8 +66,8 @@ fn check_bgp(groups: ~[solution], expected: solution) -> bool
 	let actual = convert_bindings(actual);
 	let expected = convert_bindings(expected);
 	
-	let actual = std::sort::merge_sort({|x, y| x <= y}, actual);
-	let expected = std::sort::merge_sort({|x, y| x <= y}, expected);
+	let actual = std::sort::merge_sort(|x, y| *x <= *y, actual);
+	let expected = std::sort::merge_sort(|x, y| *x <= *y, expected);
 	
 	if vec::len(actual) != vec::len(expected)
 	{
@@ -229,7 +233,7 @@ fn check_solution_err(store: store, expr: ~str, expected: ~str) -> bool
 		{
 			match selector(store)
 			{
-				result::Ok(actual) =>
+				result::Ok(_) =>
 				{
 					io::stderr().write_line(fmt!("Expr evaluated but expected to find error '%s'.", expected));
 					return false;

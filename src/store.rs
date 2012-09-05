@@ -1,8 +1,103 @@
 //! The type which stores triples.
+use core::dvec::*;
+use std::map::*;
+use object::*;
+use solution::*;
+
 export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, 
 	make_triple_str, make_triple_uri, store_trait, store_methods, to_str, base_iter, get_blank_name, contract_uri;
 export expand_uri;			// this should be internal
+export expr, pattern, variable, constant, triple_pattern, algebra, basic, group, optional, bind, filter,
+	constant_expr, variable_expr, call_expr, extension_expr, query_context, object_to_str, get_object;
 
+// --------------------------------------------------------------------------------------
+// TODO: should be in expression.rs (see rust bug 3352)
+enum expr
+{
+	constant_expr(object),
+	variable_expr(~str),
+	call_expr(~str, ~[@expr]),			// function name + arguments
+	extension_expr(~str, ~[@expr])	// function name + arguments
+}
+
+// --------------------------------------------------------------------------------------
+// TODO: should be in query.rs (see rust bug 3352)
+enum pattern
+{
+	variable(~str),
+	constant(object)
+}
+
+type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
+
+enum algebra
+{
+	basic(triple_pattern),
+	group(~[@algebra]),
+	optional(@algebra),
+	bind(expr, ~str),
+	filter(expr)
+}
+
+type query_context =
+	{
+		namespaces: ~[namespace],
+		extensions: @hashmap<~str, extension_fn>,
+		algebra: algebra,
+		order_by: ~[expr],
+		distinct: bool,
+		limit: Option<uint>,
+		rng: rand::Rng,		// for RAND
+		timestamp: Tm		// for NOW
+	};
+
+// --------------------------------------------------------------------------------------
+// TODO: should be in object.rs (see rust bug 3352)
+fn object_to_str(store: store, obj: object) -> ~str
+{
+	match obj
+	{
+		typed_value(value, kind) =>
+		{
+			fmt!("\"%s^^\"%s", value, contract_uri(store.namespaces, kind))
+		}
+		iri_value(iri) =>
+		{
+			let result = contract_uri(store.namespaces, iri);
+			if result != iri
+			{
+				result
+			}
+			else
+			{
+				~"<" + iri + ~">"
+			}
+		}
+		_ =>
+		{
+			obj.to_str()
+		}
+	}
+}
+
+// --------------------------------------------------------------------------------------
+// TODO: should be in object.rs (see rust bug 3352)
+fn get_object(row: solution_row, name: ~str) -> object
+{
+	match row.search(name)
+	{
+		option::Some(value) =>
+		{
+			value
+		}
+		option::None =>
+		{
+			unbound_value(name)
+		}
+	}
+}
+
+// --------------------------------------------------------------------------------------
 /// An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
 /// or a blank node (_1).
 type subject = ~str;
@@ -33,7 +128,7 @@ type extension_fn = fn@ (~[namespace], ~[object]) -> object;
 /// Stores triples in a more or less efficient format.
 type store = {
 	namespaces: ~[namespace],
-	subjects: hashmap<~str, @dvec<entry>>,
+	subjects: hashmap<~str, @DVec<entry>>,
 	extensions: @hashmap<~str, extension_fn>,
 	next_blank: @mut int,
 };
@@ -314,14 +409,8 @@ impl  store: store_trait
 			{
 				match entries.position(|candidate| {candidate.predicate == predicate})
 				{
-					option::Some(index)
-					{
-						entries.set_elt(index, entry);
-					}
-					option::None
-					{
-						entries.push(entry);
-					}
+					option::Some(index) 	=> entries.set_elt(index, entry),
+					option::None 			=> entries.push(entry),
 				}
 			}
 			option::None =>
@@ -332,33 +421,39 @@ impl  store: store_trait
 	}
 }
 
-impl of base_iter<triple> for store
+impl store : BaseIter<triple>
 {
 	/// Calls the blk for each triple in the store (in an undefined order).
-	fn each(blk: fn(triple) -> bool)
+	pure fn each(blk: fn(triple) -> bool)
 	{
-		for self.subjects.each()
-		|subject, entries|
+		unchecked		// TODO: remove once bug 3372 is fixed
 		{
-			for (*entries).each()
-			|entry|
+			for self.subjects.each()
+			|subject, entries|
 			{
-				let triple = {subject: subject, predicate: entry.predicate, object: entry.object};
-				if !blk(triple)
+				for (*entries).each()
+				|entry|
 				{
-					return;
+					let triple = {subject: subject, predicate: entry.predicate, object: entry.object};
+					if !blk(triple)
+					{
+						return;
+					}
 				}
-			}
-		};
+			};
+		}
 	}
 	
-	fn size_hint() -> option<uint>
+	pure fn size_hint() -> Option<uint>
 	{
-		option::Some(self.subjects.size())
+		unchecked
+		{
+			option::Some(self.subjects.size())
+		}
 	}
 }
 
-impl  triple: to_str 
+impl  triple : ToStr 
 {
 	fn to_str() -> ~str
 	{
@@ -366,7 +461,7 @@ impl  triple: to_str
 	}
 }
 
-impl  store: to_str 
+impl  store : ToStr 
 {
 	fn to_str() -> ~str
 	{
@@ -479,9 +574,9 @@ fn make_triple_uri(store: store, subject: ~str, predicate: ~str, value: ~str) ->
 	}
 }
 
-impl of base_iter<uint> for uint
+impl uint : BaseIter<uint>
 {
-	fn each(blk: fn(&&uint) -> bool)
+	pure fn each(blk: fn(&&uint) -> bool)
 	{
 		let mut i = 0u;
 		while i < self
@@ -494,7 +589,7 @@ impl of base_iter<uint> for uint
 		}
 	}
 	
-	fn size_hint() -> option<uint>
+	pure fn size_hint() -> Option<uint>
 	{
 		option::Some(self)
 	}
@@ -531,7 +626,7 @@ fn pname_fn(namespaces: ~[namespace], args: ~[object]) -> object
 			}
 			_ =>
 			{
-				error_value(fmt!("rrdf:pname expected an iri_value or blank_value but was called with %?.", args[0)])
+				error_value(fmt!("rrdf:pname expected an iri_value or blank_value but was called with %?.", args[0]))
 			}
 		}
 	}

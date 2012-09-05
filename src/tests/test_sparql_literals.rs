@@ -1,4 +1,6 @@
-import std::map::*;
+use std::map::*;
+use object::*;
+use store::*;
 use test_helpers::*;
 
 fn got(s: ~str) -> ~str
@@ -276,13 +278,13 @@ fn datetime()
 	let expr = ~"SELECT ?s WHERE {?s ?p \"1999-05-31T13:10:00-05:00\"^^<http://www.w3.org/2001/XMLSchema#dateTime>}";
 	let store = test_data::got_cast1();
 	store.add(~"got:Some_Guy", ~[
-		(~"v:born", literal_to_object(~"1999-05-31T13:10:00-05:00", ~"http://www.w3.org/2001/XMLSchema#dateTime", ~""))
+		(~"v:born", literal_to_object(@~"1999-05-31T13:10:00-05:00", @~"http://www.w3.org/2001/XMLSchema#dateTime", @~""))
 	]);
 //	store.add(~"got:A_Woman", ~[
-//		(~"v:born", literal_to_object(~"1999-05-31T14:10:00-04:00", ~"http://www.w3.org/2001/XMLSchema#dateTime", ~""))
+//		(~"v:born", literal_to_object(@~"1999-05-31T14:10:00-04:00", @~"http://www.w3.org/2001/XMLSchema#dateTime", @~""))
 //	]);
 	store.add(~"got:A_Dude", ~[
-		(~"v:born", literal_to_object(~"1999-05-31T13:22:00-05:00", ~"http://www.w3.org/2001/XMLSchema#dateTime", ~""))
+		(~"v:born", literal_to_object(@~"1999-05-31T13:22:00-05:00", @~"http://www.w3.org/2001/XMLSchema#dateTime", @~""))
 	]);
 	
 	let expected = ~[

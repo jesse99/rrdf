@@ -1,4 +1,7 @@
 //! Value component of a triple and associated methods.
+use std::time::{Tm};
+
+// Object must be sendable (so that solutions can be sent cross-task).
 
 // Note that the SPARQL error conditions do not always result in an error:
 // 1) Functions like COALESCE accept unbound variables.
@@ -11,7 +14,7 @@ enum object					// TODO: once we support serialization we'll need to add somethi
 	bool_value(bool),
 	int_value(i64),				// value, xsd:decimal (and derived types)
 	float_value(f64),			// value, xsd:float or xsd:double
-	dateTime_value(tm),		// xsd:dateTime
+	dateTime_value(Tm),		// xsd:dateTime
 	string_value(~str, ~str),	// value + lang
 	typed_value(~str, ~str),	// value + type iri (aka simple literal)
 	
@@ -25,7 +28,7 @@ enum object					// TODO: once we support serialization we'll need to add somethi
 	error_value(~str)			// err mesg
 }
 
-impl object_methods for object
+impl object
 {
 	fn as_bool() -> bool
 	{
@@ -139,7 +142,7 @@ impl object_methods for object
 		}
 	}
 	
-	fn as_tm() -> tm
+	fn as_tm() -> Tm
 	{
 		match self
 		{
@@ -296,7 +299,7 @@ impl object_methods for object
 		}
 	}
 	
-	fn as_tm_or_default(default: tm) -> tm
+	fn as_tm_or_default(default: Tm) -> Tm
 	{
 		match self
 		{
@@ -342,34 +345,7 @@ impl object_methods for object
 	}
 }
 
-fn object_to_str(store: store, obj: object) -> ~str
-{
-	match obj
-	{
-		typed_value(value, kind) =>
-		{
-			fmt!("\"%s^^\"%s", value, contract_uri(store.namespaces, kind))
-		}
-		iri_value(iri) =>
-		{
-			let result = contract_uri(store.namespaces, iri);
-			if result != iri
-			{
-				result
-			}
-			else
-			{
-				~"<" + iri + ~">"
-			}
-		}
-		_ =>
-		{
-			obj.to_str()
-		}
-	}
-}
-
-impl  object: to_str 
+impl  object : ToStr 
 {
 	fn to_str() -> ~str
 	{
@@ -426,52 +402,52 @@ impl  object: to_str
 /// Converts an arbitrary lexical value to an object.
 /// 
 /// Note that it is usually simplest to simply use the object enum directly.
-fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
+fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> object
 {
 	match (value, kind, lang)
 	{
-		(v, ~"blank", ~"") =>
+		(v, @~"blank", @~"") =>
 		{
-			blank_value(v)
+			blank_value(*v)
 		}
-		(v, ~"http://www.w3.org/2001/XMLSchema#anyURI", ~"") =>
+		(v, @~"http://www.w3.org/2001/XMLSchema#anyURI", @~"") =>
 		{
-			if str::starts_with(v, "_:")
+			if str::starts_with(*v, "_:")
 			{
-				blank_value(v)
+				blank_value(*v)
 			}
 			else
 			{
-				iri_value(v)
+				iri_value(*v)
 			}
 		}
-		(v, ~"http://www.w3.org/2001/XMLSchema#boolean", ~"") =>
+		(v, @~"http://www.w3.org/2001/XMLSchema#boolean", @~"") =>
 		{
-			if v == ~"true" || v == ~"1"
+			if v == @~"true" || v == @~"1"
 			{
 				bool_value(true)
 			}
-			else if v == ~"false" || v == ~"0"
+			else if v == @~"false" || v == @~"0"
 			{
 				bool_value(false)
 			}
 			else
 			{
-				invalid_value(v, kind)
+				invalid_value(*v, *kind)
 			}
 		}
-		(v, ~"http://www.w3.org/2001/XMLSchema#dateTime", ~"") =>
+		(v, @~"http://www.w3.org/2001/XMLSchema#dateTime", @~"") =>
 		{
 			// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
-			match do std::time::strptime(v, ~"%FT%T%z").chain_err
+			match do std::time::strptime(*v, ~"%FT%T%z").chain_err
 				|_err1|
 				{
 					// Time zone expressed as a name, e.g. EST (technically only Z is supposed to be allowed).
-					do std::time::strptime(v, ~"%FT%T%Z").chain_err
+					do std::time::strptime(*v, ~"%FT%T%Z").chain_err
 					|_err2|
 					{
 						// No time zone (so the time will be considered to be in the local time zone).
-						std::time::strptime(v, ~"%FT%T")
+						std::time::strptime(*v, ~"%FT%T")
 					}
 				}
 			{
@@ -483,26 +459,26 @@ fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 				{
 					// invalid_value would seem more sensible, but the standard explicitly
 					// reserves that for bool and numeric.
-					error_value(fmt!("'%s' is not an ISO 8601 dateTime.", v))
+					error_value(fmt!("'%s' is not an ISO 8601 dateTime.", *v))
 				}
 			}
 		}
-		(v, ~"http://www.w3.org/2001/XMLSchema#decimal", ~"") |	// minimally conformant processors must support at least 18 digits and i64 gives us 19
-		(v, ~"http://www.w3.org/2001/XMLSchema#integer", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#nonPositiveInteger", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#negativeInteger", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#long", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#int", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#short", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#byte", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#nonNegativeInteger", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#unsignedLong", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#unsignedInt", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#unsignedShort", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#unsignedByte", ~"") |
-		(v, ~"http://www.w3.org/2001/XMLSchema#positiveInteger", ~"")
+		(v, @~"http://www.w3.org/2001/XMLSchema#decimal", @~"") |	// minimally conformant processors must support at least 18 digits and i64 gives us 19
+		(v, @~"http://www.w3.org/2001/XMLSchema#integer", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#nonPositiveInteger", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#negativeInteger", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#long", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#int", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#short", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#byte", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#nonNegativeInteger", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#unsignedLong", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#unsignedInt", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#unsignedShort", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#unsignedByte", @~"") |
+		(v, @~"http://www.w3.org/2001/XMLSchema#positiveInteger", @~"") =>
 		{
-			do str::as_c_str(v)
+			do str::as_c_str(*v)
 			|vp|
 			{
 				let end = 0 as libc::c_char;
@@ -516,15 +492,15 @@ fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 					}
 					else
 					{
-						invalid_value(v, kind)
+						invalid_value(*v, *kind)
 					}
 				}
 			}
 		}
-		(v, ~"http://www.w3.org/2001/XMLSchema#float", ~"") | 
-		(v, ~"http://www.w3.org/2001/XMLSchema#double", ~"")
+		(v, @~"http://www.w3.org/2001/XMLSchema#float", @~"") | 
+		(v, @~"http://www.w3.org/2001/XMLSchema#double", @~"") =>
 		{
-			do str::as_c_str(v)
+			do str::as_c_str(*v)
 			|vp|
 			{
 				let end = 0 as libc::c_char;
@@ -538,50 +514,35 @@ fn literal_to_object(value: ~str, kind: ~str, lang: ~str) -> object
 					}
 					else
 					{
-						invalid_value(v, kind)
+						invalid_value(*v, *kind)
 					}
 				}
 			}
 		}
-		(v, ~"http://www.w3.org/2001/XMLSchema#string", l) |
-		(v, ~"http://www.w3.org/2001/XMLSchema#normalizedString", l) |
-		(v, ~"http://www.w3.org/2001/XMLSchema#token", l) |
-		(v, ~"http://www.w3.org/2001/XMLSchema#language", l) |
-		(v, ~"http://www.w3.org/2001/XMLSchema#Name", l) |
-		(v, ~"http://www.w3.org/2001/XMLSchema#NCName", l) |
-		(v, ~"http://www.w3.org/2001/XMLSchema#ID", l)
+		(v, @~"http://www.w3.org/2001/XMLSchema#string", l) |
+		(v, @~"http://www.w3.org/2001/XMLSchema#normalizedString", l) |
+		(v, @~"http://www.w3.org/2001/XMLSchema#token", l) |
+		(v, @~"http://www.w3.org/2001/XMLSchema#language", l) |
+		(v, @~"http://www.w3.org/2001/XMLSchema#Name", l) |
+		(v, @~"http://www.w3.org/2001/XMLSchema#NCName", l) |
+		(v, @~"http://www.w3.org/2001/XMLSchema#ID", l) =>
 		{
-			string_value(v, l)
+			string_value(*v, *l)
 		}
-		(v, k, ~"")
+		(v, k, @~"") =>
 		{
-			typed_value(v, k)
+			typed_value(*v, *k)
 		}
-		_
+		_ =>
 		{
-			error!("object_to_operand unsupported type: %s.", kind);
-			error_value(fmt!("object_to_operand unsupported type: %s.", kind))
-		}
-	}
-}
-
-fn get_object(row: solution_row, name: ~str) -> object
-{
-	match row.search(name)
-	{
-		option::Some(value) =>
-		{
-			value
-		}
-		option::None =>
-		{
-			unbound_value(name)
+			error!("object_to_operand unsupported type: %s.", *kind);
+			error_value(fmt!("object_to_operand unsupported type: %s.", *kind))
 		}
 	}
 }
 
 // Effective boolean value, see 17.2.2
-fn get_ebv(operand: object) -> result::Result<bool, ~str>
+pure fn get_ebv(operand: object) -> result::Result<bool, ~str>
 {
 	match operand
 	{

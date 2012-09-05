@@ -1,4 +1,6 @@
-import std::map::*;
+use std::map::*;
+use object::*;
+use store::*;
 use test_helpers::*;
 
 fn got(s: ~str) -> ~str

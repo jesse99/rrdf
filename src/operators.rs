@@ -1,4 +1,5 @@
 //! SPARQL operators. Clients will not ordinarily use this.
+use object::*;
 
 // Operators used within SPARQL FILTER expressions. See 17.2 and related.
 export op_not, op_unary_plus, op_unary_minus, op_or, op_and, op_equals, op_not_equals,
@@ -342,11 +343,11 @@ fn op_unary_plus(operand: object) -> object
 {
 	match operand
 	{
-		int_value(value) =>
+		int_value(_) =>
 		{
 			operand
 		}
-		float_value(value) =>
+		float_value(_) =>
 		{
 			operand
 		}

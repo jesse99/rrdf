@@ -1,4 +1,5 @@
 //import operands::*;
+use object::*;
 use operators::*;
 use test_helpers::*;
 

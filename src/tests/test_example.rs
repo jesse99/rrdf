@@ -1,5 +1,8 @@
 /// This is the example code we drop into the readme.
 use io::WriterUtil;
+use object::*;
+use sparql::*;
+use store::*;
 use test_helpers::*;
 
 // Creates a triple store and adds monsters to it.

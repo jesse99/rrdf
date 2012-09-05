@@ -1,4 +1,5 @@
-import functions_on_strings::*;
+use functions_on_strings::*;
+use object::*;
 use test_helpers::*;
 
 #[test]

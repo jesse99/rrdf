@@ -1,4 +1,6 @@
 //! SPARQL functions. Clients will not ordinarily use this.
+use store::*;
+use object::*;
 
 fn abs_fn(operand: object) -> object
 {
@@ -23,7 +25,7 @@ fn round_fn(operand: object) -> object
 {
 	match operand
 	{
-		int_value(value) =>
+		int_value(_) =>
 		{
 			operand
 		}
@@ -42,7 +44,7 @@ fn ceil_fn(operand: object) -> object
 {
 	match operand
 	{
-		int_value(value) =>
+		int_value(_) =>
 		{
 			operand
 		}
@@ -61,7 +63,7 @@ fn floor_fn(operand: object) -> object
 {
 	match operand
 	{
-		int_value(value) =>
+		int_value(_) =>
 		{
 			operand
 		}

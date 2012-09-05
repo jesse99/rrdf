@@ -3,6 +3,8 @@
 // Profile for electronix business cards.
 // 2) https://github.com/edumbill/doap/wiki
 // Profile used to describe open source software projects.
+use object::*;
+use store::*;
 
 fn got_cast1() -> store
 {

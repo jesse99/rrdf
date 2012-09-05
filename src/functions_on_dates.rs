@@ -1,4 +1,6 @@
 //! SPARQL functions. Clients will not ordinarily use this.
+use store::*;
+use object::*;
 
 fn now_fn(context: query_context, args: ~[object]) -> object
 {

@@ -1,4 +1,9 @@
 //! The result of a SPARQL query.
+use Option = option::Option;
+use object::*;
+
+// Note that solutions must be sendable types so that queries can be off-loaded
+// onto tasks.
 
 /// Result of matching a triple with a SPARQL query.
 ///
@@ -14,30 +19,30 @@ type solution = ~[solution_row];
 trait solution_trait
 {
 	pure fn get(row: uint, name: ~str) -> object;
-	pure fn search(row: uint, name: ~str) -> option<object>;
+	pure fn search(row: uint, name: ~str) -> Option<object>;
 }
 
 trait solution_row_trait
 {
 	pure fn get(name: ~str) -> object;
 	pure fn contains(name: ~str) -> bool;
-	pure fn search(name: ~str) -> option<object>;
+	pure fn search(name: ~str) -> Option<object>;
 }
 
-impl  solution: solution_trait 
+impl  solution : solution_trait 
 {
 	pure fn get(row: uint, name: ~str) -> object
 	{
 		self[row].get(name)
 	}
 	
-	pure fn search(row: uint, name: ~str) -> option<object>
+	pure fn search(row: uint, name: ~str) -> Option<object>
 	{
 		self[row].search(name)
 	}
 }
 
-impl  solution_row: solution_row_trait 
+impl  solution_row : solution_row_trait 
 {
 	pure fn get(name: ~str) -> object
 	{
@@ -60,7 +65,7 @@ impl  solution_row: solution_row_trait
 	}
 	
 	// Named search so we don't wind up conflicting with the find vec extension.
-	pure fn search(name: ~str) -> option<object>
+	pure fn search(name: ~str) -> Option<object>
 	{
 		match vec::find(self, |e| {e.first() == name})
 		{

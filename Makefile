@@ -18,7 +18,7 @@ check1: bin/test-rrdf
 # You can either use this target (assuming that the libraries are in /usr/local/lib/rust)
 # or install them via cargo.
 update-libraries:
-	cp /usr/local/lib/rust/librparse-*-0.5.dylib bin
+	cp /usr/local/lib/rust/librparse-*-0.6.dylib bin
 
 # Better to use /usr/local/lib but linking it in with -L /usr/local/lib fails because
 # there is a libccore there and in the nested rustc directory.
@@ -35,7 +35,7 @@ install:
 # setting an executable's name, but not libraries).
 .PHONY : lib
 lib:
-	$(RUSTC) -L bin --out-dir bin -O src/rrdf.rc
+	$(RUSTC) -L bin --out-dir bin -O src/crate.rc
 
-bin/test-rrdf: src/rrdf.rc src/*.rs src/tests/*.rs
+bin/test-rrdf: src/crate.rc src/*.rs src/tests/*.rs
 	$(RUSTC) -g -L bin --test -o $@ $<
