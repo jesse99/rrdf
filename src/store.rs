@@ -53,7 +53,7 @@ type query_context =
 
 // --------------------------------------------------------------------------------------
 // TODO: should be in object.rs (see rust bug 3352)
-fn object_to_str(store: store, obj: object) -> ~str
+fn object_to_str(store: &store, obj: object) -> ~str
 {
 	match obj
 	{

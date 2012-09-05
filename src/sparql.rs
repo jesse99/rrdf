@@ -514,6 +514,7 @@ fn binary_expr(term: Parser<expr>, ops: ~[{oname: ~str, fname: ~str}]) -> Parser
 		}
 	));
 	
+	let ops = copy ops;
 	seq2(term, suffix.r0(),
 	|b, r|
 	{

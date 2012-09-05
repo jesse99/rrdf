@@ -114,7 +114,7 @@ fn query_monsters()
 		{
 			// Run the query function against the store. This will either return
 			// a row for each monster that matched the query or an eval error.
-			match selector(store)
+			match selector(&store)
 			{
 				result::Ok(solution) =>
 				{

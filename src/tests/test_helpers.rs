@@ -59,7 +59,7 @@ fn check_bgp(groups: ~[solution], expected: solution) -> bool
 	|group|
 	{
 		let store = create_store(~[], @std::map::str_hash());
-		actual = join_solutions(store, ~[~"*"], actual, group, false);
+		actual = join_solutions(&store, ~[~"*"], actual, group, false);
 	}
 	
 	// Form this point forward we are dealing with [str] instead of [[binding]].
@@ -151,7 +151,7 @@ fn check_solution(store: store, expr: ~str, expected: solution) -> bool
 	{
 		result::Ok(selector) =>
 		{
-			match selector(store)
+			match selector(&store)
 			{
 				result::Ok(actual) =>
 				{
@@ -231,7 +231,7 @@ fn check_solution_err(store: store, expr: ~str, expected: ~str) -> bool
 	{
 		result::Ok(selector) =>
 		{
-			match selector(store)
+			match selector(&store)
 			{
 				result::Ok(_) =>
 				{
