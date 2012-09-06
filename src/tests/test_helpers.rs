@@ -147,6 +147,7 @@ fn check_triples(actual: ~[triple], expected: ~[triple]) -> bool
 fn check_solution(store: store, expr: ~str, expected: solution) -> bool
 {
 	info!("----------------------------------------------------");
+	let expected = expected.sort();
 	match compile(expr)
 	{
 		result::Ok(selector) =>
@@ -155,6 +156,8 @@ fn check_solution(store: store, expr: ~str, expected: solution) -> bool
 			{
 				result::Ok(actual) =>
 				{
+					let actual = actual.sort();
+					
 					// OK if they are both empty.
 					if vec::is_empty(actual) && vec::is_empty(expected)
 					{

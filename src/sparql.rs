@@ -193,20 +193,28 @@ fn iri_char(ch: char) -> bool
 }
 
 // [^x\\\n\r]) | ECHAR	where x is ' or "
-fn short_char(x: char, chars: @[char], i:uint) -> uint
+fn short_char(x: char, chars: @[char], index: uint) -> uint
 {
-	let ch = chars[i];
-	if ch != x && ch != '\\' && ch != '\n' && ch != '\r'
+	let mut i = index;
+	loop
 	{
-		1u
-	}
-	else if ch == '\\' && is_escape_char(chars[i + 1u])
-	{
-		2u
-	}
-	else
-	{
-		0u
+		let ch = chars[i];
+		if ch == EOT
+		{
+			return 0;
+		}
+		else if ch != x && ch != '\\' && ch != '\n' && ch != '\r'
+		{
+			i += 1;
+		}
+		else if ch == '\\' && is_escape_char(chars[i + 1u])
+		{
+			i += 2;
+		}
+		else
+		{
+			return i - index;
+		}
 	}
 }
 
@@ -214,20 +222,17 @@ fn short_char(x: char, chars: @[char], i:uint) -> uint
 fn long_char(x: char, chars: @[char], index: uint) -> uint
 {
 	let mut i = index;
-	if chars[i] == x
+	loop
 	{
-		if chars[i+1u] == x
+		if chars[i] == x && chars[i+1] == x && chars[i+2] != x
 		{
 			i += 2;
 		}
-		else
+		else if chars[i] == x && chars[i+1] != x
 		{
 			i += 1;
 		}
-	}
-	
-	loop
-	{
+		
 		let ch = chars[i];
 		if ch != x && ch != '\\' && ch != EOT
 		{

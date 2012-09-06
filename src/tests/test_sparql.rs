@@ -610,7 +610,7 @@ fn bad_order_by()
 	} ORDER BY (?s + ?o)";
 	let store = test_data::got_cast3();
 	
-	assert check_solution_err(store, expr, ~"<: +: expected numeric value but found iri_value(~\"http://awoiaf.westeros.org/index.php/Eddard_Stark\").");
+	assert check_solution_err(store, expr, ~"<: +: expected numeric value but found iri_value(~\"http://awoiaf.westeros.org/index.php/Jon_Snow\").");
 }
 
 #[test]
