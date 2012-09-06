@@ -14,12 +14,12 @@ fn bool_literal(value: @~str) -> pattern
 	constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#boolean", @~""))
 }
 
-fn int_literal(value: @~str) -> object
+fn int_literal(value: @~str) -> Object
 {
 	literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#integer", @~"")
 }
 
-fn float_literal(value: @~str) -> object
+fn float_literal(value: @~str) -> Object
 {
 	literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#double", @~"")
 }
@@ -58,11 +58,11 @@ fn expand_expr(namespaces: ~[namespace], expr: expr) -> expr
 {
 	match expr
 	{
-		constant_expr(iri_value(value)) =>
+		constant_expr(IriValue(value)) =>
 		{
-			constant_expr(iri_value(expand_uri(namespaces, value)))
+			constant_expr(IriValue(expand_uri(namespaces, value)))
 		}
-		constant_expr(typed_value(value, kind)) =>
+		constant_expr(TypedValue(value, kind)) =>
 		{
 			constant_expr(literal_to_object(@value, @expand_uri(namespaces, kind), @~""))
 		}
@@ -81,11 +81,11 @@ fn expand_pattern(namespaces: ~[namespace], pattern: pattern) -> pattern
 {
 	match pattern
 	{
-		constant(iri_value(value)) =>
+		constant(IriValue(value)) =>
 		{
-			constant(iri_value(expand_uri(namespaces, value)))
+			constant(IriValue(expand_uri(namespaces, value)))
 		}
-		constant(typed_value(value, kind)) =>
+		constant(TypedValue(value, kind)) =>
 		{
 			constant(literal_to_object(@value, @expand_uri(namespaces, kind), @~""))
 		}
@@ -834,7 +834,7 @@ fn make_parser() -> Parser<selector>
 	let VAR1 = seq2_ret1("?".lit().ws(), VARNAME).note(~"VAR1");
 	
 	// [67] ArgList ::= NIL | '(' 'DISTINCT'? Expression ( ',' Expression )* ')'
-	let Expression_ptr = @mut ret(constant_expr(unbound_value(~"foo")));
+	let Expression_ptr = @mut ret(constant_expr(UnboundValue(~"foo")));
 	let Expression_ref = forward_ref(Expression_ptr);
 	
 	let ArgList = seq3_ret1("(".lit().ws(), Expression_ref.list(",".lit().ws()), ")".lit().ws());
@@ -842,7 +842,7 @@ fn make_parser() -> Parser<selector>
 	// [118] IRIrefOrFunction ::= IRIref ArgList?
 	let IRIrefOrFunction1 = do seq2(IRIref, ArgList)
 		|i, a| {result::Ok(extension_expr(*i, vec::map(*a, |x| {@x})))};
-	let IRIrefOrFunction2 = do IRIref.thene |v| {ret(constant_expr(iri_value(*v)))};
+	let IRIrefOrFunction2 = do IRIref.thene |v| {ret(constant_expr(IriValue(*v)))};
 	let IRIrefOrFunction = (IRIrefOrFunction1.or(IRIrefOrFunction2));
 	
 	// [98] Var ::= VAR1 | VAR2
@@ -852,7 +852,7 @@ fn make_parser() -> Parser<selector>
 	let BuiltInCall = built_in_call(Expression_ref, Var);
 	
 	// [109] PrimaryExpression ::= BrackettedExpression | BuiltInCall | IRIrefOrFunction | RDFLiteral | NumericLiteral | BooleanLiteral | Var | Aggregate
-	let BrackettedExpression_ptr = @mut ret(constant_expr(unbound_value(~"foo")));
+	let BrackettedExpression_ptr = @mut ret(constant_expr(UnboundValue(~"foo")));
 	let BrackettedExpression_ref = forward_ref(BrackettedExpression_ptr);
 	
 	let PrimaryExpression = or_v(@~[
@@ -1047,7 +1047,7 @@ fn make_parser() -> Parser<selector>
 	
 	// [26] LimitClause ::= 'LIMIT' INTEGER
 	let LimitClause = do seq2_ret1("LIMIT".liti().ws(), INTEGER).thene
-		|x| {match x {int_value(n)  => ret(n as uint), _  => fail(~"Somehow INTEGER didn't return an int_value")}};
+		|x| {match x {IntValue(n)  => ret(n as uint), _  => fail(~"Somehow INTEGER didn't return an IntValue")}};
 	
 	// [25] LimitOffsetClauses	::= LimitClause OffsetClause? | OffsetClause LimitClause?
 	let LimitOffsetClauses = LimitClause;

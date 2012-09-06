@@ -13,20 +13,20 @@ use store::*;
 // This is the public API. Clients should only use the items exported here.
 // TODO: Hopefully we can clean this up a lot when exporting works a bit better.
 use literal_to_object = object::literal_to_object; export literal_to_object;
-use object = object::object; export object;
+use object = object::Object; export Object;
 use object_methods = object::object_methods; export object_methods;
 
-use blank_value = object::blank_value; export blank_value;
-use bool_value = object::bool_value; export bool_value;
-use dateTime_value = object::dateTime_value; export dateTime_value;
-use error_value = object::error_value; export error_value;
-use float_value = object::float_value; export float_value;
-use int_value = object::int_value; export int_value;
-use invalid_value = object::invalid_value; export invalid_value;
-use iri_value = object::iri_value; export iri_value;
-use string_value = object::string_value; export string_value;
-use typed_value = object::typed_value; export typed_value;
-use unbound_value = object::unbound_value; export unbound_value;
+use BlankValue = object::BlankValue; export BlankValue;
+use BoolValue = object::BoolValue; export BoolValue;
+use DateTimeValue = object::DateTimeValue; export DateTimeValue;
+use ErrorValue = object::ErrorValue; export ErrorValue;
+use FloatValue = object::FloatValue; export FloatValue;
+use IntValue = object::IntValue; export IntValue;
+use InvalidValue = object::InvalidValue; export InvalidValue;
+use IriValue = object::IriValue; export IriValue;
+use StringValue = object::StringValue; export StringValue;
+use TypedValue = object::TypedValue; export TypedValue;
+use UnboundValue = object::UnboundValue; export UnboundValue;
 
 use create_store = store::create_store; export create_store;
 use entry = store::entry; export entry;

@@ -8,39 +8,39 @@ use std::time::{Tm};
 // 2) Boolean functions normally want effective boolean values which are false for invalid values.
 // 3) Functions like op_and do not always propagate errors.
 /// Value component of a triple.
-enum object					// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
+enum Object				// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
 {								// TODO: predicate could maybe be enum with type code and uri
 	// literals
-	bool_value(bool),
-	int_value(i64),				// value, xsd:decimal (and derived types)
-	float_value(f64),			// value, xsd:float or xsd:double
-	dateTime_value(Tm),		// xsd:dateTime
-	string_value(~str, ~str),	// value + lang
-	typed_value(~str, ~str),	// value + type iri (aka simple literal)
+	BoolValue(bool),
+	IntValue(i64),				// value, xsd:decimal (and derived types)
+	FloatValue(f64),			// value, xsd:float or xsd:double
+	DateTimeValue(Tm),		// xsd:dateTime
+	StringValue(~str, ~str),	// value + lang
+	TypedValue(~str, ~str),	// value + type iri (aka simple literal)
 	
 	// other rdf terms
-	iri_value(~str),
-	blank_value(~str),
+	IriValue(~str),
+	BlankValue(~str),
 	
 	// error conditions
-	unbound_value(~str),		// binding name
-	invalid_value(~str, ~str),	// literal + type iri
-	error_value(~str)			// err mesg
+	UnboundValue(~str),		// binding name
+	InvalidValue(~str, ~str),	// literal + type iri
+	ErrorValue(~str)			// err mesg
 }
 
-impl object
+impl Object
 {
 	fn as_bool() -> bool
 	{
 		match self
 		{
-			bool_value(value) =>
+			BoolValue(value) =>
 			{
 				value
 			}
 			_ =>
 			{
-				fail(fmt!("Expected a bool_value but found %?", self));
+				fail(fmt!("Expected a BoolValue but found %?", self));
 			}
 		}
 	}
@@ -49,7 +49,7 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				if value >= int::min_value as i64 && value <= int::max_value as i64
 				{
@@ -62,7 +62,7 @@ impl object
 			}
 			_ =>
 			{
-				fail(fmt!("Expected an int_value but found %?", self));
+				fail(fmt!("Expected an IntValue but found %?", self));
 			}
 		}
 	}
@@ -71,7 +71,7 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				if value >= uint::min_value as i64 && value <= uint::max_value as i64
 				{
@@ -84,7 +84,7 @@ impl object
 			}
 			_ =>
 			{
-				fail(fmt!("Expected an int_value but found %?", self));
+				fail(fmt!("Expected an IntValue but found %?", self));
 			}
 		}
 	}
@@ -93,13 +93,13 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				value
 			}
 			_ =>
 			{
-				fail(fmt!("Expected an int_value but found %?", self));
+				fail(fmt!("Expected an IntValue but found %?", self));
 			}
 		}
 	}
@@ -108,17 +108,17 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				value as float
 			}
-			float_value(value) =>
+			FloatValue(value) =>
 			{
 				value as float
 			}
 			_ =>
 			{
-				fail(fmt!("Expected int_value or float_value but found %?", self));
+				fail(fmt!("Expected IntValue or FloatValue but found %?", self));
 			}
 		}
 	}
@@ -127,17 +127,17 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				value as f64
 			}
-			float_value(value) =>
+			FloatValue(value) =>
 			{
 				value
 			}
 			_ =>
 			{
-				fail(fmt!("Expected int_value or float_value but found %?", self));
+				fail(fmt!("Expected IntValue or FloatValue but found %?", self));
 			}
 		}
 	}
@@ -146,13 +146,13 @@ impl object
 	{
 		match self
 		{
-			dateTime_value(value) =>
+			DateTimeValue(value) =>
 			{
 				value
 			}
 			_ =>
 			{
-				fail(fmt!("Expected a dateTime_value but found %?", self));
+				fail(fmt!("Expected a DateTimeValue but found %?", self));
 			}
 		}
 	}
@@ -161,13 +161,13 @@ impl object
 	{
 		match self
 		{
-			string_value(value, _lang) =>
+			StringValue(value, _lang) =>
 			{
 				value
 			}
 			_ =>
 			{
-				fail(fmt!("Expected a string_value but found %?", self));
+				fail(fmt!("Expected a StringValue but found %?", self));
 			}
 		}
 	}
@@ -176,13 +176,13 @@ impl object
 	{
 		match self
 		{
-			iri_value(value) =>
+			IriValue(value) =>
 			{
 				value
 			}
 			_ =>
 			{
-				fail(fmt!("Expected an iri_value but found %?", self));
+				fail(fmt!("Expected an IriValue but found %?", self));
 			}
 		}
 	}
@@ -191,7 +191,7 @@ impl object
 	{
 		match self
 		{
-			bool_value(value) =>
+			BoolValue(value) =>
 			{
 				value
 			}
@@ -206,7 +206,7 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				if value >= int::min_value as i64 && value <= int::max_value as i64
 				{
@@ -228,7 +228,7 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				if value >= uint::min_value as i64 && value <= uint::max_value as i64
 				{
@@ -250,7 +250,7 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				value
 			}
@@ -265,11 +265,11 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				value as float
 			}
-			float_value(value) =>
+			FloatValue(value) =>
 			{
 				value as float
 			}
@@ -284,11 +284,11 @@ impl object
 	{
 		match self
 		{
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				value as f64
 			}
-			float_value(value) =>
+			FloatValue(value) =>
 			{
 				value
 			}
@@ -303,7 +303,7 @@ impl object
 	{
 		match self
 		{
-			dateTime_value(value) =>
+			DateTimeValue(value) =>
 			{
 				value
 			}
@@ -318,7 +318,7 @@ impl object
 	{
 		match self
 		{
-			string_value(value, _lang) =>
+			StringValue(value, _lang) =>
 			{
 				value
 			}
@@ -333,7 +333,7 @@ impl object
 	{
 		match self
 		{
-			iri_value(value) =>
+			IriValue(value) =>
 			{
 				value
 			}
@@ -345,53 +345,53 @@ impl object
 	}
 }
 
-impl  object : ToStr 
+impl  Object : ToStr 
 {
 	fn to_str() -> ~str
 	{
 		match self
 		{
-			bool_value(value) =>
+			BoolValue(value) =>
 			{
 				if value {~"true"} else {~"false"}
 			}
-			int_value(value) =>
+			IntValue(value) =>
 			{
 				fmt!("%?", value)
 			}
-			float_value(value) =>
+			FloatValue(value) =>
 			{
 				fmt!("%?", value)
 			}
-			dateTime_value(value) =>
+			DateTimeValue(value) =>
 			{
 				value.rfc3339()
 			}
-			string_value(value, lang) =>
+			StringValue(value, lang) =>
 			{
 				if str::is_not_empty(lang) {fmt!("\"%s\"@%s", value, lang)} else {fmt!("\"%s\"", value)}
 			}
-			typed_value(value, kind) =>
+			TypedValue(value, kind) =>
 			{
 				fmt!("\"%s^^\"%s", value, kind)
 			}
-			iri_value(value) =>
+			IriValue(value) =>
 			{
 				~"<" + value + ~">"
 			}
-			blank_value(value) =>
+			BlankValue(value) =>
 			{
 				value
 			}
-			unbound_value(name) =>
+			UnboundValue(name) =>
 			{
 				name + ~" is not bound"
 			}
-			invalid_value(literal, kind) =>
+			InvalidValue(literal, kind) =>
 			{
 				fmt!("'%s' is not a valid %s", literal, kind)
 			}
-			error_value(err) =>
+			ErrorValue(err) =>
 			{
 				err
 			}
@@ -402,38 +402,38 @@ impl  object : ToStr
 /// Converts an arbitrary lexical value to an object.
 /// 
 /// Note that it is usually simplest to simply use the object enum directly.
-fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> object
+fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 {
 	match (value, kind, lang)
 	{
 		(v, @~"blank", @~"") =>
 		{
-			blank_value(*v)
+			BlankValue(*v)
 		}
 		(v, @~"http://www.w3.org/2001/XMLSchema#anyURI", @~"") =>
 		{
 			if str::starts_with(*v, "_:")
 			{
-				blank_value(*v)
+				BlankValue(*v)
 			}
 			else
 			{
-				iri_value(*v)
+				IriValue(*v)
 			}
 		}
 		(v, @~"http://www.w3.org/2001/XMLSchema#boolean", @~"") =>
 		{
 			if v == @~"true" || v == @~"1"
 			{
-				bool_value(true)
+				BoolValue(true)
 			}
 			else if v == @~"false" || v == @~"0"
 			{
-				bool_value(false)
+				BoolValue(false)
 			}
 			else
 			{
-				invalid_value(*v, *kind)
+				InvalidValue(*v, *kind)
 			}
 		}
 		(v, @~"http://www.w3.org/2001/XMLSchema#dateTime", @~"") =>
@@ -453,13 +453,13 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> object
 			{
 				result::Ok(time) =>
 				{
-					dateTime_value(time)
+					DateTimeValue(time)
 				}
 				result::Err(_) =>
 				{
-					// invalid_value would seem more sensible, but the standard explicitly
+					// InvalidValue would seem more sensible, but the standard explicitly
 					// reserves that for bool and numeric.
-					error_value(fmt!("'%s' is not an ISO 8601 dateTime.", *v))
+					ErrorValue(fmt!("'%s' is not an ISO 8601 dateTime.", *v))
 				}
 			}
 		}
@@ -488,11 +488,11 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> object
 				{
 					if *endp == 0 as libc::c_char
 					{
-						int_value(r as i64)
+						IntValue(r as i64)
 					}
 					else
 					{
-						invalid_value(*v, *kind)
+						InvalidValue(*v, *kind)
 					}
 				}
 			}
@@ -510,11 +510,11 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> object
 				{
 					if *endp == 0 as libc::c_char
 					{
-						float_value(r as f64)
+						FloatValue(r as f64)
 					}
 					else
 					{
-						invalid_value(*v, *kind)
+						InvalidValue(*v, *kind)
 					}
 				}
 			}
@@ -527,50 +527,50 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> object
 		(v, @~"http://www.w3.org/2001/XMLSchema#NCName", l) |
 		(v, @~"http://www.w3.org/2001/XMLSchema#ID", l) =>
 		{
-			string_value(*v, *l)
+			StringValue(*v, *l)
 		}
 		(v, k, @~"") =>
 		{
-			typed_value(*v, *k)
+			TypedValue(*v, *k)
 		}
 		_ =>
 		{
 			error!("object_to_operand unsupported type: %s.", *kind);
-			error_value(fmt!("object_to_operand unsupported type: %s.", *kind))
+			ErrorValue(fmt!("object_to_operand unsupported type: %s.", *kind))
 		}
 	}
 }
 
 // Effective boolean value, see 17.2.2
-pure fn get_ebv(operand: object) -> result::Result<bool, ~str>
+pure fn get_ebv(operand: Object) -> result::Result<bool, ~str>
 {
 	match operand
 	{
-		invalid_value(_literal, _type) =>
+		InvalidValue(_literal, _type) =>
 		{
 			result::Ok(false)
 		}
-		bool_value(value) =>
+		BoolValue(value) =>
 		{
 			result::Ok(value)
 		}
-		string_value(value, _) | typed_value(value, _) =>
+		StringValue(value, _) | TypedValue(value, _) =>
 		{
 			result::Ok(str::is_not_empty(value))
 		}
-		int_value(value) =>
+		IntValue(value) =>
 		{
 			result::Ok(value != 0i64)
 		}
-		float_value(value) =>
+		FloatValue(value) =>
 		{
 			result::Ok(!f64::is_NaN(value) && value != 0f64)
 		}
-		unbound_value(name) =>
+		UnboundValue(name) =>
 		{
 			result::Err(fmt!("?%s is not bound.", name))
 		}
-		error_value(err) =>
+		ErrorValue(err) =>
 		{
 			result::Err(err)
 		}
@@ -581,19 +581,19 @@ pure fn get_ebv(operand: object) -> result::Result<bool, ~str>
 	}
 }
 
-fn type_error(fname: ~str, operand: object, expected: ~str) -> ~str
+fn type_error(fname: ~str, operand: Object, expected: ~str) -> ~str
 {
 	match operand
 	{
-		unbound_value(name) =>
+		UnboundValue(name) =>
 		{
 			fmt!("%s: ?%s was not bound.", fname, name)
 		}
-		invalid_value(literal, kind) =>
+		InvalidValue(literal, kind) =>
 		{
 			fmt!("%s: '%s' is not a valid %s", fname, literal, kind)
 		}
-		error_value(err) =>
+		ErrorValue(err) =>
 		{
 			fmt!("%s: %s", fname, err)
 		}

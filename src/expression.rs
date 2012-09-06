@@ -14,22 +14,22 @@ export expr_to_str, eval_expr, constant_expr, variable_expr, call_expr, extensio
 	
 // --------------------------------------------------------------------------------------
 // TODO: This stuff should be in functional_forms.rs (see rust bug 3352)
-fn bound_fn(operand: object) -> object
+fn bound_fn(operand: Object) -> Object
 {
 	match operand
 	{
-		unbound_value(_name) =>
+		UnboundValue(_name) =>
 		{
-			bool_value(false)
+			BoolValue(false)
 		}
 		_ =>
 		{
-			bool_value(true)
+			BoolValue(true)
 		}
 	}
 }
 
-fn eval_if(context: query_context, bindings: ~[(~str, object)], args: ~[@expr]) -> object
+fn eval_if(context: query_context, bindings: ~[(~str, Object)], args: ~[@expr]) -> Object
 {
 	if vec::len(args) == 3u
 	{
@@ -46,7 +46,7 @@ fn eval_if(context: query_context, bindings: ~[(~str, object)], args: ~[@expr]) 
 			}
 			result::Err(err) =>
 			{
-				error_value(~"IF: " + err)
+				ErrorValue(~"IF: " + err)
 			}
 		}
 	}
@@ -54,16 +54,16 @@ fn eval_if(context: query_context, bindings: ~[(~str, object)], args: ~[@expr]) 
 	{
 		if vec::len(args) == 1u
 		{
-			error_value(~"IF accepts 3 arguments but was called with 1 argument.")
+			ErrorValue(~"IF accepts 3 arguments but was called with 1 argument.")
 		}
 		else
 		{
-			error_value(fmt!("IF accepts 3 arguments but was called with %? arguments.", vec::len(args)))
+			ErrorValue(fmt!("IF accepts 3 arguments but was called with %? arguments.", vec::len(args)))
 		}
 	}
 }
 
-fn eval_coalesce(context: query_context, bindings: ~[(~str, object)], args: ~[@expr]) -> object
+fn eval_coalesce(context: query_context, bindings: ~[(~str, Object)], args: ~[@expr]) -> Object
 {
 	for vec::each(args)
 	|arg|
@@ -71,7 +71,7 @@ fn eval_coalesce(context: query_context, bindings: ~[(~str, object)], args: ~[@e
 		let candidate = eval_expr(context, bindings, *arg);
 		match candidate
 		{
-			unbound_value(*) | invalid_value(*) | error_value(*) =>
+			UnboundValue(*) | InvalidValue(*) | ErrorValue(*) =>
 			{
 				// try the next argument
 			}
@@ -82,128 +82,128 @@ fn eval_coalesce(context: query_context, bindings: ~[(~str, object)], args: ~[@e
 		}
 	}
 	
-	return error_value(~"COALESCE: all arguments failed to evaluate");
+	return ErrorValue(~"COALESCE: all arguments failed to evaluate");
 }
 
-fn sameterm_fn(lhs: object, rhs: object) -> object
+fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 {
 	match lhs
 	{
-		bool_value(lvalue) =>
+		BoolValue(lvalue) =>
 		{
 			match rhs
 			{
-				bool_value(rvalue) =>
+				BoolValue(rvalue) =>
 				{
-					bool_value(lvalue == rvalue)
+					BoolValue(lvalue == rvalue)
 				}
 				_ =>
 				{
-					bool_value(false)
+					BoolValue(false)
 				}
 			}
 		}
-		int_value(lvalue) =>
+		IntValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
-					bool_value(lvalue == rvalue)	// TODO: when we introduce type codes we'll need to check them here
+					BoolValue(lvalue == rvalue)	// TODO: when we introduce type codes we'll need to check them here
 				}
 				_ =>
 				{
-					bool_value(false)
+					BoolValue(false)
 				}
 			}
 		}
-		float_value(lvalue) =>
+		FloatValue(lvalue) =>
 		{
 			match rhs
 			{
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
-					bool_value(lvalue == rvalue)	// TODO: when we introduce type codes we'll need to check them here
+					BoolValue(lvalue == rvalue)	// TODO: when we introduce type codes we'll need to check them here
 				}
 				_ =>
 				{
-					bool_value(false)
+					BoolValue(false)
 				}
 			}
 		}
-		dateTime_value(lvalue) =>
+		DateTimeValue(lvalue) =>
 		{
 			match rhs
 			{
-				dateTime_value(rvalue) =>
+				DateTimeValue(rvalue) =>
 				{
-					bool_value(lvalue == rvalue)
+					BoolValue(lvalue == rvalue)
 				}
 				_ =>
 				{
-					bool_value(false)
+					BoolValue(false)
 				}
 			}
 		}
-		string_value(lvalue, llang) =>
+		StringValue(lvalue, llang) =>
 		{
 			match rhs
 			{
-				string_value(rvalue, rlang) =>		// TODO: when we introduce type codes we'll need to check them here
+				StringValue(rvalue, rlang) =>		// TODO: when we introduce type codes we'll need to check them here
 				{
-					bool_value(str::to_lower(llang) == str::to_lower(rlang) && lvalue == rvalue)
+					BoolValue(str::to_lower(llang) == str::to_lower(rlang) && lvalue == rvalue)
 				}
 				_ =>
 				{
-					bool_value(false)
+					BoolValue(false)
 				}
 			}
 		}
-		typed_value(lvalue, ltype) =>
+		TypedValue(lvalue, ltype) =>
 		{
 			match rhs
 			{
-				typed_value(rvalue, rtype) =>
+				TypedValue(rvalue, rtype) =>
 				{
-					bool_value(ltype == rtype && lvalue == rvalue)
+					BoolValue(ltype == rtype && lvalue == rvalue)
 				}
 				_ =>
 				{
-					bool_value(false)
+					BoolValue(false)
 				}
 			}
 		}
-		iri_value(lvalue) =>
+		IriValue(lvalue) =>
 		{
 			match rhs
 			{
-				iri_value(rvalue) =>
+				IriValue(rvalue) =>
 				{
-					bool_value(lvalue == rvalue)
+					BoolValue(lvalue == rvalue)
 				}
 				_ =>
 				{
-					bool_value(false)
+					BoolValue(false)
 				}
 			}
 		}
-		blank_value(lvalue) =>
+		BlankValue(lvalue) =>
 		{
 			match rhs
 			{
-				blank_value(rvalue) =>
+				BlankValue(rvalue) =>
 				{
-					bool_value(lvalue == rvalue)
+					BoolValue(lvalue == rvalue)
 				}
 				_ =>
 				{
-					bool_value(false)
+					BoolValue(false)
 				}
 			}
 		}
 		_ =>
 		{
-			bool_value(false)
+			BoolValue(false)
 		}
 	}
 }
@@ -229,7 +229,7 @@ fn expr_to_str(store: &store, expr: expr) -> ~str
 	}
 }
 
-fn eval_expr(context: query_context, bindings: ~[(~str, object)], expr: expr) -> object
+fn eval_expr(context: query_context, bindings: ~[(~str, Object)], expr: expr) -> Object
 {
 	let result = match expr
 	{
@@ -247,7 +247,7 @@ fn eval_expr(context: query_context, bindings: ~[(~str, object)], expr: expr) ->
 				}
 				option::None =>
 				{
-					unbound_value(name)
+					UnboundValue(name)
 				}
 			}
 		}
@@ -274,11 +274,11 @@ fn eval_expr(context: query_context, bindings: ~[(~str, object)], expr: expr) ->
 }
 
 // ---- Internal Functions ----------------------------------------------------
-type unary_fn = fn (object) -> object;
-type binary_fn = fn (object, object) -> object;
-type ternary_fn = fn (object, object, object) -> object;
+type UnaryFn = fn (Object) -> Object;
+type BinaryFn = fn (Object, Object) -> Object;
+type TernaryFn = fn (Object, Object, Object) -> Object;
 
-fn eval_extension(context: query_context, bindings: ~[(~str, object)], fname: ~str, args: ~[@expr]) -> object
+fn eval_extension(context: query_context, bindings: ~[(~str, Object)], fname: ~str, args: ~[@expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match context.extensions.find(fname)
@@ -289,12 +289,12 @@ fn eval_extension(context: query_context, bindings: ~[(~str, object)], fname: ~s
 		}
 		option::None =>
 		{
-			error_value(fmt!("%s wasn't registered with the store as an extension function", fname))
+			ErrorValue(fmt!("%s wasn't registered with the store as an extension function", fname))
 		}
 	}
 }
 
-fn eval_call(context: query_context, bindings: ~[(~str, object)], fname: ~str, args: ~[@expr]) -> object
+fn eval_call(context: query_context, bindings: ~[(~str, Object)], fname: ~str, args: ~[@expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match fname
@@ -516,12 +516,12 @@ fn eval_call(context: query_context, bindings: ~[(~str, object)], fname: ~str, a
 		// unknown functions
 		_ =>
 		{
-			error_value(fmt!("%s is not implemented.", fname))
+			ErrorValue(fmt!("%s is not implemented.", fname))
 		}
 	}
 }
 
-fn eval_call1(fname: ~str, fp: @unary_fn, args: ~[object]) -> object
+fn eval_call1(fname: ~str, fp: @UnaryFn, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 1u
 	{
@@ -529,11 +529,11 @@ fn eval_call1(fname: ~str, fp: @unary_fn, args: ~[object]) -> object
 	}
 	else
 	{
-		error_value(fmt!("%s accepts 1 argument but was called with %? arguments.", fname, vec::len(args)))
+		ErrorValue(fmt!("%s accepts 1 argument but was called with %? arguments.", fname, vec::len(args)))
 	}
 }
 
-fn eval_call2(fname: ~str, fp: @binary_fn, args: ~[object]) -> object
+fn eval_call2(fname: ~str, fp: @BinaryFn, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 2u
 	{
@@ -543,16 +543,16 @@ fn eval_call2(fname: ~str, fp: @binary_fn, args: ~[object]) -> object
 	{
 		if vec::len(args) == 1u
 		{
-			error_value(fmt!("%s accepts 2 arguments but was called with 1 argument.", fname))
+			ErrorValue(fmt!("%s accepts 2 arguments but was called with 1 argument.", fname))
 		}
 		else
 		{
-			error_value(fmt!("%s accepts 2 arguments but was called with %? arguments.", fname, vec::len(args)))
+			ErrorValue(fmt!("%s accepts 2 arguments but was called with %? arguments.", fname, vec::len(args)))
 		}
 	}
 }
 
-fn eval_call3(fname: ~str, fp: @ternary_fn, args: ~[object]) -> object
+fn eval_call3(fname: ~str, fp: @TernaryFn, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 3u
 	{
@@ -562,11 +562,11 @@ fn eval_call3(fname: ~str, fp: @ternary_fn, args: ~[object]) -> object
 	{
 		if vec::len(args) == 1u
 		{
-			error_value(fmt!("%s accepts 3 arguments but was called with 1 argument.", fname))
+			ErrorValue(fmt!("%s accepts 3 arguments but was called with 1 argument.", fname))
 		}
 		else
 		{
-			error_value(fmt!("%s accepts 3 arguments but was called with %? arguments.", fname, vec::len(args)))
+			ErrorValue(fmt!("%s accepts 3 arguments but was called with %? arguments.", fname, vec::len(args)))
 		}
 	}
 }

@@ -13,8 +13,8 @@ fn got_cast1() -> store
 		{prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
 		], @std::map::str_hash());
 	store.add(~"got:Eddard_Stark", ~[
-		(~"v:fn", string_value(~"Eddard Stark", ~"")),
-		(~"v:nickname", string_value(~"Ned", ~""))
+		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
+		(~"v:nickname", StringValue(~"Ned", ~""))
 	]);
 	return store;
 }
@@ -27,28 +27,28 @@ fn got_cast3() -> store
 		], @std::map::str_hash());
 	
 	store.add(~"got:Eddard_Stark", ~[
-		(~"v:fn", string_value(~"Eddard Stark", ~"")),
-		(~"v:nickname", string_value(~"Ned", ~"")),
-		(~"v:honorific-prefix", string_value(~"Lord", ~""))
+		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
+		(~"v:nickname", StringValue(~"Ned", ~"")),
+		(~"v:honorific-prefix", StringValue(~"Lord", ~""))
 	]);
 	store.add_aggregate(~"got:Eddard_Stark", ~"v:org", ~"ned-org", ~[
-		(~"v:organisation-name", string_value(~"Small Council", ~"")),
-		(~"v:organisation-unit", string_value(~"Hand", ~""))
+		(~"v:organisation-name", StringValue(~"Small Council", ~"")),
+		(~"v:organisation-unit", StringValue(~"Hand", ~""))
 	]);
 	
 	store.add(~"got:Jon_Snow", ~[
-		(~"v:fn", string_value(~"Jon Snow", ~"")),
-		(~"v:nickname", string_value(~"Lord Snow", ~"")),
-		(~"v:pet", string_value(~"Ghost", ~""))
+		(~"v:fn", StringValue(~"Jon Snow", ~"")),
+		(~"v:nickname", StringValue(~"Lord Snow", ~"")),
+		(~"v:pet", StringValue(~"Ghost", ~""))
 	]);
 	store.add_aggregate(~"got:Jon_Snow", ~"v:org", ~"jon-org", ~[
-		(~"v:organisation-name", string_value(~"Night's Watch", ~"")),
-		(~"v:organisation-unit", string_value(~"Stewards", ~""))
+		(~"v:organisation-name", StringValue(~"Night's Watch", ~"")),
+		(~"v:organisation-unit", StringValue(~"Stewards", ~""))
 	]);
 	
 	store.add(~"got:Sandor_Clegane", ~[
-		(~"v:fn", string_value(~"Sandor Clegane", ~"")),
-		(~"v:nickname", string_value(~"The Hound", ~""))
+		(~"v:fn", StringValue(~"Sandor Clegane", ~"")),
+		(~"v:nickname", StringValue(~"The Hound", ~""))
 	]);
 	return store;
 }
@@ -58,40 +58,40 @@ fn animals() -> store
 	let store = create_store(~[{prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @std::map::str_hash());
 	
 	store.add(~"wiki:aardvark", ~[
-		(~"wiki:phylum", string_value(~"chordata", ~"")),
-		(~"wiki:class", string_value(~"mammalia", ~"")),
-		(~"wiki:family", string_value(~"orycteropodidae", ~"")),
+		(~"wiki:phylum", StringValue(~"chordata", ~"")),
+		(~"wiki:class", StringValue(~"mammalia", ~"")),
+		(~"wiki:family", StringValue(~"orycteropodidae", ~"")),
 	]);
 		
 	store.add(~"wiki:black_widow", ~[
-		(~"wiki:phylum", string_value(~"arthropoda", ~"")),
-		(~"wiki:class", string_value(~"arachnida", ~"")),
-		(~"wiki:family", string_value(~"theridiidae", ~"")),
+		(~"wiki:phylum", StringValue(~"arthropoda", ~"")),
+		(~"wiki:class", StringValue(~"arachnida", ~"")),
+		(~"wiki:family", StringValue(~"theridiidae", ~"")),
 	]);
 		
 	store.add(~"wiki:firefly", ~[
-		(~"wiki:phylum", string_value(~"arthropoda", ~"")),
-		(~"wiki:class", string_value(~"insecta", ~"")),
-		(~"wiki:family", string_value(~"lampyridae", ~"")),
+		(~"wiki:phylum", StringValue(~"arthropoda", ~"")),
+		(~"wiki:class", StringValue(~"insecta", ~"")),
+		(~"wiki:family", StringValue(~"lampyridae", ~"")),
 	]);
 		
 	store.add(~"wiki:giraffe", ~[
-		(~"wiki:phylum", string_value(~"chordata", ~"")),
-		(~"wiki:class", string_value(~"mammalia", ~"")),
-		(~"wiki:family", string_value(~"giraffidae", ~"")),
-		(~"wiki:habitat", string_value(~"savannah", ~"")),
+		(~"wiki:phylum", StringValue(~"chordata", ~"")),
+		(~"wiki:class", StringValue(~"mammalia", ~"")),
+		(~"wiki:family", StringValue(~"giraffidae", ~"")),
+		(~"wiki:habitat", StringValue(~"savannah", ~"")),
 	]);
 		
 	store.add(~"wiki:grizzly", ~[
-		(~"wiki:phylum", string_value(~"chordata", ~"")),
-		(~"wiki:class", string_value(~"mammalia", ~"")),
-		(~"wiki:family", string_value(~"ursidae", ~"")),
+		(~"wiki:phylum", StringValue(~"chordata", ~"")),
+		(~"wiki:class", StringValue(~"mammalia", ~"")),
+		(~"wiki:family", StringValue(~"ursidae", ~"")),
 	]);
 		
 	store.add(~"wiki:salmon", ~[
-		(~"wiki:phylum", string_value(~"chordata", ~"")),
-		(~"wiki:class", string_value(~"actinopterygii", ~"")),
-		(~"wiki:family", string_value(~"salmonidae", ~"")),
+		(~"wiki:phylum", StringValue(~"chordata", ~"")),
+		(~"wiki:class", StringValue(~"actinopterygii", ~"")),
+		(~"wiki:family", StringValue(~"salmonidae", ~"")),
 	]);
 	
 	return store;

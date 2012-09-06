@@ -8,7 +8,7 @@ use object::*;
 /// Result of matching a triple with a SPARQL query.
 ///
 /// Order of entries in each row will match the order in the SELECT clause.
-type solution_row = ~[(~str, object)];
+type solution_row = ~[(~str, Object)];
 
 /// Result of a SPARQL query.
 /// 
@@ -18,8 +18,8 @@ type solution = ~[solution_row];
 
 trait solution_trait
 {
-	pure fn get(row: uint, name: ~str) -> object;
-	pure fn search(row: uint, name: ~str) -> Option<object>;
+	pure fn get(row: uint, name: ~str) -> Object;
+	pure fn search(row: uint, name: ~str) -> Option<Object>;
 	
 	/// In general an ORDER BY clause should be used to sort solutions.
 	/// However it can be convenient to manually sort them for things
@@ -29,19 +29,19 @@ trait solution_trait
 
 trait solution_row_trait
 {
-	pure fn get(name: ~str) -> object;
+	pure fn get(name: ~str) -> Object;
 	pure fn contains(name: ~str) -> bool;
-	pure fn search(name: ~str) -> Option<object>;
+	pure fn search(name: ~str) -> Option<Object>;
 }
 
 impl  solution : solution_trait 
 {
-	pure fn get(row: uint, name: ~str) -> object
+	pure fn get(row: uint, name: ~str) -> Object
 	{
 		self[row].get(name)
 	}
 	
-	pure fn search(row: uint, name: ~str) -> Option<object>
+	pure fn search(row: uint, name: ~str) -> Option<Object>
 	{
 		self[row].search(name)
 	}
@@ -98,7 +98,7 @@ impl  solution : solution_trait
 
 impl  solution_row : solution_row_trait 
 {
-	pure fn get(name: ~str) -> object
+	pure fn get(name: ~str) -> Object
 	{
 		match vec::find(self, |e| {e.first() == name})
 		{
@@ -119,7 +119,7 @@ impl  solution_row : solution_row_trait
 	}
 	
 	// Named search so we don't wind up conflicting with the find vec extension.
-	pure fn search(name: ~str) -> Option<object>
+	pure fn search(name: ~str) -> Option<Object>
 	{
 		match vec::find(self, |e| {e.first() == name})
 		{

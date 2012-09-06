@@ -17,7 +17,7 @@ export join_solutions, eval, pattern, variable, constant, algebra, triple_patter
 /// Returns a solution or a 'runtime' error.
 type selector = fn@ (s: &store) -> result::Result<solution, ~str>;
 
-type binding = {name: ~str, value: object};
+type binding = {name: ~str, value: Object};
 
 type Match = either::Either<binding, bool>;	// match succeeded if bindings or true
 
@@ -107,7 +107,7 @@ fn solution_to_str(store: &store, solution: solution) -> ~str
 // are also identical.
 fn join_solutions(store: &store, names: ~[~str], group1: solution, group2: solution, optional_join: bool) -> solution
 {
-	fn compatible_binding(name1: ~str, value1: object, rhs: solution_row) -> bool
+	fn compatible_binding(name1: ~str, value1: Object, rhs: solution_row) -> bool
 	{
 		match rhs.search(name1)
 		{
@@ -213,11 +213,11 @@ fn filter_row(names: ~[~str], row: solution_row) -> solution_row
 	}
 }
 
-fn equal_objects(actual: object, expected: object) -> bool
+fn equal_objects(actual: Object, expected: Object) -> bool
 {
-	match op_equals(actual, expected)	// should get bool_value or error_value
+	match op_equals(actual, expected)	// should get BoolValue or ErrorValue
 	{
-		bool_value(value) =>
+		BoolValue(value) =>
 		{
 			value
 		}
@@ -237,21 +237,21 @@ fn match_subject(actual: ~str, pattern: pattern) -> Match
 			let value =
 				if actual.starts_with("_:")
 				{
-					blank_value(actual)
+					BlankValue(actual)
 				}
 				else
 				{
-					iri_value(actual)
+					IriValue(actual)
 				};
 			either::Left({name: name, value: value})
 		}
-		constant(iri_value(value)) =>
+		constant(IriValue(value)) =>
 		{
 			let matched = actual == value;
 			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
 			either::Right(matched)
 		}
-		constant(blank_value(value)) =>
+		constant(BlankValue(value)) =>
 		{
 			let matched = actual == value;
 			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
@@ -270,10 +270,10 @@ fn match_predicate(actual: ~str, pattern: pattern) -> Match
 	{
 		variable(name) =>
 		{
-			let value = iri_value(actual);
+			let value = IriValue(actual);
 			either::Left({name: name, value: value})
 		}
-		constant(iri_value(value)) =>
+		constant(IriValue(value)) =>
 		{
 			let matched = actual == value;
 			//debug!("Actual predicate %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
@@ -286,7 +286,7 @@ fn match_predicate(actual: ~str, pattern: pattern) -> Match
 	}
 }
 
-fn match_object(actual: object, pattern: pattern) -> Match
+fn match_object(actual: Object, pattern: pattern) -> Match
 {
 	match pattern
 	{
@@ -303,7 +303,7 @@ fn match_object(actual: object, pattern: pattern) -> Match
 	}
 }
 
-fn eval_match(&bindings: ~[(~str, object)], m: Match) -> result::Result<bool, ~str>
+fn eval_match(&bindings: ~[(~str, Object)], m: Match) -> result::Result<bool, ~str>
 {
 	match m
 	{
@@ -354,7 +354,7 @@ fn iterate_matches(store: &store, spattern: pattern, callback: fn (Option<bindin
 	
 	match spattern
 	{
-		constant(iri_value(subject)) | constant(blank_value(subject)) =>
+		constant(IriValue(subject)) | constant(BlankValue(subject)) =>
 		{
 			// Optimization for a common case where we are attempting to match a specific subject.
 			let candidate = store.subjects.find(subject);
@@ -487,15 +487,15 @@ fn bind_solution(context: query_context, names: ~[~str], solution: solution, exp
 		let value = eval_expr(context, row, expr);
 		match value
 		{
-			unbound_value(name) =>
+			UnboundValue(name) =>
 			{
 				return result::Err(fmt!("?%s was not bound", name));
 			}
-			invalid_value(literal, kind) =>
+			InvalidValue(literal, kind) =>
 			{
 				return result::Err(fmt!("?%s is not a valid %s", literal, kind));
 			}
-			error_value(mesg) =>
+			ErrorValue(mesg) =>
 			{
 				return result::Err(mesg);
 			}
@@ -652,7 +652,7 @@ fn eval_algebra(store: &store, names: ~[~str], context: query_context) -> result
 	}
 }
 
-fn eval_order_expr(context: query_context, row: solution_row, expr: expr) -> (bool, object)
+fn eval_order_expr(context: query_context, row: solution_row, expr: expr) -> (bool, Object)
 {
 	match expr
 	{
@@ -671,7 +671,7 @@ fn eval_order_expr(context: query_context, row: solution_row, expr: expr) -> (bo
 	}
 }
 
-fn compare_order_values(lhs: (bool, object), rhs: (bool, object)) -> result::Result<int, ~str>
+fn compare_order_values(lhs: (bool, Object), rhs: (bool, Object)) -> result::Result<int, ~str>
 {
 	assert lhs.first() == rhs.first();
 	
@@ -690,12 +690,10 @@ fn compare_order_values(lhs: (bool, object), rhs: (bool, object)) -> result::Res
 
 fn order_by(context: query_context, solution: solution, ordering: ~[expr]) -> result::Result<solution, ~str>
 {
-	// TODO: Might have to do this in multiple passes:
-	// 1) see if the rows are comparable (how would they not be? predicate objects aren't guaranteed to be the same...)
-	// 2) sort the rows
-	//
+	// TODO
 	// Probably more efficient to do the evaluation in a pre-pass. Looks like rust requires 2N comparisons in the worst case.
 	// http://www.codecodex.com/wiki/Merge_sort#Analysis
+	// Or maybe just do an in place sort.
 	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[expr], context: query_context, row1: solution_row, row2: solution_row) -> bool
 	{
 		unchecked

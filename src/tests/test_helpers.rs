@@ -17,7 +17,7 @@ fn check_strs(actual: ~str, expected: ~str) -> bool
 	return true;
 }
 
-fn check_operands(actual: object, expected: object) -> bool
+fn check_operands(actual: Object, expected: Object) -> bool
 {
 	if actual != expected
 	{

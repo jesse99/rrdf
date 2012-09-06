@@ -24,60 +24,60 @@ fn monsters() -> store
 	// containers, aggregates, reified statements, and predicates/objects
 	// associated with a subject (which is what we use here).
 	store.add(~"game:snake", ~[
-		(~"game:name", string_value(~"King Snake", ~"")),	// "" is for an optional language
-		(~"game:min_level", int_value(1)),
-		(~"game:max_level", int_value(5)),
-		(~"game:weight", int_value(4)),				// relative probability
-		(~"game:habitat", string_value(~"|land|water|", ~"")),
+		(~"game:name", StringValue(~"King Snake", ~"")),	// "" is for an optional language
+		(~"game:min_level", IntValue(1)),
+		(~"game:max_level", IntValue(5)),
+		(~"game:weight", IntValue(4)),				// relative probability
+		(~"game:habitat", StringValue(~"|land|water|", ~"")),
 	]);
 	
 	store.add(~"game:bear", ~[
-		(~"game:name", string_value(~"Grizzly Bear", ~"")),
-		(~"game:min_level", int_value(3)),
-		(~"game:max_level", int_value(6)),
-		(~"game:weight", int_value(3)),
-		(~"game:habitat", string_value(~"|land|", ~"")),
+		(~"game:name", StringValue(~"Grizzly Bear", ~"")),
+		(~"game:min_level", IntValue(3)),
+		(~"game:max_level", IntValue(6)),
+		(~"game:weight", IntValue(3)),
+		(~"game:habitat", StringValue(~"|land|", ~"")),
 	]);
 	
 	store.add(~"game:naga", ~[
-		(~"game:name", string_value(~"Naga Warrior", ~"")),
-		(~"game:min_level", int_value(7)),
-		(~"game:max_level", int_value(15)),
-		(~"game:weight", int_value(2)),
-		(~"game:habitat", string_value(~"|land|water|", ~"")),
+		(~"game:name", StringValue(~"Naga Warrior", ~"")),
+		(~"game:min_level", IntValue(7)),
+		(~"game:max_level", IntValue(15)),
+		(~"game:weight", IntValue(2)),
+		(~"game:habitat", StringValue(~"|land|water|", ~"")),
 	]);
 	
 	store.add(~"game:shark", ~[
-		(~"game:name", string_value(~"Hammerhead Shark", ~"")),
-		(~"game:min_level", int_value(5)),
-		(~"game:max_level", int_value(21)),
-		(~"game:weight", int_value(1)),
-		(~"game:habitat", string_value(~"|water|", ~"")),
+		(~"game:name", StringValue(~"Hammerhead Shark", ~"")),
+		(~"game:min_level", IntValue(5)),
+		(~"game:max_level", IntValue(21)),
+		(~"game:weight", IntValue(1)),
+		(~"game:habitat", StringValue(~"|water|", ~"")),
 	]);
 	
 	store.add(~"game:mummy", ~[
-		(~"game:name", string_value(~"Mummy", ~"")),
-		(~"game:min_level", int_value(10)),
-		(~"game:max_level", int_value(20)),
-		(~"game:weight", int_value(2)),
-		(~"game:habitat", string_value(~"|land|", ~"")),
+		(~"game:name", StringValue(~"Mummy", ~"")),
+		(~"game:min_level", IntValue(10)),
+		(~"game:max_level", IntValue(20)),
+		(~"game:weight", IntValue(2)),
+		(~"game:habitat", StringValue(~"|land|", ~"")),
 	]);
 	
 	store.add(~"game:lich", ~[
-		(~"game:name", string_value(~"Lich", ~"")),
-		(~"game:min_level", int_value(15)),
-		(~"game:max_level", int_value(30)),
-		(~"game:weight", int_value(3)),
-		(~"game:habitat", string_value(~"|land|", ~"")),
-		(~"game:announce", string_value(~"You feel a chill.", ~"")),	
+		(~"game:name", StringValue(~"Lich", ~"")),
+		(~"game:min_level", IntValue(15)),
+		(~"game:max_level", IntValue(30)),
+		(~"game:weight", IntValue(3)),
+		(~"game:habitat", StringValue(~"|land|", ~"")),
+		(~"game:announce", StringValue(~"You feel a chill.", ~"")),	
 	]);
 	
 	store.add(~"game:necromancer", ~[
-		(~"game:name", string_value(~"Necromancer", ~"")),
-		(~"game:min_level", int_value(20)),
-		(~"game:max_level", int_value(30)),
-		(~"game:weight", int_value(2)),
-		(~"game:habitat", string_value(~"|land|", ~"")),
+		(~"game:name", StringValue(~"Necromancer", ~"")),
+		(~"game:min_level", IntValue(20)),
+		(~"game:max_level", IntValue(30)),
+		(~"game:weight", IntValue(2)),
+		(~"game:habitat", StringValue(~"|land|", ~"")),
 	]);
 	
 	return store;
@@ -141,9 +141,9 @@ fn query_monsters()
 	}
 	
 	let expected = ~[
-		~[(~"name", string_value(~"Lich", ~"")), (~"weight", int_value(3)), (~"announcement", string_value(~"You feel a chill.", ~""))],
-		~[(~"name", string_value(~"Mummy", ~"")), (~"weight", int_value(2))],
-		~[(~"name", string_value(~"Necromancer", ~"")), (~"weight", int_value(2))],
+		~[(~"name", StringValue(~"Lich", ~"")), (~"weight", IntValue(3)), (~"announcement", StringValue(~"You feel a chill.", ~""))],
+		~[(~"name", StringValue(~"Mummy", ~"")), (~"weight", IntValue(2))],
+		~[(~"name", StringValue(~"Necromancer", ~"")), (~"weight", IntValue(2))],
 	];
 	assert check_solution(store, expr, expected);
 }

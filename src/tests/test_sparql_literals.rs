@@ -19,7 +19,7 @@ fn string1_match()
 	let expr = ~"SELECT ?s ?p WHERE {?s ?p 'Ned'}";
 	let store = test_data::got_cast1();
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Eddard_Stark"))), (~"p", iri_value(v(~"nickname")))]
+		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -31,7 +31,7 @@ fn string2_match()
 	let expr = ~"SELECT ?s ?p WHERE {?s ?p \"Ned\"}";
 	let store = test_data::got_cast1();
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Eddard_Stark"))), (~"p", iri_value(v(~"nickname")))]
+		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -43,11 +43,11 @@ fn long_string1_match()
 	let expr = ~"SELECT ?s ?p WHERE {?s ?p '''Name\nTitle'''}";
 	let store = test_data::got_cast1();
 	store.add(~"got:Some_Guy", ~[
-		(~"v:fn", string_value(~"Name\nTitle", ~""))
+		(~"v:fn", StringValue(~"Name\nTitle", ~""))
 	]);
 	
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Some_Guy"))), (~"p", iri_value(v(~"fn")))]
+		~[(~"s", IriValue(got(~"Some_Guy"))), (~"p", IriValue(v(~"fn")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -59,11 +59,11 @@ fn long_string2_match()
 	let expr = ~"SELECT ?s ?p WHERE {?s ?p \"\"\"Bob \"Bob\n\"\"\"}";
 	let store = test_data::got_cast1();
 	store.add(~"got:Some_Guy", ~[
-		(~"v:fn", string_value(~"Bob \"Bob\n", ~""))
+		(~"v:fn", StringValue(~"Bob \"Bob\n", ~""))
 	]);
 	
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Some_Guy"))), (~"p", iri_value(v(~"fn")))]
+		~[(~"s", IriValue(got(~"Some_Guy"))), (~"p", IriValue(v(~"fn")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -76,8 +76,8 @@ fn fancy_types() -> store
 		{prefix: ~"x", path: ~"http://blah#"}
 		], @std::map::str_hash());
 	
-	store.add(~"x:Hans", ~[(~"x:greeting", string_value(~"guten tag", ~"de"))]);
-	store.add(~"x:Jones", ~[(~"x:greeting", string_value(~"guten tag", ~"en-US"))]);
+	store.add(~"x:Hans", ~[(~"x:greeting", StringValue(~"guten tag", ~"de"))]);
+	store.add(~"x:Jones", ~[(~"x:greeting", StringValue(~"guten tag", ~"en-US"))]);
 	return store;
 }
 
@@ -87,7 +87,7 @@ fn language_tags()
 	let expr = ~"SELECT ?s WHERE {?s ?p \"guten tag\"@en-US}";
 	let store = fancy_types();
 	let expected = ~[
-		~[(~"s", iri_value(~"http://blah#Jones"))]
+		~[(~"s", IriValue(~"http://blah#Jones"))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -99,9 +99,9 @@ fn iri_match()
 	let expr = ~"SELECT ?s WHERE {?s <http://www.w3.org/2006/vcard/ns#nickname> ?z}";
 	let store = test_data::got_cast3();
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Eddard_Stark")))],
-		~[(~"s", iri_value(got(~"Jon_Snow")))],
-		~[(~"s", iri_value(got(~"Sandor_Clegane")))]
+		~[(~"s", IriValue(got(~"Eddard_Stark")))],
+		~[(~"s", IriValue(got(~"Jon_Snow")))],
+		~[(~"s", IriValue(got(~"Sandor_Clegane")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -114,8 +114,8 @@ fn subject_match()
 	let expr = ~"SELECT ?p WHERE {<http://awoiaf.westeros.org/index.php/Sandor_Clegane> ?p ?z}";
 	let store = test_data::got_cast3();
 	let expected = ~[
-		~[(~"p", iri_value(v(~"fn")))],
-		~[(~"p", iri_value(v(~"nickname")))]
+		~[(~"p", IriValue(v(~"fn")))],
+		~[(~"p", IriValue(v(~"nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -137,7 +137,7 @@ fn typed_literal_match()
 	let expr = ~"SELECT ?s ?p WHERE {?s ?p \"Ned\"^^<http://www.w3.org/2001/XMLSchema#string>}";
 	let store = test_data::got_cast1();
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Eddard_Stark"))), (~"p", iri_value(v(~"nickname")))]
+		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -156,7 +156,7 @@ WHERE
 }";
 	let store = test_data::got_cast1();
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Eddard_Stark"))), (~"p", iri_value(v(~"nickname")))]
+		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -168,15 +168,15 @@ fn int_literal()
 	let expr = ~"SELECT ?s WHERE {?s ?p 23}";
 	let store = test_data::got_cast1();
 	store.add(~"got:Some_Guy", ~[
-		(~"v:age", int_value(23i64))
+		(~"v:age", IntValue(23i64))
 	]);
 	store.add(~"got:Another_Guy", ~[
-		(~"v:age", int_value(23i64))
+		(~"v:age", IntValue(23i64))
 	]);
 	
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Another_Guy")))],
-		~[(~"s", iri_value(got(~"Some_Guy")))]
+		~[(~"s", IriValue(got(~"Another_Guy")))],
+		~[(~"s", IriValue(got(~"Some_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -187,11 +187,11 @@ fn signed_int_literal()
 {
 	let expr = ~"SELECT ?s WHERE {?s ?p -23}";
 	let store = test_data::got_cast1();
-	store.add(~"got:Some_Guy", ~[(~"v:age", int_value(23i64))]);
-	store.add(~"got:Another_Guy", ~[(~"v:age", int_value(-23i64))]);
+	store.add(~"got:Some_Guy", ~[(~"v:age", IntValue(23i64))]);
+	store.add(~"got:Another_Guy", ~[(~"v:age", IntValue(-23i64))]);
 	
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Another_Guy")))]
+		~[(~"s", IriValue(got(~"Another_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -202,12 +202,12 @@ fn decimal_literal()
 {
 	let expr = ~"SELECT ?s WHERE {?s ?p 3.14}";
 	let store = test_data::got_cast1();
-	store.add(~"got:Some_Guy", ~[(~"v:age", float_value(3.14f64))]);
-	store.add(~"got:Another_Guy", ~[(~"v:age", float_value(3.14f64))]);
+	store.add(~"got:Some_Guy", ~[(~"v:age", FloatValue(3.14f64))]);
+	store.add(~"got:Another_Guy", ~[(~"v:age", FloatValue(3.14f64))]);
 	
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Another_Guy")))],
-		~[(~"s", iri_value(got(~"Some_Guy")))]
+		~[(~"s", IriValue(got(~"Another_Guy")))],
+		~[(~"s", IriValue(got(~"Some_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -219,14 +219,14 @@ fn signed_decimal_literal()
 	let expr = ~"SELECT ?s WHERE {?s ?p -3.14}";
 	let store = test_data::got_cast1();
 	store.add(~"got:Some_Guy", ~[
-		(~"v:age", float_value(3.14f64))
+		(~"v:age", FloatValue(3.14f64))
 	]);
 	store.add(~"got:Another_Guy", ~[
-		(~"v:age", float_value(-3.14f64))
+		(~"v:age", FloatValue(-3.14f64))
 	]);
 	
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Another_Guy")))]
+		~[(~"s", IriValue(got(~"Another_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -238,15 +238,15 @@ fn double_literal()
 	let expr = ~"SELECT ?s WHERE {?s ?p 314e-2}";
 	let store = test_data::got_cast1();
 	store.add(~"got:Some_Guy", ~[
-		(~"v:age", float_value(3.14f64))
+		(~"v:age", FloatValue(3.14f64))
 	]);
 	store.add(~"got:Another_Guy", ~[
-		(~"v:age", float_value(3.14f64))
+		(~"v:age", FloatValue(3.14f64))
 	]);
 	
 	let expected = ~[
-		~[(~"s", iri_value(got(~"Another_Guy")))],
-		~[(~"s", iri_value(got(~"Some_Guy")))]
+		~[(~"s", IriValue(got(~"Another_Guy")))],
+		~[(~"s", IriValue(got(~"Some_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -258,14 +258,14 @@ fn boolean_literal()
 	let expr = ~"SELECT ?s WHERE {?s ?p false}";
 	let store = test_data::got_cast1();
 	store.add(~"got:Some_Guy", ~[
-		(~"v:male", bool_value(true))
+		(~"v:male", BoolValue(true))
 	]);
 	store.add(~"got:A_Woman", ~[
-		(~"v:male", bool_value(false))
+		(~"v:male", BoolValue(false))
 	]);
 	
 	let expected = ~[
-		~[(~"s", iri_value(got(~"A_Woman")))]
+		~[(~"s", IriValue(got(~"A_Woman")))]
 	];
 	
 	assert check_solution(store, expr, expected);
@@ -288,8 +288,8 @@ fn datetime()
 	]);
 	
 	let expected = ~[
-//		~[(~"s", iri_value(got(~"A_Woman")))],
-		~[(~"s", iri_value(got(~"Some_Guy")))]
+//		~[(~"s", IriValue(got(~"A_Woman")))],
+		~[(~"s", IriValue(got(~"Some_Guy")))]
 	];
 	
 	assert check_solution(store, expr, expected);

@@ -14,7 +14,7 @@ export expr, pattern, variable, constant, triple_pattern, algebra, basic, group,
 // TODO: should be in expression.rs (see rust bug 3352)
 enum expr
 {
-	constant_expr(object),
+	constant_expr(Object),
 	variable_expr(~str),
 	call_expr(~str, ~[@expr]),			// function name + arguments
 	extension_expr(~str, ~[@expr])	// function name + arguments
@@ -25,7 +25,7 @@ enum expr
 enum pattern
 {
 	variable(~str),
-	constant(object)
+	constant(Object)
 }
 
 type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
@@ -53,15 +53,15 @@ type query_context =
 
 // --------------------------------------------------------------------------------------
 // TODO: should be in object.rs (see rust bug 3352)
-fn object_to_str(store: &store, obj: object) -> ~str
+fn object_to_str(store: &store, obj: Object) -> ~str
 {
 	match obj
 	{
-		typed_value(value, kind) =>
+		TypedValue(value, kind) =>
 		{
 			fmt!("\"%s^^\"%s", value, contract_uri(store.namespaces, kind))
 		}
-		iri_value(iri) =>
+		IriValue(iri) =>
 		{
 			let result = contract_uri(store.namespaces, iri);
 			if result != iri
@@ -82,7 +82,7 @@ fn object_to_str(store: &store, obj: object) -> ~str
 
 // --------------------------------------------------------------------------------------
 // TODO: should be in object.rs (see rust bug 3352)
-fn get_object(row: solution_row, name: ~str) -> object
+fn get_object(row: solution_row, name: ~str) -> Object
 {
 	match row.search(name)
 	{
@@ -92,7 +92,7 @@ fn get_object(row: solution_row, name: ~str) -> object
 		}
 		option::None =>
 		{
-			unbound_value(name)
+			UnboundValue(name)
 		}
 	}
 }
@@ -114,16 +114,16 @@ type predicate = ~str;
 /// Here is a psuedo-code example:
 /// 
 /// ('https://github.com/jesse99/rrdf', 'http://purl.org/dc/terms/creator', 'Jesse Jones')
-type triple = {subject: subject, predicate: predicate, object: object};
+type triple = {subject: subject, predicate: predicate, object: Object};
 
 /// Name of a namespace plus the IRI it expands to.
 type namespace = {prefix: ~str, path: ~str};
 
 /// Predicate and object associated with a subject.
-type entry = {predicate: ~str, object: object};
+type entry = {predicate: ~str, object: Object};
 
 /// SPARQL extension function.
-type extension_fn = fn@ (~[namespace], ~[object]) -> object;
+type extension_fn = fn@ (~[namespace], ~[Object]) -> Object;
 
 /// Stores triples in a more or less efficient format.
 type store = {
@@ -136,7 +136,7 @@ type store = {
 /// Initializes a store object.
 /// 
 /// xsd, rdf, rdfs, and owl namespaces are automatically added. An rrdf:pname extension is
-/// automatically added which converts an iri_value to a string_value using namespaces (or
+/// automatically added which converts an IriValue to a StringValue using namespaces (or
 /// simply stringifies it if none of the namespaces paths match).
 fn create_store(namespaces: ~[namespace], extensions: @hashmap<~str, extension_fn>) -> store
 {
@@ -176,18 +176,18 @@ fn contract_uri(namespaces: ~[namespace], iri: ~str) -> ~str
 
 trait store_trait
 {
-	fn add(subject: ~str, entries: ~[(~str, object)]);
+	fn add(subject: ~str, entries: ~[(~str, Object)]);
 	fn add_triple(namespaces: ~[namespace], triple: triple);
-	fn add_aggregate(subject: ~str, predicate: ~str, label: ~str, entries: ~[(~str, object)]) -> ~str;
-	fn add_alt(subject: ~str, values: ~[object]);
-	fn add_bag(subject: ~str, values: ~[object]);
-	fn add_container(subject: ~str, kind: ~str, values: ~[object]);
-	fn add_list(subject: ~str, predicate: ~str, values: ~[object]);
-	fn add_reify(subject: ~str, predicate: ~str, value: object);
-	fn add_seq(subject: ~str, values: ~[object]);
+	fn add_aggregate(subject: ~str, predicate: ~str, label: ~str, entries: ~[(~str, Object)]) -> ~str;
+	fn add_alt(subject: ~str, values: ~[Object]);
+	fn add_bag(subject: ~str, values: ~[Object]);
+	fn add_container(subject: ~str, kind: ~str, values: ~[Object]);
+	fn add_list(subject: ~str, predicate: ~str, values: ~[Object]);
+	fn add_reify(subject: ~str, predicate: ~str, value: Object);
+	fn add_seq(subject: ~str, values: ~[Object]);
 	fn clear();
-	fn find_object(subject: ~str, predicate: ~str) -> option::Option<object>;
-	fn find_objects(subject: ~str, predicate: ~str) -> ~[object];
+	fn find_object(subject: ~str, predicate: ~str) -> option::Option<Object>;
+	fn find_objects(subject: ~str, predicate: ~str) -> ~[Object];
 	fn replace_triple(namespaces: ~[namespace], triple: triple);
 }
 
@@ -196,7 +196,7 @@ impl  store: store_trait
 	/// Efficient addition of triples to the store.
 	/// 
 	/// Typically create_int, create_str, etc functions are used to create objects.
-	fn add(subject: ~str, entries: ~[(~str, object)])
+	fn add(subject: ~str, entries: ~[(~str, Object)])
 	{
 		if vec::is_not_empty(entries)
 		{
@@ -245,67 +245,67 @@ impl  store: store_trait
 	/// Adds a subject statement referencing a new blank node.
 	/// 
 	/// Label is an arbitrary string useful for debugging. Returns the name of the blank node.
-	fn add_aggregate(subject: ~str, predicate: ~str, label: ~str, entries: ~[(~str, object)]) -> ~str
+	fn add_aggregate(subject: ~str, predicate: ~str, label: ~str, entries: ~[(~str, Object)]) -> ~str
 	{
 		let blank = get_blank_name(self, label);
-		self.add_triple(~[], {subject: subject, predicate: predicate, object: blank_value(blank)});
+		self.add_triple(~[], {subject: subject, predicate: predicate, object: BlankValue(blank)});
 		self.add(blank, entries);
 		return blank;
 	}
 	
 	/// Adds statements representing a choice between alternatives.
-	fn add_alt(subject: ~str, values: ~[object])
+	fn add_alt(subject: ~str, values: ~[Object])
 	{
 		self.add_container(subject, ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt", values);
 	}
 	
 	/// Adds statements representing an unordered set of (possibly duplicate) values.
-	fn add_bag(subject: ~str, values: ~[object])
+	fn add_bag(subject: ~str, values: ~[Object])
 	{
 		self.add_container(subject, ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag", values);
 	}
 	
 	/// Adds statements representing an arbitrary open container using 1-based integral keys.
-	fn add_container(subject: ~str, kind: ~str, values: ~[object])
+	fn add_container(subject: ~str, kind: ~str, values: ~[Object])
 	{
 		let blank = get_blank_name(self, after(subject, ':') + "-items");
-		self.add_triple(~[], {subject: subject, predicate: kind, object: blank_value(blank)});
+		self.add_triple(~[], {subject: subject, predicate: kind, object: BlankValue(blank)});
 		
 		let predicates = do iter::map_to_vec(vec::len(values)) |i: uint| {fmt!("http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u)};
 		self.add(blank, vec::zip(predicates, values));
 	}
 	
 	/// Adds a fixed size list of (possibly duplicate) items.
-	fn add_list(subject: ~str, predicate: ~str, values: ~[object])
+	fn add_list(subject: ~str, predicate: ~str, values: ~[Object])
 	{
 		let prefix = after(predicate, ':');
 		let mut blank = get_blank_name(self, prefix);
-		self.add_triple(~[], {subject: subject, predicate: predicate, object: blank_value(blank)});
+		self.add_triple(~[], {subject: subject, predicate: predicate, object: BlankValue(blank)});
 		for vec::each(values)
 		|value|
 		{
 			let next = get_blank_name(self, prefix);
 			self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#first", object: value});
-			self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: blank_value(next)});
+			self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: BlankValue(next)});
 			blank = next;
 		};
-		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: iri_value(~"http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")});
+		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: IriValue(~"http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")});
 	}
 	
 	/// Adds a statement about a statement.
 	/// 
 	/// Often used for meta-data, e.g. a timestamp stating when a statement was added to the store.
-	fn add_reify(subject: ~str, predicate: ~str, value: object)
+	fn add_reify(subject: ~str, predicate: ~str, value: Object)
 	{
 		let mut blank = get_blank_name(self, after(predicate, ':'));
-		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", object: iri_value(~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement")});
-		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#subject", object: iri_value(subject)});
-		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate", object: iri_value(predicate)});
+		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", object: IriValue(~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement")});
+		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#subject", object: IriValue(subject)});
+		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate", object: IriValue(predicate)});
 		self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#object", object: value});
 	}
 	
 	/// Adds statements representing an ordered set of (possibly duplicate) values.
-	fn add_seq(subject: ~str, values: ~[object])
+	fn add_seq(subject: ~str, values: ~[Object])
 	{
 		self.add_container(subject, ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq", values);
 	}
@@ -332,7 +332,7 @@ impl  store: store_trait
 	/// Returns the first matching object, or option::none.
 	/// 
 	/// Qualified names may use the namespaces associated with the store.
-	fn find_object(subject: ~str, predicate: ~str) -> option::Option<object>
+	fn find_object(subject: ~str, predicate: ~str) -> option::Option<Object>
 	{
 		let subject = expand_uri_or_blank(self.namespaces, subject);
 		let predicate = expand_uri(self.namespaces, predicate);
@@ -363,7 +363,7 @@ impl  store: store_trait
 	/// Returns all matching objects.
 	/// 
 	/// Qualified names may use the namespaces associated with the store.
-	fn find_objects(subject: ~str, predicate: ~str) -> ~[object]
+	fn find_objects(subject: ~str, predicate: ~str) -> ~[Object]
 	{
 		let subject = expand_uri_or_blank(self.namespaces, subject);
 		let predicate = expand_uri(self.namespaces, predicate);
@@ -519,21 +519,21 @@ fn expand_uri_or_blank(namespaces: ~[namespace], name: ~str) -> ~str
 	}
 }
 
-fn expand_object(namespaces: ~[namespace], obj: object) -> object
+fn expand_object(namespaces: ~[namespace], obj: Object) -> Object
 {
 	match obj
 	{
-		typed_value(value, kind) =>
+		TypedValue(value, kind) =>
 		{
-			typed_value(value, expand_uri(namespaces, kind))
+			TypedValue(value, expand_uri(namespaces, kind))
 		}
-		iri_value(value) =>
+		IriValue(value) =>
 		{
-			iri_value(expand_uri(namespaces, value))
+			IriValue(expand_uri(namespaces, value))
 		}
-		blank_value(value) =>
+		BlankValue(value) =>
 		{
-			blank_value(expand_uri(namespaces, value))
+			BlankValue(expand_uri(namespaces, value))
 		}
 		_ =>
 		{
@@ -542,7 +542,7 @@ fn expand_object(namespaces: ~[namespace], obj: object) -> object
 	}
 }
 
-fn expand_entry(namespaces: ~[namespace], entry: (~str, object)) -> entry
+fn expand_entry(namespaces: ~[namespace], entry: (~str, Object)) -> entry
 {
 	{predicate: expand_uri(namespaces, entry.first()), object: expand_object(namespaces, entry.second())}
 }
@@ -552,7 +552,7 @@ fn make_triple_blank(store: store, subject: ~str, predicate: ~str, value: ~str) 
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
 		predicate: expand_uri(store.namespaces, predicate), 
-		object: blank_value(fmt!("_:%s", value))
+		object: BlankValue(fmt!("_:%s", value))
 	}
 }
 
@@ -561,7 +561,7 @@ fn make_triple_str(store: store, subject: ~str, predicate: ~str, value: ~str) ->
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
 		predicate: expand_uri(store.namespaces, predicate), 
-		object: string_value(value, ~"")
+		object: StringValue(value, ~"")
 	}
 }
 
@@ -570,7 +570,7 @@ fn make_triple_uri(store: store, subject: ~str, predicate: ~str, value: ~str) ->
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
 		predicate: expand_uri(store.namespaces, predicate), 
-		object: iri_value(expand_uri(store.namespaces, value))
+		object: IriValue(expand_uri(store.namespaces, value))
 	}
 }
 
@@ -610,28 +610,28 @@ fn after(text: ~str, ch: char) -> ~str
 	}
 }
 
-fn pname_fn(namespaces: ~[namespace], args: ~[object]) -> object
+fn pname_fn(namespaces: ~[namespace], args: ~[Object]) -> Object
 {
 	if vec::len(args) == 1u
 	{
 		match args[0]
 		{
-			iri_value(iri) =>
+			IriValue(iri) =>
 			{
-				string_value(contract_uri(namespaces, iri), ~"")
+				StringValue(contract_uri(namespaces, iri), ~"")
 			}
-			blank_value(name) =>
+			BlankValue(name) =>
 			{
-				string_value(name, ~"")
+				StringValue(name, ~"")
 			}
 			_ =>
 			{
-				error_value(fmt!("rrdf:pname expected an iri_value or blank_value but was called with %?.", args[0]))
+				ErrorValue(fmt!("rrdf:pname expected an IriValue or BlankValue but was called with %?.", args[0]))
 			}
 		}
 	}
 	else
 	{
-		error_value(fmt!("rrdf:pname accepts 1 argument but was called with %? arguments.", vec::len(args)))
+		ErrorValue(fmt!("rrdf:pname accepts 1 argument but was called with %? arguments.", vec::len(args)))
 	}
 }

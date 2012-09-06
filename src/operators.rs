@@ -6,15 +6,15 @@ export op_not, op_unary_plus, op_unary_minus, op_or, op_and, op_equals, op_not_e
 	op_less_than, op_less_than_or_equal, op_greater_than, op_greater_than_or_equal,
 	op_multiply, op_divide, op_add, op_subtract, compare_values;
 	
-fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool, ~str>
+fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<bool, ~str>
 {
 	match lhs
 	{
-		bool_value(lvalue) =>
+		BoolValue(lvalue) =>
 		{
 			match rhs
 			{
-				bool_value(rvalue) =>
+				BoolValue(rvalue) =>
 				{
 					result::Ok(lvalue == rvalue)
 				}
@@ -24,15 +24,15 @@ fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool
 				}
 			}
 		}
-		int_value(lvalue) =>
+		IntValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
 					result::Ok(lvalue == rvalue)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
 					result::Ok(lvalue as f64 == rvalue)
 				}
@@ -42,15 +42,15 @@ fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool
 				}
 			}
 		}
-		float_value(lvalue) =>
+		FloatValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
 					result::Ok(lvalue == rvalue as f64)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
 					result::Ok(lvalue == rvalue)
 				}
@@ -60,11 +60,11 @@ fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool
 				}
 			}
 		}
-		dateTime_value(lvalue) =>
+		DateTimeValue(lvalue) =>
 		{
 			match rhs
 			{
-				dateTime_value(rvalue) =>
+				DateTimeValue(rvalue) =>
 				{
 					result::Ok(lvalue == rvalue)
 				}
@@ -74,11 +74,11 @@ fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool
 				}
 			}
 		}
-		string_value(lvalue, llang) =>
+		StringValue(lvalue, llang) =>
 		{
 			match rhs
 			{
-				string_value(rvalue, rlang) =>
+				StringValue(rvalue, rlang) =>
 				{
 					result::Ok(str::to_lower(llang) == str::to_lower(rlang) && lvalue == rvalue)
 				}
@@ -88,11 +88,11 @@ fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool
 				}
 			}
 		}
-		typed_value(lvalue, ltype) =>
+		TypedValue(lvalue, ltype) =>
 		{
 			match rhs
 			{
-				typed_value(rvalue, rtype) =>
+				TypedValue(rvalue, rtype) =>
 				{
 					result::Ok(ltype == rtype && lvalue == rvalue)
 				}
@@ -102,11 +102,11 @@ fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool
 				}
 			}
 		}
-		iri_value(lvalue) =>
+		IriValue(lvalue) =>
 		{
 			match rhs
 			{
-				iri_value(rvalue) =>
+				IriValue(rvalue) =>
 				{
 					result::Ok(lvalue == rvalue)
 				}
@@ -116,11 +116,11 @@ fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool
 				}
 			}
 		}
-		blank_value(lvalue) =>
+		BlankValue(lvalue) =>
 		{
 			match rhs
 			{
-				blank_value(rvalue) =>
+				BlankValue(rvalue) =>
 				{
 					result::Ok(lvalue == rvalue)
 				}
@@ -138,24 +138,24 @@ fn equal_values(operator: ~str, lhs: object, rhs: object) -> result::Result<bool
 }
 
 // See 15.1
-fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<int, ~str>
+fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<int, ~str>
 {
 	match lhs
 	{
-		int_value(lvalue) =>
+		IntValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
 					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
 					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				unbound_value(_) | blank_value(_) =>
+				UnboundValue(_) | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -165,20 +165,20 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 				}
 			}
 		}
-		float_value(lvalue) =>
+		FloatValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
 					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
 					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				unbound_value(_) | blank_value(_) =>
+				UnboundValue(_) | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -188,11 +188,11 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 				}
 			}
 		}
-		dateTime_value(lvalue) =>
+		DateTimeValue(lvalue) =>
 		{
 			match rhs
 			{
-				dateTime_value(rvalue) =>
+				DateTimeValue(rvalue) =>
 				{
 					let lvalue = lvalue.to_timespec();
 					let rvalue = rvalue.to_timespec();
@@ -202,7 +202,7 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 						else {1}
 					)
 				}
-				unbound_value(_) | blank_value(_) =>
+				UnboundValue(_) | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -212,11 +212,11 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 				}
 			}
 		}
-		string_value(lvalue, llang) =>
+		StringValue(lvalue, llang) =>
 		{
 			match rhs
 			{
-				string_value(rvalue, rlang) =>
+				StringValue(rvalue, rlang) =>
 				{
 					let llang = str::to_lower(llang);
 					let rlang = str::to_lower(rlang);
@@ -226,7 +226,7 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 						else {1}
 					)
 				}
-				unbound_value(_) | blank_value(_) =>
+				UnboundValue(_) | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -236,11 +236,11 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 				}
 			}
 		}
-		typed_value(lvalue, ltype) =>
+		TypedValue(lvalue, ltype) =>
 		{
 			match rhs
 			{
-				typed_value(rvalue, rtype) =>
+				TypedValue(rvalue, rtype) =>
 				{
 					result::Ok(
 						if ltype < rtype || (ltype == rtype && lvalue < rvalue) {-1} 
@@ -248,7 +248,7 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 						else {1}
 					)
 				}
-				unbound_value(_) | blank_value(_) =>
+				UnboundValue(_) | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -258,11 +258,11 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 				}
 			}
 		}
-		iri_value(lvalue) =>
+		IriValue(lvalue) =>
 		{
 			match rhs
 			{
-				iri_value(rvalue) =>
+				IriValue(rvalue) =>
 				{
 					result::Ok(
 						if lvalue < rvalue {-1} 
@@ -270,7 +270,7 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 						else {1}
 					)
 				}
-				unbound_value(_) | blank_value(_) =>
+				UnboundValue(_) | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -280,11 +280,11 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 				}
 			}
 		}
-		unbound_value(_) =>
+		UnboundValue(_) =>
 		{
 			match rhs
 			{
-				unbound_value(_) =>
+				UnboundValue(_) =>
 				{
 					result::Ok(0)
 				}
@@ -294,15 +294,15 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 				}
 			}
 		}
-		blank_value(lvalue) =>
+		BlankValue(lvalue) =>
 		{
 			match rhs
 			{
-				unbound_value(_) =>
+				UnboundValue(_) =>
 				{
 					result::Ok(1)
 				}
-				blank_value(rvalue) =>
+				BlankValue(rvalue) =>
 				{
 					result::Ok(
 						if lvalue < rvalue {-1} 
@@ -324,420 +324,420 @@ fn compare_values(operator: ~str, lhs: object, rhs: object) -> result::Result<in
 }
 
 // ---- Unary Operators -------------------------------------------------------
-fn op_not(operand: object) -> object
+fn op_not(operand: Object) -> Object
 {
 	match get_ebv(operand)
 	{
 		result::Ok(value) =>
 		{
-			bool_value(!value)
+			BoolValue(!value)
 		}
 		result::Err(err) =>
 		{
-			error_value(err)
+			ErrorValue(err)
 		}
 	}
 }
 
-fn op_unary_plus(operand: object) -> object
+fn op_unary_plus(operand: Object) -> Object
 {
 	match operand
 	{
-		int_value(_) =>
+		IntValue(_) =>
 		{
 			operand
 		}
-		float_value(_) =>
+		FloatValue(_) =>
 		{
 			operand
 		}
 		_ =>
 		{
-			error_value(type_error(~"unary plus", operand, ~"numeric"))
+			ErrorValue(type_error(~"unary plus", operand, ~"numeric"))
 		}
 	}
 }
 
-fn op_unary_minus(operand: object) -> object
+fn op_unary_minus(operand: Object) -> Object
 {
 	match operand
 	{
-		int_value(value) =>
+		IntValue(value) =>
 		{
-			int_value(-value)
+			IntValue(-value)
 		}
-		float_value(value) =>
+		FloatValue(value) =>
 		{
-			float_value(-value)
+			FloatValue(-value)
 		}
 		_ =>
 		{
-			error_value(type_error(~"unary minus", operand, ~"numeric"))
+			ErrorValue(type_error(~"unary minus", operand, ~"numeric"))
 		}
 	}
 }
 
 // ---- Binary Operators -------------------------------------------------------
-fn op_or(lhs: object, rhs: object) -> object
+fn op_or(lhs: Object, rhs: Object) -> Object
 {
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
 	
 	if result::is_ok(lvalue) && result::is_ok(rvalue)
 	{
-		bool_value(result::get(lvalue) || result::get(rvalue))
+		BoolValue(result::get(lvalue) || result::get(rvalue))
 	}
 	else if result::is_ok(lvalue)
 	{
 		if result::get(lvalue)
 		{
-			bool_value(true)
+			BoolValue(true)
 		}
 		else
 		{
-			error_value(result::get_err(rvalue))
+			ErrorValue(result::get_err(rvalue))
 		}
 	}
 	else if result::is_ok(rvalue)
 	{
 		if result::get(rvalue)
 		{
-			bool_value(true)
+			BoolValue(true)
 		}
 		else
 		{
-			error_value(result::get_err(lvalue))
+			ErrorValue(result::get_err(lvalue))
 		}
 	}
 	else
 	{
-		error_value(fmt!("%s %s", result::get_err(lvalue), result::get_err(rvalue)))
+		ErrorValue(fmt!("%s %s", result::get_err(lvalue), result::get_err(rvalue)))
 	}
 }
 
-fn op_and(lhs: object, rhs: object) -> object
+fn op_and(lhs: Object, rhs: Object) -> Object
 {
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
 	
 	if result::is_ok(lvalue) && result::is_ok(rvalue)
 	{
-		bool_value(result::get(lvalue) && result::get(rvalue))
+		BoolValue(result::get(lvalue) && result::get(rvalue))
 	}
 	else if result::is_ok(lvalue)
 	{
 		if !result::get(lvalue)
 		{
-			bool_value(false)
+			BoolValue(false)
 		}
 		else
 		{
-			error_value(result::get_err(rvalue))
+			ErrorValue(result::get_err(rvalue))
 		}
 	}
 	else if result::is_ok(rvalue)
 	{
 		if !result::get(rvalue)
 		{
-			bool_value(false)
+			BoolValue(false)
 		}
 		else
 		{
-			error_value(result::get_err(lvalue))
+			ErrorValue(result::get_err(lvalue))
 		}
 	}
 	else
 	{
-		error_value(fmt!("%s %s", result::get_err(lvalue), result::get_err(rvalue)))
+		ErrorValue(fmt!("%s %s", result::get_err(lvalue), result::get_err(rvalue)))
 	}
 }
 
-fn op_equals(lhs: object, rhs: object) -> object
+fn op_equals(lhs: Object, rhs: Object) -> Object
 {
 	match equal_values(~"=", lhs, rhs)
 	{
 		result::Ok(value) =>
 		{
-			bool_value(value)
+			BoolValue(value)
 		}
 		result::Err(err) =>
 		{
-			error_value(err)
+			ErrorValue(err)
 		}
 	}
 }
 
-fn op_not_equals(lhs: object, rhs: object) -> object
+fn op_not_equals(lhs: Object, rhs: Object) -> Object
 {
 	match equal_values(~"!=", lhs, rhs)
 	{
 		result::Ok(value) =>
 		{
-			bool_value(!value)
+			BoolValue(!value)
 		}
 		result::Err(err) =>
 		{
-			error_value(err)
+			ErrorValue(err)
 		}
 	}
 }
 
-fn op_less_than(lhs: object, rhs: object) -> object
+fn op_less_than(lhs: Object, rhs: Object) -> Object
 {
 	match compare_values(~"<", lhs, rhs)
 	{
 		result::Ok(value) =>
 		{
-			bool_value(value < 0)
+			BoolValue(value < 0)
 		}
 		result::Err(err) =>
 		{
-			error_value(err)
+			ErrorValue(err)
 		}
 	}
 }
 
-fn op_less_than_or_equal(lhs: object, rhs: object) -> object
+fn op_less_than_or_equal(lhs: Object, rhs: Object) -> Object
 {
 	match compare_values(~"<=", lhs, rhs)
 	{
 		result::Ok(value) =>
 		{
-			bool_value(value <= 0)
+			BoolValue(value <= 0)
 		}
 		result::Err(err) =>
 		{
-			error_value(err)
+			ErrorValue(err)
 		}
 	}
 }
 
-fn op_greater_than(lhs: object, rhs: object) -> object
+fn op_greater_than(lhs: Object, rhs: Object) -> Object
 {
 	match compare_values(~">", lhs, rhs)
 	{
 		result::Ok(value) =>
 		{
-			bool_value(value > 0)
+			BoolValue(value > 0)
 		}
 		result::Err(err) =>
 		{
-			error_value(err)
+			ErrorValue(err)
 		}
 	}
 }
 
-fn op_greater_than_or_equal(lhs: object, rhs: object) -> object
+fn op_greater_than_or_equal(lhs: Object, rhs: Object) -> Object
 {
 	match compare_values(~">=", lhs, rhs)
 	{
 		result::Ok(value) =>
 		{
-			bool_value(value >= 0)
+			BoolValue(value >= 0)
 		}
 		result::Err(err) =>
 		{
-			error_value(err)
+			ErrorValue(err)
 		}
 	}
 }
 
-fn op_multiply(lhs: object, rhs: object) -> object
+fn op_multiply(lhs: Object, rhs: Object) -> Object
 {
 	match lhs
 	{
-		int_value(lvalue) =>
+		IntValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
-					int_value(lvalue*rvalue)
+					IntValue(lvalue*rvalue)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
-					float_value(lvalue*rvalue)
+					FloatValue(lvalue*rvalue)
 				}
 				_ =>
 				{
-					error_value(type_error(~"*", rhs, ~"numeric"))
+					ErrorValue(type_error(~"*", rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue) =>
+		FloatValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
-					float_value(lvalue*rvalue)
+					FloatValue(lvalue*rvalue)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
-					float_value(lvalue*rvalue)
+					FloatValue(lvalue*rvalue)
 				}
 				_ =>
 				{
-					error_value(type_error(~"*", rhs, ~"numeric"))
+					ErrorValue(type_error(~"*", rhs, ~"numeric"))
 				}
 			}
 		}
 		_ =>
 		{
-			error_value(type_error(~"*", lhs, ~"numeric"))
+			ErrorValue(type_error(~"*", lhs, ~"numeric"))
 		}
 	}
 }
 
-fn op_divide(lhs: object, rhs: object) -> object
+fn op_divide(lhs: Object, rhs: Object) -> Object
 {
 	match lhs
 	{
-		int_value(lvalue) =>
+		IntValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(0i64) =>
+				IntValue(0i64) =>
 				{
-					error_value(~"Divide by zero.")
+					ErrorValue(~"Divide by zero.")
 				}
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
-					int_value(lvalue/rvalue)
+					IntValue(lvalue/rvalue)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
-					float_value(lvalue/rvalue)
+					FloatValue(lvalue/rvalue)
 				}
 				_ =>
 				{
-					error_value(type_error(~"/", rhs, ~"numeric"))
+					ErrorValue(type_error(~"/", rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue) =>
+		FloatValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
-					float_value(lvalue/rvalue)
+					FloatValue(lvalue/rvalue)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
-					float_value(lvalue/rvalue)
+					FloatValue(lvalue/rvalue)
 				}
 				_ =>
 				{
-					error_value(type_error(~"/", rhs, ~"numeric"))
+					ErrorValue(type_error(~"/", rhs, ~"numeric"))
 				}
 			}
 		}
 		_ =>
 		{
-			error_value(type_error(~"/", lhs, ~"numeric"))
+			ErrorValue(type_error(~"/", lhs, ~"numeric"))
 		}
 	}
 }
 
-fn op_add(lhs: object, rhs: object) -> object
+fn op_add(lhs: Object, rhs: Object) -> Object
 {
 	match lhs
 	{
-		int_value(lvalue) =>
+		IntValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
-					int_value(lvalue+rvalue)
+					IntValue(lvalue+rvalue)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
-					float_value(lvalue+rvalue)
+					FloatValue(lvalue+rvalue)
 				}
 				_ =>
 				{
-					error_value(type_error(~"+", rhs, ~"numeric"))
+					ErrorValue(type_error(~"+", rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue) =>
+		FloatValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
-					float_value(lvalue+rvalue)
+					FloatValue(lvalue+rvalue)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
-					float_value(lvalue+rvalue)
+					FloatValue(lvalue+rvalue)
 				}
 				_ =>
 				{
-					error_value(type_error(~"+", rhs, ~"numeric"))
+					ErrorValue(type_error(~"+", rhs, ~"numeric"))
 				}
 			}
 		}
 		_ =>
 		{
-			error_value(type_error(~"+", lhs, ~"numeric"))
+			ErrorValue(type_error(~"+", lhs, ~"numeric"))
 		}
 	}
 }
 
-fn op_subtract(lhs: object, rhs: object) -> object
+fn op_subtract(lhs: Object, rhs: Object) -> Object
 {
 	match lhs
 	{
-		int_value(lvalue) =>
+		IntValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
-					int_value(lvalue-rvalue)
+					IntValue(lvalue-rvalue)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
 					let lvalue = lvalue as f64;
-					float_value(lvalue-rvalue)
+					FloatValue(lvalue-rvalue)
 				}
 				_ =>
 				{
-					error_value(type_error(~"-", rhs, ~"numeric"))
+					ErrorValue(type_error(~"-", rhs, ~"numeric"))
 				}
 			}
 		}
-		float_value(lvalue) =>
+		FloatValue(lvalue) =>
 		{
 			match rhs
 			{
-				int_value(rvalue) =>
+				IntValue(rvalue) =>
 				{
 					let rvalue = rvalue as f64;
-					float_value(lvalue-rvalue)
+					FloatValue(lvalue-rvalue)
 				}
-				float_value(rvalue) =>
+				FloatValue(rvalue) =>
 				{
-					float_value(lvalue-rvalue)
+					FloatValue(lvalue-rvalue)
 				}
 				_ =>
 				{
-					error_value(type_error(~"-", rhs, ~"numeric"))
+					ErrorValue(type_error(~"-", rhs, ~"numeric"))
 				}
 			}
 		}
 		_ =>
 		{
-			error_value(type_error(~"-", lhs, ~"numeric"))
+			ErrorValue(type_error(~"-", lhs, ~"numeric"))
 		}
 	}
 }

@@ -1,4 +1,3 @@
-//use io;
 use io::WriterUtil;
 use std::map::*;
 use object::*;
@@ -50,12 +49,12 @@ fn references()
 		], @std::map::str_hash());
 		
 	store.add(~"got:Eddard_Stark", ~[
-		(~"v:fn", string_value(~"Eddard Stark", ~"")),
-		(~"v:nickname", string_value(~"Ned", ~"")),
-		(~"foo:child", iri_value(~"got:Jon_Snow"))
+		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
+		(~"v:nickname", StringValue(~"Ned", ~"")),
+		(~"foo:child", IriValue(~"got:Jon_Snow"))
 	]);
 	store.add(~"got:Jon_Snow", ~[
-		(~"v:fn", string_value(~"Jon Snow", ~""))
+		(~"v:fn", StringValue(~"Jon Snow", ~""))
 	]);
 	
 	let mut actual = ~[];
@@ -115,7 +114,7 @@ fn blank_nodes()
 fn container() 
 {
 	let store = create_store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
-	store.add_alt(~"got:places", ~[iri_value(~"got:The_Wall"), iri_value(~"got:Winterfell")]);
+	store.add_alt(~"got:places", ~[IriValue(~"got:The_Wall"), IriValue(~"got:Winterfell")]);
 	
 	let mut actual = ~[];
 	for store.each
@@ -158,7 +157,7 @@ fn list0()
 fn list1() 
 {
 	let store = create_store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
-	store.add_list(~"got:westeros", ~"got:cities", ~[string_value(~"Lanisport", ~"")]);
+	store.add_list(~"got:westeros", ~"got:cities", ~[StringValue(~"Lanisport", ~"")]);
 	
 	let mut actual = ~[];
 	for store.each
@@ -183,7 +182,7 @@ fn list1()
 fn reify() 
 {
 	let store = got_cast1();
-	store.add_reify(~"got:Eddard_Stark", ~"got:wife", iri_value(~"got:Caitlyn_Stark"));
+	store.add_reify(~"got:Eddard_Stark", ~"got:wife", IriValue(~"got:Caitlyn_Stark"));
 	
 	let mut actual = ~[];
 	for store.each
@@ -207,8 +206,8 @@ fn reify()
 fn replace() 
 {
 	let store = got_cast1();
-	store.replace_triple(~[], {subject: ~"got:Eddard_Stark", predicate: ~"v:nickname", object: string_value(~"Ned the Dead", ~"")});
-	store.replace_triple(~[], {subject: ~"got:Arya", predicate: ~"v:nickname", object: string_value(~"Underfoot", ~"")});
+	store.replace_triple(~[], {subject: ~"got:Eddard_Stark", predicate: ~"v:nickname", object: StringValue(~"Ned the Dead", ~"")});
+	store.replace_triple(~[], {subject: ~"got:Arya", predicate: ~"v:nickname", object: StringValue(~"Underfoot", ~"")});
 	
 	let mut actual = ~[];
 	for store.each
@@ -230,8 +229,8 @@ fn trivial_bgp()
 {
 	let group1 = ~[];
 	let group2 = ~[
-		~[(~"age", int_value(25i64))],
-		~[(~"age", int_value(18i64))]
+		~[(~"age", IntValue(25i64))],
+		~[(~"age", IntValue(18i64))]
 	];
 	
 	assert check_bgp(~[group1, group2], ~[]);
@@ -242,12 +241,12 @@ fn trivial_bgp()
 fn identical_bgp()
 {
 	let group1 = ~[
-		~[(~"age", int_value(25i64))],		// TODO: use some fancy regex, remember \1 is atually $1
-		~[(~"age", int_value(18i64))]
+		~[(~"age", IntValue(25i64))],		// TODO: use some fancy regex, remember \1 is atually $1
+		~[(~"age", IntValue(18i64))]
 	];
 	let group2 = ~[
-		~[(~"age", int_value(25i64))],
-		~[(~"age", int_value(18i64))]
+		~[(~"age", IntValue(25i64))],
+		~[(~"age", IntValue(18i64))]
 	];
 	let expected = group2;
 	
@@ -259,18 +258,18 @@ fn identical_bgp()
 fn disjoint1_bgp()
 {
 	let group1 = ~[
-		~[(~"age", int_value(25i64))],
-		~[(~"age", int_value(18i64))]
+		~[(~"age", IntValue(25i64))],
+		~[(~"age", IntValue(18i64))]
 	];
 	let group2 = ~[
-		~[(~"name", string_value(~"Bob", ~""))],
-		~[(~"name", string_value(~"Ted", ~""))]
+		~[(~"name", StringValue(~"Bob", ~""))],
+		~[(~"name", StringValue(~"Ted", ~""))]
 	];
 	let expected = ~[
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))],
-		~[(~"age", int_value(25i64)), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(25i64)), (~"name", string_value(~"Ted", ~""))]
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))],
+		~[(~"age", IntValue(25i64)), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(25i64)), (~"name", StringValue(~"Ted", ~""))]
 	];
 	
 	assert check_bgp(~[group1, group2], expected);
@@ -281,18 +280,18 @@ fn disjoint1_bgp()
 fn disjoint2_bgp() 
 {
 	let group1 = ~[
-		~[(~"age", int_value(25i64)), (~"job", string_value(~"cowboy", ~""))],
-		~[(~"age", int_value(18i64)), (~"job", string_value(~"muckraker", ~""))]
+		~[(~"age", IntValue(25i64)), (~"job", StringValue(~"cowboy", ~""))],
+		~[(~"age", IntValue(18i64)), (~"job", StringValue(~"muckraker", ~""))]
 	];
 	let group2 = ~[
-		~[(~"id", string_value(~"bbb", ~"")), (~"name", string_value(~"Bob", ~""))],
-		~[(~"id", string_value(~"ttt", ~"")), (~"name", string_value(~"Ted", ~""))]
+		~[(~"id", StringValue(~"bbb", ~"")), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"id", StringValue(~"ttt", ~"")), (~"name", StringValue(~"Ted", ~""))]
 	];
 	let expected = ~[
-		~[(~"age", int_value(18i64)), (~"id", string_value(~"bbb", ~"")), (~"job", string_value(~"muckraker", ~"")), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(18i64)), (~"id", string_value(~"ttt", ~"")), (~"job", string_value(~"muckraker", ~"")), (~"name", string_value(~"Ted", ~""))],
-		~[(~"age", int_value(25i64)), (~"id", string_value(~"bbb", ~"")), (~"job", string_value(~"cowboy", ~"")), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(25i64)), (~"id", string_value(~"ttt", ~"")), (~"job", string_value(~"cowboy", ~"")), (~"name", string_value(~"Ted", ~""))]
+		~[(~"age", IntValue(18i64)), (~"id", StringValue(~"bbb", ~"")), (~"job", StringValue(~"muckraker", ~"")), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(18i64)), (~"id", StringValue(~"ttt", ~"")), (~"job", StringValue(~"muckraker", ~"")), (~"name", StringValue(~"Ted", ~""))],
+		~[(~"age", IntValue(25i64)), (~"id", StringValue(~"bbb", ~"")), (~"job", StringValue(~"cowboy", ~"")), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(25i64)), (~"id", StringValue(~"ttt", ~"")), (~"job", StringValue(~"cowboy", ~"")), (~"name", StringValue(~"Ted", ~""))]
 	];
 	
 	assert check_bgp(~[group1, group2], expected);
@@ -303,19 +302,19 @@ fn disjoint2_bgp()
 fn asymmetric_bgp() 
 {
 	let group1 = ~[
-		~[(~"age", int_value(33i64))],
-		~[(~"age", int_value(25i64))],
-		~[(~"age", int_value(18i64))]
+		~[(~"age", IntValue(33i64))],
+		~[(~"age", IntValue(25i64))],
+		~[(~"age", IntValue(18i64))]
 	];
 	let group2 = ~[
-		~[(~"age", int_value(88i64)), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))]
+		~[(~"age", IntValue(88i64)), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
 	];
 	
 	let expected = ~[
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))]
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
 	];
 	
 	assert check_bgp(~[group1, group2], expected);
@@ -326,18 +325,18 @@ fn asymmetric_bgp()
 fn symmetric_bgp() 
 {
 	let group1 = ~[
-		~[(~"age", int_value(33i64))],
-		~[(~"age", int_value(25i64))],
-		~[(~"age", int_value(18i64))]
+		~[(~"age", IntValue(33i64))],
+		~[(~"age", IntValue(25i64))],
+		~[(~"age", IntValue(18i64))]
 	];
 	let group2 = ~[
-		~[(~"age", int_value(88i64)), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))]
+		~[(~"age", IntValue(88i64)), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
 	];
 	let expected = ~[
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(18i64)), (~"name", string_value(~"Ted", ~""))]
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
 	];
 	
 	assert check_bgp(~[group1, group2], expected);
@@ -348,18 +347,18 @@ fn symmetric_bgp()
 fn path_bgp() 
 {
 	let group1 = ~[
-		~[(~"name", string_value(~"Bob", ~"")), (~"id", string_value(~"bbb", ~""))],
-		~[(~"name", string_value(~"Ted", ~"")), (~"id", string_value(~"ttt", ~""))],
-		~[(~"name", string_value(~"George", ~"")), (~"id", string_value(~"ggg", ~""))]
+		~[(~"name", StringValue(~"Bob", ~"")), (~"id", StringValue(~"bbb", ~""))],
+		~[(~"name", StringValue(~"Ted", ~"")), (~"id", StringValue(~"ttt", ~""))],
+		~[(~"name", StringValue(~"George", ~"")), (~"id", StringValue(~"ggg", ~""))]
 	];
 	let group2 = ~[
-		~[(~"id", string_value(~"ttt", ~"")), (~"age", int_value(18i64))],
-		~[(~"id", string_value(~"bbb", ~"")), (~"age", int_value(88i64))],
-		~[(~"id", string_value(~"zzz", ~"")), (~"age", int_value(38i64))]
+		~[(~"id", StringValue(~"ttt", ~"")), (~"age", IntValue(18i64))],
+		~[(~"id", StringValue(~"bbb", ~"")), (~"age", IntValue(88i64))],
+		~[(~"id", StringValue(~"zzz", ~"")), (~"age", IntValue(38i64))]
 	];
 	let expected = ~[
-		~[(~"age", int_value(88i64)), (~"id", string_value(~"bbb", ~"")), (~"name", string_value(~"Bob", ~""))],
-		~[(~"age", int_value(18i64)), (~"id", string_value(~"ttt", ~"")), (~"name", string_value(~"Ted", ~""))]
+		~[(~"age", IntValue(88i64)), (~"id", StringValue(~"bbb", ~"")), (~"name", StringValue(~"Bob", ~""))],
+		~[(~"age", IntValue(18i64)), (~"id", StringValue(~"ttt", ~"")), (~"name", StringValue(~"Ted", ~""))]
 	];
 	
 	assert check_bgp(~[group1, group2], expected);
@@ -370,14 +369,14 @@ fn path_bgp()
 fn incompatible_bgp() 
 {
 	let group1 = ~[
-		~[(~"name", string_value(~"Bob", ~"")), (~"id", string_value(~"bbb", ~""))],
-		~[(~"name", string_value(~"Ted", ~"")), (~"id", string_value(~"ttt", ~""))],
-		~[(~"name", string_value(~"George", ~"")), (~"id", string_value(~"ggg", ~""))]
+		~[(~"name", StringValue(~"Bob", ~"")), (~"id", StringValue(~"bbb", ~""))],
+		~[(~"name", StringValue(~"Ted", ~"")), (~"id", StringValue(~"ttt", ~""))],
+		~[(~"name", StringValue(~"George", ~"")), (~"id", StringValue(~"ggg", ~""))]
 	];
 	let group2 = ~[
-		~[(~"id", string_value(~"tyt", ~"")), (~"age", int_value(18i64))],
-		~[(~"id", string_value(~"bxb", ~"")), (~"age", int_value(88i64))],
-		~[(~"id", string_value(~"zzz", ~"")), (~"age", int_value(38i64))]
+		~[(~"id", StringValue(~"tyt", ~"")), (~"age", IntValue(18i64))],
+		~[(~"id", StringValue(~"bxb", ~"")), (~"age", IntValue(88i64))],
+		~[(~"id", StringValue(~"zzz", ~"")), (~"age", IntValue(38i64))]
 	];
 	let expected = ~[];
 	
@@ -389,14 +388,14 @@ fn incompatible_bgp()
 fn multiple_bgp() 
 {
 	let group1 = ~[
-		~[(~"name", string_value(~"Bob", ~"")), (~"id", string_value(~"bbb", ~""))],
-		~[(~"name", string_value(~"Ted", ~"")), (~"id", string_value(~"ttt", ~""))],
-		~[(~"name", string_value(~"George", ~"")), (~"id", string_value(~"ggg", ~""))]
+		~[(~"name", StringValue(~"Bob", ~"")), (~"id", StringValue(~"bbb", ~""))],
+		~[(~"name", StringValue(~"Ted", ~"")), (~"id", StringValue(~"ttt", ~""))],
+		~[(~"name", StringValue(~"George", ~"")), (~"id", StringValue(~"ggg", ~""))]
 	];
 	let group2 = ~[
-		~[(~"id", string_value(~"tyt", ~"")), (~"age", int_value(18i64))],
-		~[(~"id", string_value(~"bxb", ~"")), (~"age", int_value(88i64))],
-		~[(~"id", string_value(~"zzz", ~"")), (~"age", int_value(38i64))]
+		~[(~"id", StringValue(~"tyt", ~"")), (~"age", IntValue(18i64))],
+		~[(~"id", StringValue(~"bxb", ~"")), (~"age", IntValue(88i64))],
+		~[(~"id", StringValue(~"zzz", ~"")), (~"age", IntValue(38i64))]
 	];
 	let expected = ~[];
 	

@@ -1,121 +1,121 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 use object::*;
 
-fn isiri_fn(operand: object) -> object
+fn isiri_fn(operand: Object) -> Object
 {
 	match operand
 	{
-		iri_value(_name) =>
+		IriValue(_name) =>
 		{
-			bool_value(true)
+			BoolValue(true)
 		}
 		_ =>
 		{
-			bool_value(false)
+			BoolValue(false)
 		}
 	}
 }
 
-fn isblank_fn(operand: object) -> object
+fn isblank_fn(operand: Object) -> Object
 {
 	match operand
 	{
-		blank_value(_name) =>
+		BlankValue(_name) =>
 		{
-			bool_value(true)
+			BoolValue(true)
 		}
 		_ =>
 		{
-			bool_value(false)
+			BoolValue(false)
 		}
 	}
 }
 
-fn isliteral_fn(operand: object) -> object
+fn isliteral_fn(operand: Object) -> Object
 {
 	match operand
 	{
-		bool_value(*) |  int_value(*) | float_value(*) | dateTime_value(*) |string_value(*) | typed_value(*) =>
+		BoolValue(*) |  IntValue(*) | FloatValue(*) | DateTimeValue(*) |StringValue(*) | TypedValue(*) =>
 		{
-			bool_value(true)
+			BoolValue(true)
 		}
 		_ =>
 		{
-			bool_value(false)
+			BoolValue(false)
 		}
 	}
 }
 
-fn isnumeric_fn(operand: object) -> object
+fn isnumeric_fn(operand: Object) -> Object
 {
 	match operand
 	{
-		int_value(*) | float_value(*) =>
+		IntValue(*) | FloatValue(*) =>
 		{
-			bool_value(true)
+			BoolValue(true)
 		}
 		_ =>
 		{
-			bool_value(false)
+			BoolValue(false)
 		}
 	}
 }
 
-fn str_fn(operand: object) -> object
+fn str_fn(operand: Object) -> Object
 {
-	string_value(operand.to_str(), ~"")
+	StringValue(operand.to_str(), ~"")
 }
 
-fn lang_fn(operand: object) -> object
+fn lang_fn(operand: Object) -> Object
 {
 	match operand
 	{
-		string_value(_value, lang) =>
+		StringValue(_value, lang) =>
 		{
-			string_value(lang, ~"")
+			StringValue(lang, ~"")
 		}
 		_ =>
 		{
-			string_value(~"", ~"")
+			StringValue(~"", ~"")
 		}
 	}
 }
 
-fn datatype_fn(operand: object) -> object
+fn datatype_fn(operand: Object) -> Object
 {
 	match operand
 	{
-		bool_value(*) =>
+		BoolValue(*) =>
 		{
-			string_value(~"http://www.w3.org/2001/XMLSchema#boolean", ~"")
+			StringValue(~"http://www.w3.org/2001/XMLSchema#boolean", ~"")
 		}
-		int_value(*) =>
+		IntValue(*) =>
 		{
-			string_value(~"http://www.w3.org/2001/XMLSchema#integer", ~"")
+			StringValue(~"http://www.w3.org/2001/XMLSchema#integer", ~"")
 		}
-		float_value(*) =>
+		FloatValue(*) =>
 		{
-			string_value(~"http://www.w3.org/2001/XMLSchema#double", ~"")
+			StringValue(~"http://www.w3.org/2001/XMLSchema#double", ~"")
 		}
-		dateTime_value(*) =>
+		DateTimeValue(*) =>
 		{
-			string_value(~"http://www.w3.org/2001/XMLSchema#dateTime", ~"")
+			StringValue(~"http://www.w3.org/2001/XMLSchema#dateTime", ~"")
 		}
-		string_value(*) =>
+		StringValue(*) =>
 		{
-			string_value(~"http://www.w3.org/2001/XMLSchema#string", ~"")
+			StringValue(~"http://www.w3.org/2001/XMLSchema#string", ~"")
 		}
-		typed_value(_value, kind) =>
+		TypedValue(_value, kind) =>
 		{
-			string_value(kind, ~"")
+			StringValue(kind, ~"")
 		}
-		iri_value(*) =>
+		IriValue(*) =>
 		{
-			string_value(~"http://www.w3.org/2001/XMLSchema#anyURI", ~"")
+			StringValue(~"http://www.w3.org/2001/XMLSchema#anyURI", ~"")
 		}
 		_ =>
 		{
-			error_value(fmt!("DATATYPE: can't get a type for %?", operand))
+			ErrorValue(fmt!("DATATYPE: can't get a type for %?", operand))
 		}
 	}
 }
@@ -123,52 +123,52 @@ fn datatype_fn(operand: object) -> object
 // TODO: add iri_fn
 // TODO: add bnode_fn
 
-fn strdt_fn(lexical: object, kind: object) -> object
+fn strdt_fn(lexical: Object, kind: Object) -> Object
 {
 	match lexical
 	{
-		bool_value(*) | int_value(*) | float_value(*) | dateTime_value(*) | string_value(*) =>
+		BoolValue(*) | IntValue(*) | FloatValue(*) | DateTimeValue(*) | StringValue(*) =>
 		{
 			match kind
 			{
-				iri_value(value) =>
+				IriValue(value) =>
 				{
-					typed_value(lexical.to_str(), value)
+					TypedValue(lexical.to_str(), value)
 				}
 				_ =>
 				{
-					error_value(fmt!("STRDT: expected an IRI for the second argument found %?", kind))
+					ErrorValue(fmt!("STRDT: expected an IRI for the second argument found %?", kind))
 				}
 			}
 		}
 		_ =>
 		{
-			error_value(fmt!("STRDT: expected a simple literal for the first argument but found %?", lexical))
+			ErrorValue(fmt!("STRDT: expected a simple literal for the first argument but found %?", lexical))
 		}
 	}
 }
 
-fn strlang_fn(lexical: object, tag: object) -> object
+fn strlang_fn(lexical: Object, tag: Object) -> Object
 {
 	match lexical
 	{
-		bool_value(*) | int_value(*) | float_value(*) | dateTime_value(*) | string_value(*) =>
+		BoolValue(*) | IntValue(*) | FloatValue(*) | DateTimeValue(*) | StringValue(*) =>
 		{
 			match tag
 			{
-				bool_value(*) | int_value(*) | float_value(*) | dateTime_value(*) | string_value(*) =>
+				BoolValue(*) | IntValue(*) | FloatValue(*) | DateTimeValue(*) | StringValue(*) =>
 				{
-					string_value(lexical.to_str(), tag.to_str())
+					StringValue(lexical.to_str(), tag.to_str())
 				}
 				_ =>
 				{
-					error_value(fmt!("STRLANG: expected a simple literal for the second argument found %?", tag))
+					ErrorValue(fmt!("STRLANG: expected a simple literal for the second argument found %?", tag))
 				}
 			}
 		}
 		_ =>
 		{
-			error_value(fmt!("STRLANG: expected a simple literal for the first argument but found %?", lexical))
+			ErrorValue(fmt!("STRLANG: expected a simple literal for the first argument but found %?", lexical))
 		}
 	}
 }
