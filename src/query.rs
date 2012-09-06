@@ -14,7 +14,7 @@ export join_solutions, eval, Pattern, Variable, Constant, Algebra, TriplePattern
 /// The function returned by compile and invoked to execute a SPARQL query. 
 /// 
 /// Returns a solution or a 'runtime' error.
-type Selector = fn@ (s: &store) -> result::Result<solution, ~str>;
+type Selector = fn@ (s: &store) -> result::Result<Solution, ~str>;
 
 type Binding = {name: ~str, value: Object};
 
@@ -67,7 +67,7 @@ fn algebra_to_str(store: &store, algebra: &Algebra) -> ~str
 	}
 }
 
-fn solution_row_to_str(store: &store, row: solution_row) -> ~str
+fn solution_row_to_str(store: &store, row: SolutionRow) -> ~str
 {
 	let mut entries = ~[];
 	for row.each
@@ -80,7 +80,7 @@ fn solution_row_to_str(store: &store, row: solution_row) -> ~str
 	str::connect(entries, ~", ")
 }
 
-fn solution_to_str(store: &store, solution: solution) -> ~str
+fn solution_to_str(store: &store, solution: Solution) -> ~str
 {
 	let mut result = ~"";
 	
@@ -98,15 +98,15 @@ fn solution_to_str(store: &store, solution: solution) -> ~str
 	return result;
 }
 
-// Conceptually treats solution_row as a set where each set value consists of both
+// Conceptually treats SolutionRow as a set where each set value consists of both
 // the name and the value. Takes the cross product of entries from each pair
 // of groups and adds compatible results to the result.
 //
 // Where a cross product is compatible if, for every identical name, the values
 // are also identical.
-fn join_solutions(store: &store, names: ~[~str], group1: solution, group2: solution, optional_join: bool) -> solution
+fn join_solutions(store: &store, names: ~[~str], group1: Solution, group2: Solution, optional_join: bool) -> Solution
 {
-	fn compatible_binding(name1: ~str, value1: Object, rhs: solution_row) -> bool
+	fn compatible_binding(name1: ~str, value1: Object, rhs: SolutionRow) -> bool
 	{
 		match rhs.search(name1)
 		{
@@ -121,7 +121,7 @@ fn join_solutions(store: &store, names: ~[~str], group1: solution, group2: solut
 		}
 	}
 	
-	fn compatible_row(row: solution_row, rhs: solution_row) -> bool
+	fn compatible_row(row: SolutionRow, rhs: SolutionRow) -> bool
 	{
 		for row.each()
 		|entry|
@@ -134,7 +134,7 @@ fn join_solutions(store: &store, names: ~[~str], group1: solution, group2: solut
 		return true;
 	}
 	
-	fn union_rows(lhs: solution_row, rhs: solution_row) -> solution_row
+	fn union_rows(lhs: SolutionRow, rhs: SolutionRow) -> SolutionRow
 	{
 		let mut result = copy(lhs);
 		
@@ -200,7 +200,7 @@ fn join_solutions(store: &store, names: ~[~str], group1: solution, group2: solut
 	return result;
 }
 
-fn filter_row(names: ~[~str], row: solution_row) -> solution_row
+fn filter_row(names: ~[~str], row: SolutionRow) -> SolutionRow
 {
 	if names == ~[~"*"]
 	{
@@ -330,9 +330,9 @@ fn eval_match(&bindings: ~[(~str, Object)], m: Match) -> result::Result<bool, ~s
 	}
 }
 
-fn iterate_matches(store: &store, spattern: Pattern, callback: fn (Option<Binding>, @DVec<entry>) -> bool)
+fn iterate_matches(store: &store, spattern: Pattern, callback: fn (Option<Binding>, @DVec<Entry>) -> bool)
 {
-	fn invoke(subject: ~str, pattern: Pattern, entries: @DVec<entry>, callback: fn (option::Option<Binding>, @DVec<entry>) -> bool) -> bool
+	fn invoke(subject: ~str, pattern: Pattern, entries: @DVec<Entry>, callback: fn (option::Option<Binding>, @DVec<Entry>) -> bool) -> bool
 	{
 		match match_subject(subject, pattern)
 		{
@@ -383,9 +383,9 @@ fn iterate_matches(store: &store, spattern: Pattern, callback: fn (Option<Bindin
 }
 
 // Returns the named bindings.
-fn eval_basic(store: &store, names: ~[~str], matcher: TriplePattern) -> result::Result<solution, ~str>
+fn eval_basic(store: &store, names: ~[~str], matcher: TriplePattern) -> result::Result<Solution, ~str>
 {
-	let mut rows: solution = ~[];
+	let mut rows: Solution = ~[];
 	
 	// Iterate over the matching subjects,
 	for iterate_matches(store, matcher.subject)
@@ -446,7 +446,7 @@ fn eval_basic(store: &store, names: ~[~str], matcher: TriplePattern) -> result::
 	result::Ok(rows)
 }
 
-fn filter_solution(context: QueryContext, names: ~[~str], solution: solution, expr: Expr) -> result::Result<solution, ~str>
+fn filter_solution(context: QueryContext, names: ~[~str], solution: Solution, expr: Expr) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
@@ -475,7 +475,7 @@ fn filter_solution(context: QueryContext, names: ~[~str], solution: solution, ex
 	return result::Ok(result);
 }
 
-fn bind_solution(context: QueryContext, names: ~[~str], solution: solution, expr: Expr, name: ~str) -> result::Result<solution, ~str>
+fn bind_solution(context: QueryContext, names: ~[~str], solution: Solution, expr: Expr, name: ~str) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
@@ -508,7 +508,7 @@ fn bind_solution(context: QueryContext, names: ~[~str], solution: solution, expr
 	return result::Ok(result);
 }
 
-fn eval_group(store: &store, context: QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<solution, ~str>
+fn eval_group(store: &store, context: QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
 	
@@ -606,7 +606,7 @@ fn eval_group(store: &store, context: QueryContext, in_names: ~[~str], terms: ~[
 	return result::Ok(result);
 }
 
-fn eval_optional(store: &store, names: ~[~str], context: QueryContext, term: Algebra) -> result::Result<solution, ~str>
+fn eval_optional(store: &store, names: ~[~str], context: QueryContext, term: Algebra) -> result::Result<Solution, ~str>
 {
 	match eval_algebra(store, names, {algebra: term, ..context})
 	{
@@ -621,7 +621,7 @@ fn eval_optional(store: &store, names: ~[~str], context: QueryContext, term: Alg
 	}
 }
 
-fn eval_algebra(store: &store, names: ~[~str], context: QueryContext) -> result::Result<solution, ~str>
+fn eval_algebra(store: &store, names: ~[~str], context: QueryContext) -> result::Result<Solution, ~str>
 {
 	match context.algebra
 	{
@@ -651,7 +651,7 @@ fn eval_algebra(store: &store, names: ~[~str], context: QueryContext) -> result:
 	}
 }
 
-fn eval_order_expr(context: QueryContext, row: solution_row, expr: Expr) -> (bool, Object)
+fn eval_order_expr(context: QueryContext, row: SolutionRow, expr: Expr) -> (bool, Object)
 {
 	match expr
 	{
@@ -687,13 +687,13 @@ fn compare_order_values(lhs: (bool, Object), rhs: (bool, Object)) -> result::Res
 	}
 }
 
-fn order_by(context: QueryContext, solution: solution, ordering: ~[Expr]) -> result::Result<solution, ~str>
+fn order_by(context: QueryContext, solution: Solution, ordering: ~[Expr]) -> result::Result<Solution, ~str>
 {
 	// TODO
 	// Probably more efficient to do the evaluation in a pre-pass. Looks like rust requires 2N comparisons in the worst case.
 	// http://www.codecodex.com/wiki/Merge_sort#Analysis
 	// Or maybe just do an in place sort.
-	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[Expr], context: QueryContext, row1: solution_row, row2: solution_row) -> bool
+	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[Expr], context: QueryContext, row1: SolutionRow, row2: SolutionRow) -> bool
 	{
 		unchecked
 		{
@@ -740,7 +740,7 @@ fn order_by(context: QueryContext, solution: solution, ordering: ~[Expr]) -> res
 	}
 }
 
-fn make_distinct(solution: solution) -> result::Result<solution, ~str>
+fn make_distinct(solution: Solution) -> result::Result<Solution, ~str>
 {
 	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
 	let solution = std::sort::merge_sort(|x, y| {*x < *y}, solution);	// TODO: probably dont want to de-reference the pointers

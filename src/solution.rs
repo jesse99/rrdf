@@ -8,15 +8,15 @@ use object::*;
 /// Result of matching a triple with a SPARQL query.
 ///
 /// Order of entries in each row will match the order in the SELECT clause.
-type solution_row = ~[(~str, Object)];
+type SolutionRow = ~[(~str, Object)];
 
 /// Result of a SPARQL query.
 /// 
 /// Note that the solution_methods impl provides a number of convenience methods
 /// to simplify result retrieval.
-type solution = ~[solution_row];
+type Solution = ~[SolutionRow];
 
-trait solution_trait
+trait SolutionTrait
 {
 	pure fn get(row: uint, name: ~str) -> Object;
 	pure fn search(row: uint, name: ~str) -> Option<Object>;
@@ -24,17 +24,17 @@ trait solution_trait
 	/// In general an ORDER BY clause should be used to sort solutions.
 	/// However it can be convenient to manually sort them for things
 	/// like unit tests.
-	pure fn sort() -> solution;
+	pure fn sort() -> Solution;
 }
 
-trait solution_row_trait
+trait SolutionRowTrait
 {
 	pure fn get(name: ~str) -> Object;
 	pure fn contains(name: ~str) -> bool;
 	pure fn search(name: ~str) -> Option<Object>;
 }
 
-impl  solution : solution_trait 
+impl  Solution : SolutionTrait 
 {
 	pure fn get(row: uint, name: ~str) -> Object
 	{
@@ -46,9 +46,9 @@ impl  solution : solution_trait
 		self[row].search(name)
 	}
 	
-	pure fn sort() -> solution
+	pure fn sort() -> Solution
 	{
-		pure fn solution_row_le(x: &solution_row, y: &solution_row) -> bool
+		pure fn solution_row_le(x: &SolutionRow, y: &SolutionRow) -> bool
 		{
 			unchecked
 			{
@@ -96,7 +96,7 @@ impl  solution : solution_trait
 	}
 }
 
-impl  solution_row : solution_row_trait 
+impl  SolutionRow : SolutionRowTrait 
 {
 	pure fn get(name: ~str) -> Object
 	{

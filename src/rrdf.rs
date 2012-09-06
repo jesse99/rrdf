@@ -30,7 +30,7 @@ use UnboundValue = object::UnboundValue; export UnboundValue;
 
 use create_store = store::create_store; export create_store;
 use entry = store::entry; export entry;
-use extension_fn = store::extension_fn; export extension_fn;
+use ExtensionFn = store::ExtensionFn; export ExtensionFn;
 use get_blank_name = store::get_blank_name; export get_blank_name;
 use predicate = store::predicate; export predicate;
 use make_triple_blank = store::make_triple_blank; export make_triple_blank;
@@ -47,8 +47,8 @@ use to_str = store::to_str; export to_str;
 use compile = sparql::compile; export compile;
 use selector = sparql::selector; export selector;
 
-use solution = solution::solution; export solution;
-use solution_row = solution::solution_row; export solution_row;
+use Solution = solution::Solution; export Solution;
+use SolutionRow = solution::SolutionRow; export SolutionRow;
 use solution_row_methods = solution::solution_row_methods; export solution_row_methods;
 use solution_methods = solution::solution_methods; export solution_methods;
 

@@ -30,9 +30,9 @@ fn check_operands(actual: Object, expected: Object) -> bool
 	return true;
 }
 
-fn check_bgp(groups: ~[solution], expected: solution) -> bool
+fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
 {
-	fn convert_bindings(group: solution) -> ~[~str]
+	fn convert_bindings(group: Solution) -> ~[~str]
 	{
 		do vec::map(group)
 		|row|
@@ -144,7 +144,7 @@ fn check_triples(actual: ~[triple], expected: ~[triple]) -> bool
 	return true;
 }
 
-fn check_solution(store: store, expr: ~str, expected: solution) -> bool
+fn check_solution(store: store, expr: ~str, expected: Solution) -> bool
 {
 	info!("----------------------------------------------------");
 	let expected = expected.sort();
@@ -271,7 +271,7 @@ fn check_solution_err(store: store, expr: ~str, expected: ~str) -> bool
 }
 
 // ---- Private Functions -----------------------------------------------------
-fn print_result(value: solution)
+fn print_result(value: Solution)
 {
 	for vec::eachi(value)
 	|i, row|
@@ -282,7 +282,7 @@ fn print_result(value: solution)
 	};
 }
 
-fn print_failure(mesg: ~str, actual: solution, expected: solution)
+fn print_failure(mesg: ~str, actual: Solution, expected: Solution)
 {
 	io::stderr().write_line(mesg);
 	io::stderr().write_line("Actual:");

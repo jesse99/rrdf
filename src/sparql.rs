@@ -53,7 +53,7 @@ fn pattern_to_expr(pattern: Pattern) -> Expr
 	}
 }
 
-fn expand_expr(namespaces: ~[namespace], expr: Expr) -> Expr
+fn expand_expr(namespaces: ~[Namespace], expr: Expr) -> Expr
 {
 	match expr
 	{
@@ -76,7 +76,7 @@ fn expand_expr(namespaces: ~[namespace], expr: Expr) -> Expr
 	}
 }
 
-fn expand_pattern(namespaces: ~[namespace], pattern: Pattern) -> Pattern
+fn expand_pattern(namespaces: ~[Namespace], pattern: Pattern) -> Pattern
 {
 	match pattern
 	{
@@ -95,12 +95,12 @@ fn expand_pattern(namespaces: ~[namespace], pattern: Pattern) -> Pattern
 	}
 }
 
-fn expand_triple(namespaces: ~[namespace], tp: TriplePattern) -> TriplePattern
+fn expand_triple(namespaces: ~[Namespace], tp: TriplePattern) -> TriplePattern
 {
 	{subject: expand_pattern(namespaces, tp.subject), predicate: expand_pattern(namespaces, tp.predicate), object: expand_pattern(namespaces, tp.object)}
 }
 
-fn expand(namespaces: ~[namespace], algebra: Algebra) -> Algebra
+fn expand(namespaces: ~[Namespace], algebra: Algebra) -> Algebra
 {
 	match algebra
 	{
@@ -493,12 +493,12 @@ fn ws<T: copy owned>(parser: Parser<T>) -> Parser<T>
 	}
 }
 
-trait my_parser_trait<T: copy owned>
+trait MyParserTrait<T: copy owned>
 {
 	fn ws() -> Parser<T>;
 }
 
-impl<T: copy owned> Parser<T> : my_parser_trait<T>
+impl<T: copy owned> Parser<T> : MyParserTrait<T>
 {
 	fn ws() -> Parser<T>
 	{
@@ -1103,7 +1103,7 @@ type SolutionModifiers = {order_by: Option<@~[Expr]>, limit: Option<uint>};
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-fn build_parser(namespaces: ~[namespace], query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
+fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
 {
 	let ((distinct, patterns), algebra, modifiers) = query;
 	
