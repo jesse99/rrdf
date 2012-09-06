@@ -92,9 +92,9 @@ fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
 	return true;
 }
 
-fn check_triples(actual: ~[triple], expected: ~[triple]) -> bool
+fn check_triples(actual: ~[Triple], expected: ~[Triple]) -> bool
 {
-	fn dump_triples(actual: ~[triple])
+	fn dump_triples(actual: ~[Triple])
 	{
 		io::stderr().write_line("Actual triples:");
 		for vec::eachi(actual)
@@ -144,7 +144,7 @@ fn check_triples(actual: ~[triple], expected: ~[triple]) -> bool
 	return true;
 }
 
-fn check_solution(store: store, expr: ~str, expected: Solution) -> bool
+fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
 {
 	info!("----------------------------------------------------");
 	let expected = expected.sort();
@@ -227,7 +227,7 @@ fn check_solution(store: store, expr: ~str, expected: Solution) -> bool
 	}
 }
 
-fn check_solution_err(store: store, expr: ~str, expected: ~str) -> bool
+fn check_solution_err(store: Store, expr: ~str, expected: ~str) -> bool
 {
 	info!("----------------------------------------------------");
 	match compile(expr)

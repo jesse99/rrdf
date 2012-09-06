@@ -14,13 +14,13 @@ export join_solutions, eval, Pattern, Variable, Constant, Algebra, TriplePattern
 /// The function returned by compile and invoked to execute a SPARQL query. 
 /// 
 /// Returns a solution or a 'runtime' error.
-type Selector = fn@ (s: &store) -> result::Result<Solution, ~str>;
+type Selector = fn@ (s: &Store) -> result::Result<Solution, ~str>;
 
 type Binding = {name: ~str, value: Object};
 
 type Match = either::Either<Binding, bool>;	// match succeeded if bindings or true
 
-fn pattern_to_str(store: &store, pattern: Pattern) -> ~str
+fn pattern_to_str(store: &Store, pattern: Pattern) -> ~str
 {
 	match pattern
 	{
@@ -35,12 +35,12 @@ fn pattern_to_str(store: &store, pattern: Pattern) -> ~str
 	}
 }
 
-fn triple_pattern_to_str(store: &store, pattern: TriplePattern) -> ~str
+fn triple_pattern_to_str(store: &Store, pattern: TriplePattern) -> ~str
 {
 	fmt!("{subject: %s, predicate: %s, object: %s}", pattern_to_str(store, pattern.subject), pattern_to_str(store, pattern.predicate), pattern_to_str(store, pattern.object))
 }
 	
-fn algebra_to_str(store: &store, algebra: &Algebra) -> ~str
+fn algebra_to_str(store: &Store, algebra: &Algebra) -> ~str
 {
 	match *algebra
 	{
@@ -67,7 +67,7 @@ fn algebra_to_str(store: &store, algebra: &Algebra) -> ~str
 	}
 }
 
-fn solution_row_to_str(store: &store, row: SolutionRow) -> ~str
+fn solution_row_to_str(store: &Store, row: SolutionRow) -> ~str
 {
 	let mut entries = ~[];
 	for row.each
@@ -80,7 +80,7 @@ fn solution_row_to_str(store: &store, row: SolutionRow) -> ~str
 	str::connect(entries, ~", ")
 }
 
-fn solution_to_str(store: &store, solution: Solution) -> ~str
+fn solution_to_str(store: &Store, solution: Solution) -> ~str
 {
 	let mut result = ~"";
 	
@@ -104,7 +104,7 @@ fn solution_to_str(store: &store, solution: Solution) -> ~str
 //
 // Where a cross product is compatible if, for every identical name, the values
 // are also identical.
-fn join_solutions(store: &store, names: ~[~str], group1: Solution, group2: Solution, optional_join: bool) -> Solution
+fn join_solutions(store: &Store, names: ~[~str], group1: Solution, group2: Solution, optional_join: bool) -> Solution
 {
 	fn compatible_binding(name1: ~str, value1: Object, rhs: SolutionRow) -> bool
 	{
@@ -330,7 +330,7 @@ fn eval_match(&bindings: ~[(~str, Object)], m: Match) -> result::Result<bool, ~s
 	}
 }
 
-fn iterate_matches(store: &store, spattern: Pattern, callback: fn (Option<Binding>, @DVec<Entry>) -> bool)
+fn iterate_matches(store: &Store, spattern: Pattern, callback: fn (Option<Binding>, @DVec<Entry>) -> bool)
 {
 	fn invoke(subject: ~str, pattern: Pattern, entries: @DVec<Entry>, callback: fn (option::Option<Binding>, @DVec<Entry>) -> bool) -> bool
 	{
@@ -383,7 +383,7 @@ fn iterate_matches(store: &store, spattern: Pattern, callback: fn (Option<Bindin
 }
 
 // Returns the named bindings.
-fn eval_basic(store: &store, names: ~[~str], matcher: TriplePattern) -> result::Result<Solution, ~str>
+fn eval_basic(store: &Store, names: ~[~str], matcher: TriplePattern) -> result::Result<Solution, ~str>
 {
 	let mut rows: Solution = ~[];
 	
@@ -508,7 +508,7 @@ fn bind_solution(context: QueryContext, names: ~[~str], solution: Solution, expr
 	return result::Ok(result);
 }
 
-fn eval_group(store: &store, context: QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<Solution, ~str>
+fn eval_group(store: &Store, context: QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
 	
@@ -606,7 +606,7 @@ fn eval_group(store: &store, context: QueryContext, in_names: ~[~str], terms: ~[
 	return result::Ok(result);
 }
 
-fn eval_optional(store: &store, names: ~[~str], context: QueryContext, term: Algebra) -> result::Result<Solution, ~str>
+fn eval_optional(store: &Store, names: ~[~str], context: QueryContext, term: Algebra) -> result::Result<Solution, ~str>
 {
 	match eval_algebra(store, names, {algebra: term, ..context})
 	{
@@ -621,7 +621,7 @@ fn eval_optional(store: &store, names: ~[~str], context: QueryContext, term: Alg
 	}
 }
 
-fn eval_algebra(store: &store, names: ~[~str], context: QueryContext) -> result::Result<Solution, ~str>
+fn eval_algebra(store: &Store, names: ~[~str], context: QueryContext) -> result::Result<Solution, ~str>
 {
 	match context.algebra
 	{
@@ -768,7 +768,7 @@ fn eval(names: ~[~str], context: QueryContext) -> Selector
 {
 	let names = names;
 	let context = copy context;
-	|store: &store| 
+	|store: &Store| 
 	{
 		info!("algebra: %s", algebra_to_str(store, &context.algebra));
 		let context = {namespaces: store.namespaces, extensions: store.extensions, ..context};

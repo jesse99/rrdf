@@ -209,7 +209,7 @@ fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 }
 
 // --------------------------------------------------------------------------------------
-fn expr_to_str(store: &store, expr: Expr) -> ~str
+fn expr_to_str(store: &Store, expr: Expr) -> ~str
 {
 	match expr
 	{

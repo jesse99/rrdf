@@ -69,7 +69,7 @@ fn long_string2_match()
 	assert check_solution(store, expr, expected);
 }
 
-fn fancy_types() -> store
+fn fancy_types() -> Store
 {
 	let store = create_store(~[
 		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},

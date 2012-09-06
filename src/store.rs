@@ -4,8 +4,8 @@ use std::map::*;
 use object::*;
 use solution::*;
 
-export Subject, Predicate, Triple, Namespace, Entry, ExtensionFn, store, create_store, make_triple_blank, 
-	make_triple_str, make_triple_uri, store_trait, store_methods, to_str, base_iter, get_blank_name, contract_uri;
+export Subject, Predicate, Triple, Namespace, Entry, ExtensionFn, Store, create_store, make_triple_blank, 
+	make_triple_str, make_triple_uri, StoreTrait, store_methods, to_str, base_iter, get_blank_name, contract_uri;
 export expand_uri;			// this should be internal
 export Expr, Pattern, Variable, Constant, TriplePattern, Algebra, Basic, Group, Optional, Bind, Filter,
 	ConstantExpr, VariableExpr, CallExpr, ExtensionExpr, QueryContext, object_to_str, get_object;
@@ -53,7 +53,7 @@ type QueryContext =
 
 // --------------------------------------------------------------------------------------
 // TODO: should be in object.rs (see rust bug 3352)
-fn object_to_str(store: &store, obj: Object) -> ~str
+fn object_to_str(store: &Store, obj: Object) -> ~str
 {
 	match obj
 	{
@@ -126,7 +126,7 @@ type Entry = {predicate: ~str, object: Object};
 type ExtensionFn = fn@ (~[Namespace], ~[Object]) -> Object;
 
 /// Stores triples in a more or less efficient format.
-type store = {
+type Store = {
 	namespaces: ~[Namespace],
 	subjects: hashmap<~str, @DVec<Entry>>,
 	extensions: @hashmap<~str, ExtensionFn>,
@@ -138,7 +138,7 @@ type store = {
 /// xsd, rdf, rdfs, and owl namespaces are automatically added. An rrdf:pname extension is
 /// automatically added which converts an IriValue to a StringValue using namespaces (or
 /// simply stringifies it if none of the namespaces paths match).
-fn create_store(namespaces: ~[Namespace], extensions: @hashmap<~str, ExtensionFn>) -> store
+fn create_store(namespaces: ~[Namespace], extensions: @hashmap<~str, ExtensionFn>) -> Store
 {
 	extensions.insert(~"rrdf:pname", pname_fn);
 	
@@ -150,7 +150,7 @@ fn create_store(namespaces: ~[Namespace], extensions: @hashmap<~str, ExtensionFn
 	}
 }
 
-fn get_blank_name(store: store, prefix: ~str) -> ~str
+fn get_blank_name(store: Store, prefix: ~str) -> ~str
 {
 	let suffix = *store.next_blank;
 	*store.next_blank += 1;
@@ -174,7 +174,7 @@ fn contract_uri(namespaces: ~[Namespace], iri: ~str) -> ~str
 	}
 }
 
-trait store_trait
+trait StoreTrait
 {
 	fn add(subject: ~str, entries: ~[(~str, Object)]);
 	fn add_triple(namespaces: ~[Namespace], triple: Triple);
@@ -191,7 +191,7 @@ trait store_trait
 	fn replace_triple(namespaces: ~[Namespace], triple: Triple);
 }
 
-impl  store: store_trait 
+impl  Store : StoreTrait 
 {
 	/// Efficient addition of triples to the store.
 	/// 
@@ -421,7 +421,7 @@ impl  store: store_trait
 	}
 }
 
-impl store : BaseIter<Triple>
+impl Store : BaseIter<Triple>
 {
 	/// Calls the blk for each triple in the store (in an undefined order).
 	pure fn each(blk: fn(Triple) -> bool)
@@ -461,7 +461,7 @@ impl  Triple : ToStr
 	}
 }
 
-impl  store : ToStr 
+impl  Store : ToStr 
 {
 	fn to_str() -> ~str
 	{
@@ -547,7 +547,7 @@ fn expand_entry(namespaces: ~[Namespace], entry: (~str, Object)) -> Entry
 	{predicate: expand_uri(namespaces, entry.first()), object: expand_object(namespaces, entry.second())}
 }
 
-fn make_triple_blank(store: store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+fn make_triple_blank(store: Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -556,7 +556,7 @@ fn make_triple_blank(store: store, subject: ~str, predicate: ~str, value: ~str) 
 	}
 }
 
-fn make_triple_str(store: store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+fn make_triple_str(store: Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -565,7 +565,7 @@ fn make_triple_str(store: store, subject: ~str, predicate: ~str, value: ~str) ->
 	}
 }
 
-fn make_triple_uri(store: store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+fn make_triple_uri(store: Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 

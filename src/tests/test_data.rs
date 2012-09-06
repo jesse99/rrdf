@@ -6,7 +6,7 @@
 use object::*;
 use store::*;
 
-fn got_cast1() -> store
+fn got_cast1() -> Store
 {
 	let store = create_store(~[
 		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
@@ -19,7 +19,7 @@ fn got_cast1() -> store
 	return store;
 }
 
-fn got_cast3() -> store
+fn got_cast3() -> Store
 {
 	let store = create_store(~[
 		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
@@ -53,7 +53,7 @@ fn got_cast3() -> store
 	return store;
 }
 
-fn animals() -> store
+fn animals() -> Store
 {
 	let store = create_store(~[{prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @std::map::str_hash());
 	

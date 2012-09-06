@@ -6,7 +6,7 @@ use store::*;
 use test_helpers::*;
 
 // Creates a triple store and adds monsters to it.
-fn monsters() -> store
+fn monsters() -> Store
 {
 	// Namespaces allow subjects and predicates to be added to the 
 	// store using a prefixed name instead of a full URL.
