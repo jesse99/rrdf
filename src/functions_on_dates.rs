@@ -2,7 +2,7 @@
 use store::*;
 use object::*;
 
-fn now_fn(context: query_context, args: ~[Object]) -> Object
+fn now_fn(context: QueryContext, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 0u
 	{

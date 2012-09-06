@@ -6,11 +6,10 @@ use expression::*;
 use object::*;
 use operators::*;
 use solution::*;
-//use sparql::*;
 use store::*;
 
-export join_solutions, eval, Pattern, Variable, Constant, algebra, triple_pattern, query_context,
-	basic, group, optional, bind, filter, Selector;
+export join_solutions, eval, Pattern, Variable, Constant, Algebra, TriplePattern, QueryContext,
+	Basic, Group, Optional, Bind, Filter, Selector;
 
 /// The function returned by compile and invoked to execute a SPARQL query. 
 /// 
@@ -36,32 +35,32 @@ fn pattern_to_str(store: &store, pattern: Pattern) -> ~str
 	}
 }
 
-fn triple_pattern_to_str(store: &store, pattern: triple_pattern) -> ~str
+fn triple_pattern_to_str(store: &store, pattern: TriplePattern) -> ~str
 {
 	fmt!("{subject: %s, predicate: %s, object: %s}", pattern_to_str(store, pattern.subject), pattern_to_str(store, pattern.predicate), pattern_to_str(store, pattern.object))
 }
 	
-fn algebra_to_str(store: &store, algebra: &algebra) -> ~str
+fn algebra_to_str(store: &store, algebra: &Algebra) -> ~str
 {
 	match *algebra
 	{
-		basic(p) =>
+		Basic(p) =>
 		{
 			triple_pattern_to_str(store, p)
 		}
-		group(args) =>
+		Group(args) =>
 		{
 			fmt!("[%s]", str::connect(do args.map |a| {algebra_to_str(store, a)}, ~", "))
 		}
-		optional(a) =>
+		Optional(a) =>
 		{
 			~"optional " + algebra_to_str(store, a)
 		}
-		bind(e, n) =>
+		Bind(e, n) =>
 		{
 			fmt!("%s = %s", n, expr_to_str(store, e))
 		}
-		filter(e) =>
+		Filter(e) =>
 		{
 			~"filter " + expr_to_str(store, e)
 		}
@@ -384,7 +383,7 @@ fn iterate_matches(store: &store, spattern: Pattern, callback: fn (Option<Bindin
 }
 
 // Returns the named bindings.
-fn eval_basic(store: &store, names: ~[~str], matcher: triple_pattern) -> result::Result<solution, ~str>
+fn eval_basic(store: &store, names: ~[~str], matcher: TriplePattern) -> result::Result<solution, ~str>
 {
 	let mut rows: solution = ~[];
 	
@@ -447,7 +446,7 @@ fn eval_basic(store: &store, names: ~[~str], matcher: triple_pattern) -> result:
 	result::Ok(rows)
 }
 
-fn filter_solution(context: query_context, names: ~[~str], solution: solution, expr: Expr) -> result::Result<solution, ~str>
+fn filter_solution(context: QueryContext, names: ~[~str], solution: solution, expr: Expr) -> result::Result<solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
@@ -476,7 +475,7 @@ fn filter_solution(context: query_context, names: ~[~str], solution: solution, e
 	return result::Ok(result);
 }
 
-fn bind_solution(context: query_context, names: ~[~str], solution: solution, expr: Expr, name: ~str) -> result::Result<solution, ~str>
+fn bind_solution(context: QueryContext, names: ~[~str], solution: solution, expr: Expr, name: ~str) -> result::Result<solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
@@ -509,7 +508,7 @@ fn bind_solution(context: query_context, names: ~[~str], solution: solution, exp
 	return result::Ok(result);
 }
 
-fn eval_group(store: &store, context: query_context, in_names: ~[~str], terms: ~[@algebra]) -> result::Result<solution, ~str>
+fn eval_group(store: &store, context: QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<solution, ~str>
 {
 	let mut result = ~[];
 	
@@ -529,7 +528,7 @@ fn eval_group(store: &store, context: query_context, in_names: ~[~str], terms: ~
 			};
 		match term
 		{
-			@filter(expr) =>
+			@Filter(expr) =>
 			{
 				match filter_solution(context, names, result, expr)
 				{
@@ -544,7 +543,7 @@ fn eval_group(store: &store, context: query_context, in_names: ~[~str], terms: ~
 					}
 				}
 			}
-			@bind(expr, name) =>
+			@Bind(expr, name) =>
 			{
 				match bind_solution(context, names, result, expr, name)
 				{
@@ -567,7 +566,7 @@ fn eval_group(store: &store, context: query_context, in_names: ~[~str], terms: ~
 					{
 						match *term
 						{
-							optional(_t) =>
+							Optional(_t) =>
 							{
 								if result.is_not_empty()
 								{
@@ -607,9 +606,9 @@ fn eval_group(store: &store, context: query_context, in_names: ~[~str], terms: ~
 	return result::Ok(result);
 }
 
-fn eval_optional(store: &store, names: ~[~str], context: query_context, term: algebra) -> result::Result<solution, ~str>
+fn eval_optional(store: &store, names: ~[~str], context: QueryContext, term: Algebra) -> result::Result<solution, ~str>
 {
-	match eval_algebra(store, names, {algebra: term ,.. context})
+	match eval_algebra(store, names, {algebra: term, ..context})
 	{
 		result::Ok(solution) =>
 		{
@@ -622,27 +621,27 @@ fn eval_optional(store: &store, names: ~[~str], context: query_context, term: al
 	}
 }
 
-fn eval_algebra(store: &store, names: ~[~str], context: query_context) -> result::Result<solution, ~str>
+fn eval_algebra(store: &store, names: ~[~str], context: QueryContext) -> result::Result<solution, ~str>
 {
 	match context.algebra
 	{
-		basic(pattern) =>
+		Basic(pattern) =>
 		{
 			eval_basic(store, names, pattern)
 		}
-		group(terms) =>
+		Group(terms) =>
 		{
 			eval_group(store, context, names, terms)
 		}
-		optional(term) =>
+		Optional(term) =>
 		{
 			eval_optional(store, names, context, *term)
 		}
-		bind(*) =>
+		Bind(*) =>
 		{
 			result::Err(~"BIND should appear in a pattern group.")
 		}
-		filter(*) =>
+		Filter(*) =>
 		{
 			// Not sure what's supposed to happen here. According to GroupGraphPatternSub a
 			// group can contain just a FILTER (should be a no-op?) or a filter and then a triple
@@ -652,7 +651,7 @@ fn eval_algebra(store: &store, names: ~[~str], context: query_context) -> result
 	}
 }
 
-fn eval_order_expr(context: query_context, row: solution_row, expr: Expr) -> (bool, Object)
+fn eval_order_expr(context: QueryContext, row: solution_row, expr: Expr) -> (bool, Object)
 {
 	match expr
 	{
@@ -688,13 +687,13 @@ fn compare_order_values(lhs: (bool, Object), rhs: (bool, Object)) -> result::Res
 	}
 }
 
-fn order_by(context: query_context, solution: solution, ordering: ~[Expr]) -> result::Result<solution, ~str>
+fn order_by(context: QueryContext, solution: solution, ordering: ~[Expr]) -> result::Result<solution, ~str>
 {
 	// TODO
 	// Probably more efficient to do the evaluation in a pre-pass. Looks like rust requires 2N comparisons in the worst case.
 	// http://www.codecodex.com/wiki/Merge_sort#Analysis
 	// Or maybe just do an in place sort.
-	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[Expr], context: query_context, row1: solution_row, row2: solution_row) -> bool
+	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[Expr], context: QueryContext, row1: solution_row, row2: solution_row) -> bool
 	{
 		unchecked
 		{
@@ -765,7 +764,7 @@ fn make_distinct(solution: solution) -> result::Result<solution, ~str>
 	return result::Ok(result);
 }
 
-fn eval(names: ~[~str], context: query_context) -> Selector
+fn eval(names: ~[~str], context: QueryContext) -> Selector
 {
 	let names = names;
 	let context = copy context;

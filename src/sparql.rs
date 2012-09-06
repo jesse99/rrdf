@@ -2,7 +2,6 @@
 use std::map::*;
 use std::time;
 use rparse::rparse::*;
-//use expression::*;
 use query::*;
 use store::*;
 use object::*;
@@ -96,34 +95,34 @@ fn expand_pattern(namespaces: ~[namespace], pattern: Pattern) -> Pattern
 	}
 }
 
-fn expand_triple(namespaces: ~[namespace], tp: triple_pattern) -> triple_pattern
+fn expand_triple(namespaces: ~[namespace], tp: TriplePattern) -> TriplePattern
 {
 	{subject: expand_pattern(namespaces, tp.subject), predicate: expand_pattern(namespaces, tp.predicate), object: expand_pattern(namespaces, tp.object)}
 }
 
-fn expand(namespaces: ~[namespace], algebra: algebra) -> algebra
+fn expand(namespaces: ~[namespace], algebra: Algebra) -> Algebra
 {
 	match algebra
 	{
-		basic(pattern) =>
+		Basic(pattern) =>
 		{
-			basic(expand_triple(namespaces, pattern))
+			Basic(expand_triple(namespaces, pattern))
 		}
-		group(terms) =>
+		Group(terms) =>
 		{
-			group(vec::map(terms, |term| {@expand(namespaces, *term)}))
+			Group(vec::map(terms, |term| {@expand(namespaces, *term)}))
 		}
-		optional(term) =>
+		Optional(term) =>
 		{
-			optional(@expand(namespaces, *term))
+			Optional(@expand(namespaces, *term))
 		}
-		bind(expr, name) =>
+		Bind(expr, name) =>
 		{
-			bind(expand_expr(namespaces, expr), name)
+			Bind(expand_expr(namespaces, expr), name)
 		}
-		filter(expr) =>
+		Filter(expr) =>
 		{
-			filter(expand_expr(namespaces, expr))
+			Filter(expand_expr(namespaces, expr))
 		}
 	}
 }
@@ -974,22 +973,22 @@ fn make_parser() -> Parser<Selector>
 	let Constraint = or_v(@~[BrackettedExpression, BuiltInCall]).note(~"Constraint");
 	
 	// [64] Filter ::= 'FILTER' Constraint
-	let Filter = seq2_ret1("FILTER".liti().ws(), Constraint).thene(|v| {ret(filter(v))}).note(~"filter");
+	let filter = seq2_ret1("FILTER".liti().ws(), Constraint).thene(|v| {ret(Filter(v))}).note(~"filter");
 	
 	// [61] Bind ::= 'BIND' '(' Expression 'AS' Var ')'
-	let Bind = seq6("BIND".liti().ws(), "(".lit().ws(), Expression, "AS".liti().ws(), Var, ")".lit().ws(),
-		|_b, _p, e, _a, v, _q| {result::Ok(bind(e, *v))}).note(~"bind");
+	let bind = seq6("BIND".liti().ws(), "(".lit().ws(), Expression, "AS".liti().ws(), Var, ")".lit().ws(),
+		|_b, _p, e, _a, v, _q| {result::Ok(Bind(e, *v))}).note(~"bind");
 	
 	// [58] OptionalGraphPattern ::= 'OPTIONAL' GroupGraphPattern
-	let GroupGraphPattern_ptr = @mut ret(group(~[]));
+	let GroupGraphPattern_ptr = @mut ret(Group(~[]));
 	let GroupGraphPattern_ref = forward_ref(GroupGraphPattern_ptr);
 	
 	let OptionalGraphPattern = do seq2("OPTIONAL".liti().ws(), GroupGraphPattern_ref)
-		|_o, a| {result::Ok(optional(@a))};
+		|_o, a| {result::Ok(Optional(@a))};
 	
 	// [57] GraphPatternNotTriples ::= GroupOrUnionGraphPattern | OptionalGraphPattern | MinusGraphPattern | 
 	//                                                GraphGraphPattern | ServiceGraphPattern | Filter | Bind
-	let GraphPatternNotTriples = or_v(@~[OptionalGraphPattern, Filter, Bind]).note(~"GraphPatternNotTriples");
+	let GraphPatternNotTriples = or_v(@~[OptionalGraphPattern, filter, bind]).note(~"GraphPatternNotTriples");
 	
 	// [56] TriplesBlock ::= TriplesSameSubjectPath ('.' TriplesBlock?)?
 	let TriplesBlock = seq2(TriplesSameSubjectPath.list(".".lit().ws()), ".".lit().ws().optional(),
@@ -997,11 +996,11 @@ fn make_parser() -> Parser<Selector>
 		{
 			if vec::len(*patterns) == 1
 			{
-				result::Ok(basic(patterns[0]))
+				result::Ok(Basic(patterns[0]))
 			}
 			else
 			{
-				result::Ok(group(vec::map(*patterns, {|p| @basic(p)})))
+				result::Ok(Group(vec::map(*patterns, {|p| @Basic(p)})))
 			}
 		}).note(~"TriplesBlock");
 	
@@ -1011,7 +1010,7 @@ fn make_parser() -> Parser<Selector>
 		{
 			if option::is_some(tb)
 			{
-				result::Ok(group(~[@gpnt, @(tb.get())]))
+				result::Ok(Group(~[@gpnt, @(tb.get())]))
 			}
 			else
 			{
@@ -1037,7 +1036,7 @@ fn make_parser() -> Parser<Selector>
 			}
 			else
 			{
-				result::Ok(group(vec::map(patterns, {|p| @p})))
+				result::Ok(Group(vec::map(patterns, {|p| @p})))
 			}
 		};
 		
@@ -1104,7 +1103,7 @@ type SolutionModifiers = {order_by: Option<@~[Expr]>, limit: Option<uint>};
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-fn build_parser(namespaces: ~[namespace], query: ((bool, ~[Pattern]), algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
+fn build_parser(namespaces: ~[namespace], query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
 {
 	let ((distinct, patterns), algebra, modifiers) = query;
 	

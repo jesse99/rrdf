@@ -7,8 +7,8 @@ use solution::*;
 export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, 
 	make_triple_str, make_triple_uri, store_trait, store_methods, to_str, base_iter, get_blank_name, contract_uri;
 export expand_uri;			// this should be internal
-export Expr, Pattern, Variable, Constant, triple_pattern, algebra, basic, group, optional, bind, filter,
-	ConstantExpr, VariableExpr, CallExpr, ExtensionExpr, query_context, object_to_str, get_object;
+export Expr, Pattern, Variable, Constant, TriplePattern, Algebra, Basic, Group, Optional, Bind, Filter,
+	ConstantExpr, VariableExpr, CallExpr, ExtensionExpr, QueryContext, object_to_str, get_object;
 
 // --------------------------------------------------------------------------------------
 // TODO: should be in expression.rs (see rust bug 3352)
@@ -28,22 +28,22 @@ enum Pattern
 	Constant(Object)
 }
 
-type triple_pattern = {subject: Pattern, predicate: Pattern, object: Pattern};
+type TriplePattern = {subject: Pattern, predicate: Pattern, object: Pattern};
 
-enum algebra
+enum Algebra
 {
-	basic(triple_pattern),
-	group(~[@algebra]),
-	optional(@algebra),
-	bind(Expr, ~str),
-	filter(Expr)
+	Basic(TriplePattern),
+	Group(~[@Algebra]),
+	Optional(@Algebra),
+	Bind(Expr, ~str),
+	Filter(Expr)
 }
 
-type query_context =
+type QueryContext =
 	{
 		namespaces: ~[namespace],
 		extensions: @hashmap<~str, extension_fn>,
-		algebra: algebra,
+		algebra: Algebra,
 		order_by: ~[Expr],
 		distinct: bool,
 		limit: Option<uint>,

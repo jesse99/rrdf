@@ -29,7 +29,7 @@ fn bound_fn(operand: Object) -> Object
 	}
 }
 
-fn eval_if(context: query_context, bindings: ~[(~str, Object)], args: ~[@Expr]) -> Object
+fn eval_if(context: QueryContext, bindings: ~[(~str, Object)], args: ~[@Expr]) -> Object
 {
 	if vec::len(args) == 3u
 	{
@@ -63,7 +63,7 @@ fn eval_if(context: query_context, bindings: ~[(~str, Object)], args: ~[@Expr]) 
 	}
 }
 
-fn eval_coalesce(context: query_context, bindings: ~[(~str, Object)], args: ~[@Expr]) -> Object
+fn eval_coalesce(context: QueryContext, bindings: ~[(~str, Object)], args: ~[@Expr]) -> Object
 {
 	for vec::each(args)
 	|arg|
@@ -228,7 +228,7 @@ fn expr_to_str(store: &store, expr: Expr) -> ~str
 	}
 }
 
-fn eval_expr(context: query_context, bindings: ~[(~str, Object)], expr: Expr) -> Object
+fn eval_expr(context: QueryContext, bindings: ~[(~str, Object)], expr: Expr) -> Object
 {
 	let result = match expr
 	{
@@ -277,7 +277,7 @@ type UnaryFn = fn (Object) -> Object;
 type BinaryFn = fn (Object, Object) -> Object;
 type TernaryFn = fn (Object, Object, Object) -> Object;
 
-fn eval_extension(context: query_context, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
+fn eval_extension(context: QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match context.extensions.find(fname)
@@ -293,7 +293,7 @@ fn eval_extension(context: query_context, bindings: ~[(~str, Object)], fname: ~s
 	}
 }
 
-fn eval_call(context: query_context, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
+fn eval_call(context: QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match fname
