@@ -7,36 +7,36 @@ use solution::*;
 export subject, predicate, triple, namespace, entry, extension_fn, store, create_store, make_triple_blank, 
 	make_triple_str, make_triple_uri, store_trait, store_methods, to_str, base_iter, get_blank_name, contract_uri;
 export expand_uri;			// this should be internal
-export expr, pattern, variable, constant, triple_pattern, algebra, basic, group, optional, bind, filter,
-	constant_expr, variable_expr, call_expr, extension_expr, query_context, object_to_str, get_object;
+export Expr, Pattern, Variable, Constant, triple_pattern, algebra, basic, group, optional, bind, filter,
+	ConstantExpr, VariableExpr, CallExpr, ExtensionExpr, query_context, object_to_str, get_object;
 
 // --------------------------------------------------------------------------------------
 // TODO: should be in expression.rs (see rust bug 3352)
-enum expr
+enum Expr
 {
-	constant_expr(Object),
-	variable_expr(~str),
-	call_expr(~str, ~[@expr]),			// function name + arguments
-	extension_expr(~str, ~[@expr])	// function name + arguments
+	ConstantExpr(Object),
+	VariableExpr(~str),
+	CallExpr(~str, ~[@Expr]),			// function name + arguments
+	ExtensionExpr(~str, ~[@Expr])	// function name + arguments
 }
 
 // --------------------------------------------------------------------------------------
 // TODO: should be in query.rs (see rust bug 3352)
-enum pattern
+enum Pattern
 {
-	variable(~str),
-	constant(Object)
+	Variable(~str),
+	Constant(Object)
 }
 
-type triple_pattern = {subject: pattern, predicate: pattern, object: pattern};
+type triple_pattern = {subject: Pattern, predicate: Pattern, object: Pattern};
 
 enum algebra
 {
 	basic(triple_pattern),
 	group(~[@algebra]),
 	optional(@algebra),
-	bind(expr, ~str),
-	filter(expr)
+	bind(Expr, ~str),
+	filter(Expr)
 }
 
 type query_context =
@@ -44,7 +44,7 @@ type query_context =
 		namespaces: ~[namespace],
 		extensions: @hashmap<~str, extension_fn>,
 		algebra: algebra,
-		order_by: ~[expr],
+		order_by: ~[Expr],
 		distinct: bool,
 		limit: Option<uint>,
 		rng: rand::Rng,		// for RAND

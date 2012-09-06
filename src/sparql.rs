@@ -9,9 +9,9 @@ use object::*;
 
 export selector, compile;
 
-fn bool_literal(value: @~str) -> pattern
+fn bool_literal(value: @~str) -> Pattern
 {
-	constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#boolean", @~""))
+	Constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#boolean", @~""))
 }
 
 fn int_literal(value: @~str) -> Object
@@ -24,51 +24,51 @@ fn float_literal(value: @~str) -> Object
 	literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#double", @~"")
 }
 
-fn string_literal(value: @~str, lang: @~str) -> pattern
+fn string_literal(value: @~str, lang: @~str) -> Pattern
 {
-	constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#string", lang))
+	Constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#string", lang))
 }
 
-fn typed_literal(value: @~str, kind: @~str) -> pattern
+fn typed_literal(value: @~str, kind: @~str) -> Pattern
 {
-	constant(literal_to_object(value, kind, @~""))
+	Constant(literal_to_object(value, kind, @~""))
 }
 
-fn iri_literal(value: @~str) -> pattern
+fn iri_literal(value: @~str) -> Pattern
 {
-	constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#anyURI", @~""))
+	Constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#anyURI", @~""))
 }
 
-fn pattern_to_expr(pattern: pattern) -> expr
+fn pattern_to_expr(pattern: Pattern) -> Expr
 {
 	match pattern
 	{
-		variable(name) =>
+		Variable(name) =>
 		{
-			variable_expr(name)
+			VariableExpr(name)
 		}
-		constant(value) =>
+		Constant(value) =>
 		{
-			constant_expr(value)
+			ConstantExpr(value)
 		}
 	}
 }
 
-fn expand_expr(namespaces: ~[namespace], expr: expr) -> expr
+fn expand_expr(namespaces: ~[namespace], expr: Expr) -> Expr
 {
 	match expr
 	{
-		constant_expr(IriValue(value)) =>
+		ConstantExpr(IriValue(value)) =>
 		{
-			constant_expr(IriValue(expand_uri(namespaces, value)))
+			ConstantExpr(IriValue(expand_uri(namespaces, value)))
 		}
-		constant_expr(TypedValue(value, kind)) =>
+		ConstantExpr(TypedValue(value, kind)) =>
 		{
-			constant_expr(literal_to_object(@value, @expand_uri(namespaces, kind), @~""))
+			ConstantExpr(literal_to_object(@value, @expand_uri(namespaces, kind), @~""))
 		}
-		call_expr(fname, expressions) =>
+		CallExpr(fname, expressions) =>
 		{
-			call_expr(fname, vec::map(expressions, |e| {@expand_expr(namespaces, *e)}))
+			CallExpr(fname, vec::map(expressions, |e| {@expand_expr(namespaces, *e)}))
 		}
 		_ =>
 		{
@@ -77,17 +77,17 @@ fn expand_expr(namespaces: ~[namespace], expr: expr) -> expr
 	}
 }
 
-fn expand_pattern(namespaces: ~[namespace], pattern: pattern) -> pattern
+fn expand_pattern(namespaces: ~[namespace], pattern: Pattern) -> Pattern
 {
 	match pattern
 	{
-		constant(IriValue(value)) =>
+		Constant(IriValue(value)) =>
 		{
-			constant(IriValue(expand_uri(namespaces, value)))
+			Constant(IriValue(expand_uri(namespaces, value)))
 		}
-		constant(TypedValue(value, kind)) =>
+		Constant(TypedValue(value, kind)) =>
 		{
-			constant(literal_to_object(@value, @expand_uri(namespaces, kind), @~""))
+			Constant(literal_to_object(@value, @expand_uri(namespaces, kind), @~""))
 		}
 		_ =>
 		{
@@ -507,7 +507,7 @@ impl<T: copy owned> Parser<T> : my_parser_trait<T>
 	}
 }
 
-fn binary_expr(term: Parser<expr>, ops: ~[{oname: ~str, fname: ~str}]) -> Parser<expr>
+fn binary_expr(term: Parser<Expr>, ops: ~[{oname: ~str, fname: ~str}]) -> Parser<Expr>
 {
 	// Parser that returns which arm branched plus the value of the arm.
 	let suffix = or_v(
@@ -536,7 +536,7 @@ fn binary_expr(term: Parser<expr>, ops: ~[{oname: ~str, fname: ~str}]) -> Parser
 				|lhs, rhs|
 				{
 					let (i, Right) = rhs;
-					call_expr(ops[i].fname, ~[@lhs, @Right])
+					CallExpr(ops[i].fname, ~[@lhs, @Right])
 				}
 			)
 		}
@@ -550,7 +550,7 @@ fn unslice(s: &str) -> ~str
 	s.slice(0, s.len())
 }
 
-fn built_in_call(Expression: Parser<expr>, Var: Parser<@~str>) -> Parser<expr>
+fn built_in_call(Expression: Parser<Expr>, Var: Parser<@~str>) -> Parser<Expr>
 {
 	let var = seq3_ret1("(".lit().ws(), Var, ")".lit().ws());
 	let nullary = seq2_ret1("(".lit().ws(), ")".lit().ws());
@@ -559,8 +559,8 @@ fn built_in_call(Expression: Parser<expr>, Var: Parser<@~str>) -> Parser<expr>
 	let ternary = seq7("(".lit().ws(), Expression, ",".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), |_a0, a1, _a2, a3, _a4, a5, _a6| {result::Ok(~[a1, a3, a5])});
 	let variadic = seq3_ret1("(".lit().ws(), Expression.list(",".lit().ws()), ")".lit().ws());
 	
-	macro_rules! unary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), unary, |_f, a| {result::Ok(call_expr(n + ~"_fn", ~[@a]))}) })
-	macro_rules! binary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), binary, |_f, a| {result::Ok(call_expr(n + ~"_fn", ~[@a[0], @a[1]]))}) })
+	macro_rules! unary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), unary, |_f, a| {result::Ok(CallExpr(n + ~"_fn", ~[@a]))}) })
+	macro_rules! binary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), binary, |_f, a| {result::Ok(CallExpr(n + ~"_fn", ~[@a[0], @a[1]]))}) })
 
 	// [111] BuiltInCall ::= 
 	or_v(@~[
@@ -577,14 +577,14 @@ fn built_in_call(Expression: Parser<expr>, Var: Parser<@~str>) -> Parser<expr>
 		unary_fn!("datatype"),
 		
 		// |	'BOUND' '(' Var ')' 
-		do seq2("BOUND".liti().ws(), var)	|_f, a0| {result::Ok(call_expr(~"bound_fn", ~[@variable_expr(*a0)]))},
+		do seq2("BOUND".liti().ws(), var)	|_f, a0| {result::Ok(CallExpr(~"bound_fn", ~[@VariableExpr(*a0)]))},
 		
 		// |	'IRI' '(' Expression ')' 
 		// |	'URI' '(' Expression ')' 
 		// |	'BNODE' ( '(' Expression ')' | NIL)
 		 
 		// |	'RAND' NIL 
-		do seq2("RAND".liti().ws(), nullary)	|_f, _a| {result::Ok(call_expr(~"rand_fn", ~[]))},
+		do seq2("RAND".liti().ws(), nullary)	|_f, _a| {result::Ok(CallExpr(~"rand_fn", ~[]))},
 		
 		// |	'ABS' '(' Expression ')' 
 		unary_fn!("abs"),
@@ -599,11 +599,11 @@ fn built_in_call(Expression: Parser<expr>, Var: Parser<@~str>) -> Parser<expr>
 		unary_fn!("round"),
 		
 		// |	'CONCAT' ExpressionList 
-		do seq2("CONCAT".liti().ws(), variadic)	|_f, a| {result::Ok(call_expr(~"concat_fn", vec::map(*a, {|e| @e})))},
+		do seq2("CONCAT".liti().ws(), variadic)	|_f, a| {result::Ok(CallExpr(~"concat_fn", vec::map(*a, {|e| @e})))},
 		
 		// |	SubstringExpression 
-		do seq2("substr".liti().ws(), binary)	|_f, a| {result::Ok(call_expr(~"substr2_fn", ~[@a[0], @a[1]]))},
-		do seq2("substr".liti().ws(), ternary)	|_f, a| {result::Ok(call_expr(~"substr3_fn", ~[@a[0], @a[1], @a[2]]))},
+		do seq2("substr".liti().ws(), binary)	|_f, a| {result::Ok(CallExpr(~"substr2_fn", ~[@a[0], @a[1]]))},
+		do seq2("substr".liti().ws(), ternary)	|_f, a| {result::Ok(CallExpr(~"substr3_fn", ~[@a[0], @a[1], @a[2]]))},
 		
 		// |	'STRLEN' '(' Expression ')' 
 		unary_fn!("strlen"),
@@ -658,7 +658,7 @@ fn built_in_call(Expression: Parser<expr>, Var: Parser<@~str>) -> Parser<expr>
 		unary_fn!("tz"),
 		
 		// |	'NOW' NIL 
-		do seq2("NOW".liti().ws(), nullary)	|_f, _a| {result::Ok(call_expr(~"now_fn", ~[]))},
+		do seq2("NOW".liti().ws(), nullary)	|_f, _a| {result::Ok(CallExpr(~"now_fn", ~[]))},
 		
 		// |	'MD5' '(' Expression ')' 
 		// |	'SHA1' '(' Expression ')' 
@@ -667,10 +667,10 @@ fn built_in_call(Expression: Parser<expr>, Var: Parser<@~str>) -> Parser<expr>
 		// |	'SHA512' '(' Expression ')' 
 		
 		// |	'COALESCE' ExpressionList 
-		do seq2("COALESCE".liti().ws(), variadic)	|_f, a| {result::Ok(call_expr(~"coalesce_fn", vec::map(*a, {|e| @e})))},
+		do seq2("COALESCE".liti().ws(), variadic)	|_f, a| {result::Ok(CallExpr(~"coalesce_fn", vec::map(*a, {|e| @e})))},
 		
 		// |	'IF' '(' Expression ',' Expression ',' Expression ')' 
-		do seq2("IF".liti().ws(), ternary)	|_f, a| {result::Ok(call_expr(~"if_fn", ~[@a[0], @a[1], @a[2]]))},
+		do seq2("IF".liti().ws(), ternary)	|_f, a| {result::Ok(CallExpr(~"if_fn", ~[@a[0], @a[1], @a[2]]))},
 		
 		// |	'STRLANG' '(' Expression ',' Expression ')' 
 		binary_fn!("strlang"),
@@ -685,7 +685,7 @@ fn built_in_call(Expression: Parser<expr>, Var: Parser<@~str>) -> Parser<expr>
 		unary_fn!("isiri"),
 		
 		// |	'isURI' '(' Expression ')' 
-		do seq2("isURI".liti().ws(), unary)	|_f, a| {result::Ok(call_expr(~"is_iri_fn", ~[@a]))},
+		do seq2("isURI".liti().ws(), unary)	|_f, a| {result::Ok(CallExpr(~"is_iri_fn", ~[@a]))},
 		
 		// |	'isBLANK' '(' Expression ')' 
 		unary_fn!("isblank"),
@@ -703,7 +703,7 @@ fn built_in_call(Expression: Parser<expr>, Var: Parser<@~str>) -> Parser<expr>
 }
 
 // http://www.w3.org/TR/sparql11-query/#grammar
-fn make_parser() -> Parser<selector>
+fn make_parser() -> Parser<Selector>
 {
 	// [159] PN_LOCAL ::= (PN_CHARS_U | [0-9] | PLX)  ((PN_CHARS | '.' | PLX)* (PN_CHARS | PLX))? 		note that w3c had an error here (a stray > character at the end of the production)
 	let pn_local_prefix = or_v(@~[
@@ -823,7 +823,7 @@ fn make_parser() -> Parser<selector>
 	let GraphTerm = or_v(@~[
 		RDFLiteral,
 		IRIref.thene({|v| ret(iri_literal(v))}),	// TODO: support BlankNode and NIL
-		do NumericLiteral.thene |v| {ret(constant(v))},
+		do NumericLiteral.thene |v| {ret(Constant(v))},
 		BooleanLiteral
 	]);
 	
@@ -834,15 +834,15 @@ fn make_parser() -> Parser<selector>
 	let VAR1 = seq2_ret1("?".lit().ws(), VARNAME).note(~"VAR1");
 	
 	// [67] ArgList ::= NIL | '(' 'DISTINCT'? Expression ( ',' Expression )* ')'
-	let Expression_ptr = @mut ret(constant_expr(UnboundValue(~"foo")));
+	let Expression_ptr = @mut ret(ConstantExpr(UnboundValue(~"foo")));
 	let Expression_ref = forward_ref(Expression_ptr);
 	
 	let ArgList = seq3_ret1("(".lit().ws(), Expression_ref.list(",".lit().ws()), ")".lit().ws());
 	
 	// [118] IRIrefOrFunction ::= IRIref ArgList?
 	let IRIrefOrFunction1 = do seq2(IRIref, ArgList)
-		|i, a| {result::Ok(extension_expr(*i, vec::map(*a, |x| {@x})))};
-	let IRIrefOrFunction2 = do IRIref.thene |v| {ret(constant_expr(IriValue(*v)))};
+		|i, a| {result::Ok(ExtensionExpr(*i, vec::map(*a, |x| {@x})))};
+	let IRIrefOrFunction2 = do IRIref.thene |v| {ret(ConstantExpr(IriValue(*v)))};
 	let IRIrefOrFunction = (IRIrefOrFunction1.or(IRIrefOrFunction2));
 	
 	// [98] Var ::= VAR1 | VAR2
@@ -852,7 +852,7 @@ fn make_parser() -> Parser<selector>
 	let BuiltInCall = built_in_call(Expression_ref, Var);
 	
 	// [109] PrimaryExpression ::= BrackettedExpression | BuiltInCall | IRIrefOrFunction | RDFLiteral | NumericLiteral | BooleanLiteral | Var | Aggregate
-	let BrackettedExpression_ptr = @mut ret(constant_expr(UnboundValue(~"foo")));
+	let BrackettedExpression_ptr = @mut ret(ConstantExpr(UnboundValue(~"foo")));
 	let BrackettedExpression_ref = forward_ref(BrackettedExpression_ptr);
 	
 	let PrimaryExpression = or_v(@~[
@@ -860,16 +860,16 @@ fn make_parser() -> Parser<selector>
 		IRIrefOrFunction,
 		BuiltInCall,
 		do RDFLiteral.thene |v| {ret(pattern_to_expr(v))},
-		do NumericLiteral.thene |v| {ret(constant_expr(v))},
-		do Var.thene |v| {ret(variable_expr(*v))},
+		do NumericLiteral.thene |v| {ret(ConstantExpr(v))},
+		do Var.thene |v| {ret(VariableExpr(*v))},
 		do BooleanLiteral.thene |v| {ret(pattern_to_expr(v))}
 		]);
 		
 	// [108] UnaryExpression ::= '!' PrimaryExpression | '+' PrimaryExpression | '-' PrimaryExpression | PrimaryExpression
 	let UnaryExpression = or_v(@~[
-		do seq2_ret1("!".lit().ws(), PrimaryExpression).thene |term| {ret(call_expr(~"op_not", ~[@term]))},
+		do seq2_ret1("!".lit().ws(), PrimaryExpression).thene |term| {ret(CallExpr(~"op_not", ~[@term]))},
 		seq2_ret1("+".lit().ws(), PrimaryExpression),
-		do seq2_ret1("-".lit().ws(), PrimaryExpression).thene |term| {ret(call_expr(~"op_unary_minus", ~[@term]))},
+		do seq2_ret1("-".lit().ws(), PrimaryExpression).thene |term| {ret(CallExpr(~"op_unary_minus", ~[@term]))},
 		PrimaryExpression
 		]);
 	
@@ -891,21 +891,21 @@ fn make_parser() -> Parser<selector>
 	//                                                                           'IN' ExpressionList | 'NOT' 'IN' ExpressionList )?
 	let RelationalExpression = or_v(@~[
 		do seq3(NumericExpression, "=".lit().ws(), NumericExpression)
-			|lhs, _op, rhs| {result::Ok(call_expr(~"op_equals", ~[@lhs, @rhs]))},
+			|lhs, _op, rhs| {result::Ok(CallExpr(~"op_equals", ~[@lhs, @rhs]))},
 		do seq3(NumericExpression, "!=".lit().ws(), NumericExpression)
-			|lhs, _op, rhs| {result::Ok(call_expr(~"op_not_equals", ~[@lhs, @rhs]))},
+			|lhs, _op, rhs| {result::Ok(CallExpr(~"op_not_equals", ~[@lhs, @rhs]))},
 		do seq3(NumericExpression, "<".lit().ws(), NumericExpression)
-			|lhs, _op, rhs| {result::Ok(call_expr(~"op_less_than", ~[@lhs, @rhs]))},
+			|lhs, _op, rhs| {result::Ok(CallExpr(~"op_less_than", ~[@lhs, @rhs]))},
 		do seq3(NumericExpression, ">".lit().ws(), NumericExpression)
-			|lhs, _op, rhs| {result::Ok(call_expr(~"op_greater_than", ~[@lhs, @rhs]))},
+			|lhs, _op, rhs| {result::Ok(CallExpr(~"op_greater_than", ~[@lhs, @rhs]))},
 		do seq3(NumericExpression, "<=".lit().ws(), NumericExpression)
-			|lhs, _op, rhs| {result::Ok(call_expr(~"op_less_than_or_equal", ~[@lhs, @rhs]))},
+			|lhs, _op, rhs| {result::Ok(CallExpr(~"op_less_than_or_equal", ~[@lhs, @rhs]))},
 		do seq3(NumericExpression, ">=".lit().ws(), NumericExpression)
-			|lhs, _op, rhs| {result::Ok(call_expr(~"op_greater_than_or_equal", ~[@lhs, @rhs]))},
+			|lhs, _op, rhs| {result::Ok(CallExpr(~"op_greater_than_or_equal", ~[@lhs, @rhs]))},
 		do seq3(NumericExpression, "IN".liti().ws(), NumericExpression)
-			|lhs, _op, rhs| {result::Ok(call_expr(~"in_op", ~[@lhs, @rhs]))},
+			|lhs, _op, rhs| {result::Ok(CallExpr(~"in_op", ~[@lhs, @rhs]))},
 		do seq4(NumericExpression, "NOT".liti().ws(), "IN".liti().ws(), NumericExpression)
-			|lhs, _o1, _o2, rhs| {result::Ok(call_expr(~"not_in_op", ~[@lhs, @rhs]))},
+			|lhs, _o1, _o2, rhs| {result::Ok(CallExpr(~"not_in_op", ~[@lhs, @rhs]))},
 		NumericExpression
 	]);
 	
@@ -927,7 +927,7 @@ fn make_parser() -> Parser<selector>
 	*BrackettedExpression_ptr = BrackettedExpression;
 	
 	// [96] VarOrTerm ::= Var | GraphTerm
-	let VarOrTerm = (Var.thene(|v| {ret(variable((*v)))})).or(GraphTerm);
+	let VarOrTerm = (Var.thene(|v| {ret(Variable((*v)))})).or(GraphTerm);
 	
 	// [95] GraphNode ::= VarOrTerm | TriplesNode
 	let GraphNode = VarOrTerm;
@@ -951,7 +951,7 @@ fn make_parser() -> Parser<selector>
 	let Path = PathAlternative;
 	
 	// [81] VerbSimple ::= Var
-	let VerbSimple = Var.thene(|v| {ret(variable((*v)))});
+	let VerbSimple = Var.thene(|v| {ret(Variable((*v)))});
 	
 	// [75] Object ::= GraphNode
 	let Object = GraphNode;
@@ -1053,9 +1053,9 @@ fn make_parser() -> Parser<selector>
 	let LimitOffsetClauses = LimitClause;
 	
 	// [24] OrderCondition ::= (('ASC' | 'DESC') BrackettedExpression) | (Constraint | Var)
-	let OrderCondition1 = do seq2_ret1("ASC".liti().ws(), BrackettedExpression).thene |v| {ret(call_expr(~"!asc", ~[@v]))};
-	let OrderCondition2 = do seq2_ret1("DESC".liti().ws(), BrackettedExpression).thene |v| {ret(call_expr(~"!desc", ~[@v]))};
-	let OrderCondition3 = Constraint.or(do Var.thene |v| {ret(variable_expr(*v))});
+	let OrderCondition1 = do seq2_ret1("ASC".liti().ws(), BrackettedExpression).thene |v| {ret(CallExpr(~"!asc", ~[@v]))};
+	let OrderCondition2 = do seq2_ret1("DESC".liti().ws(), BrackettedExpression).thene |v| {ret(CallExpr(~"!desc", ~[@v]))};
+	let OrderCondition3 = Constraint.or(do Var.thene |v| {ret(VariableExpr(*v))});
 	let OrderCondition = or_v(@~[OrderCondition1, OrderCondition2, OrderCondition3]);
 	
 	// [23] OrderClause ::= 'ORDER' 'BY' OrderCondition+
@@ -1070,8 +1070,8 @@ fn make_parser() -> Parser<selector>
 	
 	// [9] SelectClause ::= 'SELECT' ('DISTINCT' | 'REDUCED')? ((Var | ('(' Expression 'AS' Var ')'))+ | '*')
 	let select_suffix = or_v(@~[
-		(Var.thene(|v| {ret(variable((*v)))})).r1(),
-		"*".lit().ws().thene(|_x| {ret(@~[variable(~"*")])})]);
+		(Var.thene(|v| {ret(Variable((*v)))})).r1(),
+		"*".lit().ws().thene(|_x| {ret(@~[Variable(~"*")])})]);
 		
 	let select_mid = ("DISTINCT".liti()).or("REDUCED".liti()).ws().optional();
 		
@@ -1099,17 +1099,17 @@ fn make_parser() -> Parser<selector>
 	return QueryUnit;
 }
 
-type SolutionModifiers = {order_by: Option<@~[expr]>, limit: Option<uint>};
+type SolutionModifiers = {order_by: Option<@~[Expr]>, limit: Option<uint>};
 
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-fn build_parser(namespaces: ~[namespace], query: ((bool, ~[pattern]), algebra, SolutionModifiers)) -> result::Result<selector, @~str>
+fn build_parser(namespaces: ~[namespace], query: ((bool, ~[Pattern]), algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
 {
 	let ((distinct, patterns), algebra, modifiers) = query;
 	
-	let variables = do vec::filter(patterns) |p| {match p {variable(_l)  => true, _  => false}};
-	let names = do vec::map(variables) |p| {match p {variable(n)  => n, _  => fail}};
+	let variables = do vec::filter(patterns) |p| {match p {Variable(_l)  => true, _  => false}};
+	let names = do vec::map(variables) |p| {match p {Variable(n)  => n, _  => fail}};
 	
 	let order_by = match modifiers.order_by {option::Some(x)  => x, option::None  => @~[]};
 	
@@ -1137,7 +1137,7 @@ fn build_parser(namespaces: ~[namespace], query: ((bool, ~[pattern]), algebra, S
 /// Returns either a function capable of matching triples or a parse error.
 /// 
 /// Expr can be a subset of http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"SPARQL\".
-fn compile(expr: ~str) -> result::Result<selector, ~str>
+fn compile(expr: ~str) -> result::Result<Selector, ~str>
 {
 	let parser = make_parser();
 	do result::chain_err(parser.parse(@~"sparql", expr))

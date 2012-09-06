@@ -9,7 +9,7 @@ use operators::*;
 use solution::*;
 use store::*;
 
-export expr_to_str, eval_expr, constant_expr, variable_expr, call_expr, extension_expr,
+export expr_to_str, eval_expr, ConstantExpr, VariableExpr, CallExpr, ExtensionExpr,
 	eval_if, eval_coalesce, bound_fn, sameterm_fn;
 	
 // --------------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ fn bound_fn(operand: Object) -> Object
 	}
 }
 
-fn eval_if(context: query_context, bindings: ~[(~str, Object)], args: ~[@expr]) -> Object
+fn eval_if(context: query_context, bindings: ~[(~str, Object)], args: ~[@Expr]) -> Object
 {
 	if vec::len(args) == 3u
 	{
@@ -63,7 +63,7 @@ fn eval_if(context: query_context, bindings: ~[(~str, Object)], args: ~[@expr]) 
 	}
 }
 
-fn eval_coalesce(context: query_context, bindings: ~[(~str, Object)], args: ~[@expr]) -> Object
+fn eval_coalesce(context: query_context, bindings: ~[(~str, Object)], args: ~[@Expr]) -> Object
 {
 	for vec::each(args)
 	|arg|
@@ -207,37 +207,36 @@ fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 		}
 	}
 }
+
 // --------------------------------------------------------------------------------------
-
-
-fn expr_to_str(store: &store, expr: expr) -> ~str
+fn expr_to_str(store: &store, expr: Expr) -> ~str
 {
 	match expr
 	{
-		constant_expr(o) =>
+		ConstantExpr(o) =>
 		{
 			object_to_str(store, o)
 		}
-		variable_expr(v) =>
+		VariableExpr(v) =>
 		{
 			fmt!("?%s", v)
 		}
-		call_expr(n, args) | extension_expr(n, args) =>
+		CallExpr(n, args) | ExtensionExpr(n, args) =>
 		{
 			n + str::connect(do args.map |a| {expr_to_str(store, *a)}, ~", ")
 		}
 	}
 }
 
-fn eval_expr(context: query_context, bindings: ~[(~str, Object)], expr: expr) -> Object
+fn eval_expr(context: query_context, bindings: ~[(~str, Object)], expr: Expr) -> Object
 {
 	let result = match expr
 	{
-		constant_expr(value) =>
+		ConstantExpr(value) =>
 		{
 			value
 		}
-		variable_expr(name) =>
+		VariableExpr(name) =>
 		{
 			match bindings.search(name)
 			{
@@ -251,19 +250,19 @@ fn eval_expr(context: query_context, bindings: ~[(~str, Object)], expr: expr) ->
 				}
 			}
 		}
-		extension_expr(fname, args) =>
+		ExtensionExpr(fname, args) =>
 		{
 			eval_extension(context, bindings, fname, args)
 		}
-		call_expr(~"if_fn", args) =>				// special case this because it is supposed to short circuit
+		CallExpr(~"if_fn", args) =>				// special case this because it is supposed to short circuit
 		{
 			eval_if(context, bindings, args)
 		}
-		call_expr(~"coalesce_fn", args) =>		// special case this because it is variadic
+		CallExpr(~"coalesce_fn", args) =>		// special case this because it is variadic
 		{
 			eval_coalesce(context, bindings, args)
 		}
-		call_expr(fname, args) =>
+		CallExpr(fname, args) =>
 		{
 			eval_call(context, bindings, fname, args)
 		}
@@ -278,7 +277,7 @@ type UnaryFn = fn (Object) -> Object;
 type BinaryFn = fn (Object, Object) -> Object;
 type TernaryFn = fn (Object, Object, Object) -> Object;
 
-fn eval_extension(context: query_context, bindings: ~[(~str, Object)], fname: ~str, args: ~[@expr]) -> Object
+fn eval_extension(context: query_context, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match context.extensions.find(fname)
@@ -294,7 +293,7 @@ fn eval_extension(context: query_context, bindings: ~[(~str, Object)], fname: ~s
 	}
 }
 
-fn eval_call(context: query_context, bindings: ~[(~str, Object)], fname: ~str, args: ~[@expr]) -> Object
+fn eval_call(context: query_context, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match fname

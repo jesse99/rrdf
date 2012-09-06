@@ -9,27 +9,27 @@ use solution::*;
 //use sparql::*;
 use store::*;
 
-export join_solutions, eval, pattern, variable, constant, algebra, triple_pattern, query_context,
-	basic, group, optional, bind, filter, selector;
+export join_solutions, eval, Pattern, Variable, Constant, algebra, triple_pattern, query_context,
+	basic, group, optional, bind, filter, Selector;
 
 /// The function returned by compile and invoked to execute a SPARQL query. 
 /// 
 /// Returns a solution or a 'runtime' error.
-type selector = fn@ (s: &store) -> result::Result<solution, ~str>;
+type Selector = fn@ (s: &store) -> result::Result<solution, ~str>;
 
-type binding = {name: ~str, value: Object};
+type Binding = {name: ~str, value: Object};
 
-type Match = either::Either<binding, bool>;	// match succeeded if bindings or true
+type Match = either::Either<Binding, bool>;	// match succeeded if bindings or true
 
-fn pattern_to_str(store: &store, pattern: pattern) -> ~str
+fn pattern_to_str(store: &store, pattern: Pattern) -> ~str
 {
 	match pattern
 	{
-		variable(v) =>
+		Variable(v) =>
 		{
 			fmt!("?%s", v)
 		}
-		constant(c) =>
+		Constant(c) =>
 		{
 			object_to_str(store, c)
 		}
@@ -228,11 +228,11 @@ fn equal_objects(actual: Object, expected: Object) -> bool
 	}
 }
 
-fn match_subject(actual: ~str, pattern: pattern) -> Match
+fn match_subject(actual: ~str, pattern: Pattern) -> Match
 {
 	match pattern
 	{
-		variable(name) =>
+		Variable(name) =>
 		{
 			let value =
 				if actual.starts_with("_:")
@@ -245,13 +245,13 @@ fn match_subject(actual: ~str, pattern: pattern) -> Match
 				};
 			either::Left({name: name, value: value})
 		}
-		constant(IriValue(value)) =>
+		Constant(IriValue(value)) =>
 		{
 			let matched = actual == value;
 			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
 			either::Right(matched)
 		}
-		constant(BlankValue(value)) =>
+		Constant(BlankValue(value)) =>
 		{
 			let matched = actual == value;
 			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
@@ -264,16 +264,16 @@ fn match_subject(actual: ~str, pattern: pattern) -> Match
 	}
 }
 
-fn match_predicate(actual: ~str, pattern: pattern) -> Match
+fn match_predicate(actual: ~str, pattern: Pattern) -> Match
 {
 	match pattern
 	{
-		variable(name) =>
+		Variable(name) =>
 		{
 			let value = IriValue(actual);
 			either::Left({name: name, value: value})
 		}
-		constant(IriValue(value)) =>
+		Constant(IriValue(value)) =>
 		{
 			let matched = actual == value;
 			//debug!("Actual predicate %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
@@ -286,15 +286,15 @@ fn match_predicate(actual: ~str, pattern: pattern) -> Match
 	}
 }
 
-fn match_object(actual: Object, pattern: pattern) -> Match
+fn match_object(actual: Object, pattern: Pattern) -> Match
 {
 	match pattern
 	{
-		variable(name) =>
+		Variable(name) =>
 		{
 			either::Left({name: name, value: actual})
 		}
-		constant(expected) =>
+		Constant(expected) =>
 		{
 			let matched = equal_objects(actual, expected);
 			//debug!("Actual object %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], expected.to_str()];
@@ -331,9 +331,9 @@ fn eval_match(&bindings: ~[(~str, Object)], m: Match) -> result::Result<bool, ~s
 	}
 }
 
-fn iterate_matches(store: &store, spattern: pattern, callback: fn (Option<binding>, @DVec<entry>) -> bool)
+fn iterate_matches(store: &store, spattern: Pattern, callback: fn (Option<Binding>, @DVec<entry>) -> bool)
 {
-	fn invoke(subject: ~str, pattern: pattern, entries: @DVec<entry>, callback: fn (option::Option<binding>, @DVec<entry>) -> bool) -> bool
+	fn invoke(subject: ~str, pattern: Pattern, entries: @DVec<entry>, callback: fn (option::Option<Binding>, @DVec<entry>) -> bool) -> bool
 	{
 		match match_subject(subject, pattern)
 		{
@@ -354,7 +354,7 @@ fn iterate_matches(store: &store, spattern: pattern, callback: fn (Option<bindin
 	
 	match spattern
 	{
-		constant(IriValue(subject)) | constant(BlankValue(subject)) =>
+		Constant(IriValue(subject)) | Constant(BlankValue(subject)) =>
 		{
 			// Optimization for a common case where we are attempting to match a specific subject.
 			let candidate = store.subjects.find(subject);
@@ -447,7 +447,7 @@ fn eval_basic(store: &store, names: ~[~str], matcher: triple_pattern) -> result:
 	result::Ok(rows)
 }
 
-fn filter_solution(context: query_context, names: ~[~str], solution: solution, expr: expr) -> result::Result<solution, ~str>
+fn filter_solution(context: query_context, names: ~[~str], solution: solution, expr: Expr) -> result::Result<solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
@@ -476,7 +476,7 @@ fn filter_solution(context: query_context, names: ~[~str], solution: solution, e
 	return result::Ok(result);
 }
 
-fn bind_solution(context: query_context, names: ~[~str], solution: solution, expr: expr, name: ~str) -> result::Result<solution, ~str>
+fn bind_solution(context: query_context, names: ~[~str], solution: solution, expr: Expr, name: ~str) -> result::Result<solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution));
@@ -652,15 +652,15 @@ fn eval_algebra(store: &store, names: ~[~str], context: query_context) -> result
 	}
 }
 
-fn eval_order_expr(context: query_context, row: solution_row, expr: expr) -> (bool, Object)
+fn eval_order_expr(context: query_context, row: solution_row, expr: Expr) -> (bool, Object)
 {
 	match expr
 	{
-		call_expr(~"!desc", e) =>
+		CallExpr(~"!desc", e) =>
 		{
 			(false, eval_expr(context, row, *e[0])) 
 		}
-		call_expr(~"!asc", e) =>
+		CallExpr(~"!asc", e) =>
 		{
 			(true, eval_expr(context, row, *e[0]))
 		}
@@ -688,13 +688,13 @@ fn compare_order_values(lhs: (bool, Object), rhs: (bool, Object)) -> result::Res
 	}
 }
 
-fn order_by(context: query_context, solution: solution, ordering: ~[expr]) -> result::Result<solution, ~str>
+fn order_by(context: query_context, solution: solution, ordering: ~[Expr]) -> result::Result<solution, ~str>
 {
 	// TODO
 	// Probably more efficient to do the evaluation in a pre-pass. Looks like rust requires 2N comparisons in the worst case.
 	// http://www.codecodex.com/wiki/Merge_sort#Analysis
 	// Or maybe just do an in place sort.
-	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[expr], context: query_context, row1: solution_row, row2: solution_row) -> bool
+	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[Expr], context: query_context, row1: solution_row, row2: solution_row) -> bool
 	{
 		unchecked
 		{
@@ -765,7 +765,7 @@ fn make_distinct(solution: solution) -> result::Result<solution, ~str>
 	return result::Ok(result);
 }
 
-fn eval(names: ~[~str], context: query_context) -> selector
+fn eval(names: ~[~str], context: query_context) -> Selector
 {
 	let names = names;
 	let context = copy context;
