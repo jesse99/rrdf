@@ -2,6 +2,7 @@
 use io::WriterUtil;
 use object::*;
 use sparql::*;
+use solution::*;
 use store::*;
 use test_helpers::*;
 
@@ -122,7 +123,7 @@ fn query_monsters()
 					// 0: [(name, "Lich"), (weight, 3), (announcement, "You feel a chill.")]
 					// 1: [(name, "Mummy"), (weight, 2)]
 					// 2: [(name, "Necromancer"), (weight, 2)]
-					for vec::eachi(solution)
+					for vec::eachi(solution.rows)
 					|i, row|
 					{
 						io::println(fmt!("%?: %s", i, row.to_str()));
@@ -140,11 +141,11 @@ fn query_monsters()
 		}
 	}
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"name", StringValue(~"Lich", ~"")), (~"weight", IntValue(3)), (~"announcement", StringValue(~"You feel a chill.", ~""))],
 		~[(~"name", StringValue(~"Mummy", ~"")), (~"weight", IntValue(2))],
 		~[(~"name", StringValue(~"Necromancer", ~"")), (~"weight", IntValue(2))],
-	];
+	]};
 	assert check_solution(store, expr, expected);
 }
 

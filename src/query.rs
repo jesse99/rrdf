@@ -84,7 +84,7 @@ fn solution_to_str(store: &Store, solution: Solution) -> ~str
 {
 	let mut result = ~"";
 	
-	for vec::eachi(solution)
+	for vec::eachi(solution.rows)
 	|i, row|
 	{
 		result += fmt!("%?: %s   ", i, solution_row_to_str(store, row));
@@ -162,13 +162,13 @@ fn join_solutions(store: &Store, names: ~[~str], group1: Solution, group2: Solut
 	info!("joining:");
 	info!("   group1 = %s", solution_to_str(store, group1));
 	info!("   group2 = %s", solution_to_str(store, group2));
-	if vec::is_not_empty(group1) && (vec::is_not_empty(group2) || optional_join)
+	if vec::is_not_empty(group1.rows) && (vec::is_not_empty(group2.rows) || optional_join)
 	{
-		for vec::each(group1)
+		for vec::each(group1.rows)
 		|lhs|
 		{
 			let count = vec::len(result);
-			for vec::each(group2)
+			for vec::each(group2.rows)
 			|rhs|
 			{
 				if compatible_row(lhs, rhs)
@@ -197,7 +197,7 @@ fn join_solutions(store: &Store, names: ~[~str], group1: Solution, group2: Solut
 		info!("   empty result");
 	}
 	
-	return result;
+	return Solution {namespaces: copy store.namespaces, rows: result};
 }
 
 fn filter_row(names: ~[~str], row: SolutionRow) -> SolutionRow
@@ -385,7 +385,7 @@ fn iterate_matches(store: &Store, spattern: Pattern, callback: fn (Option<Bindin
 // Returns the named bindings.
 fn eval_basic(store: &Store, names: ~[~str], matcher: TriplePattern) -> result::Result<Solution, ~str>
 {
-	let mut rows: Solution = ~[];
+	let mut rows = Solution {namespaces: ~[], rows: ~[]};
 	
 	// Iterate over the matching subjects,
 	for iterate_matches(store, matcher.subject)
@@ -429,7 +429,7 @@ fn eval_basic(store: &Store, names: ~[~str], matcher: TriplePattern) -> result::
 					{
 						info!("basic %s matched (*, %s, %s)", triple_pattern_to_str(store, matcher), contract_uri(store.namespaces, entry.predicate), object_to_str(store, entry.object));
 					}
-					vec::push(rows, filter_row(names, bindings));
+					vec::push(rows.rows, filter_row(names, bindings));
 				}
 				result::Ok(false) =>
 				{
@@ -449,9 +449,9 @@ fn eval_basic(store: &Store, names: ~[~str], matcher: TriplePattern) -> result::
 fn filter_solution(context: QueryContext, names: ~[~str], solution: Solution, expr: Expr) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
-	vec::reserve(result, vec::len(solution));
+	vec::reserve(result, vec::len(solution.rows));
 	
-	for vec::each(solution)
+	for vec::each(solution.rows)
 	|row|
 	{
 		let value = eval_expr(context, row, expr);
@@ -472,15 +472,15 @@ fn filter_solution(context: QueryContext, names: ~[~str], solution: Solution, ex
 		}
 	}
 	
-	return result::Ok(result);
+	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
 }
 
 fn bind_solution(context: QueryContext, names: ~[~str], solution: Solution, expr: Expr, name: ~str) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
-	vec::reserve(result, vec::len(solution));
+	vec::reserve(result, vec::len(solution.rows));
 	
-	for vec::each(solution)
+	for vec::each(solution.rows)
 	|row|
 	{
 		let value = eval_expr(context, row, expr);
@@ -505,12 +505,12 @@ fn bind_solution(context: QueryContext, names: ~[~str], solution: Solution, expr
 		}
 	}
 	
-	return result::Ok(result);
+	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
 }
 
 fn eval_group(store: &Store, context: QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<Solution, ~str>
 {
-	let mut result = ~[];
+	let mut result = Solution {namespaces: copy store.namespaces, rows: ~[]};
 	
 	for vec::eachi(terms)
 	|i, term|
@@ -568,7 +568,7 @@ fn eval_group(store: &Store, context: QueryContext, in_names: ~[~str], terms: ~[
 						{
 							Optional(_t) =>
 							{
-								if result.is_not_empty()
+								if result.rows.is_not_empty()
 								{
 									result = join_solutions(store, names, result, solution, true);
 									info!("term%? %s matched %s", i, algebra_to_str(store, term), solution_to_str(store, result));
@@ -576,12 +576,12 @@ fn eval_group(store: &Store, context: QueryContext, in_names: ~[~str], terms: ~[
 							}
 							_ =>
 							{
-								if solution.is_empty()
+								if solution.rows.is_empty()
 								{
 									info!("term%? %s matched nothing", i, algebra_to_str(store, term));
-									return result::Ok(~[]);
+									return result::Ok(Solution {namespaces : ~[], rows: ~[]});
 								}
-								else if result.is_not_empty()
+								else if result.rows.is_not_empty()
 								{
 									result = join_solutions(store, names, result, solution, false);
 									info!("term%? %s matched %s", i, algebra_to_str(store, term), solution_to_str(store, result));
@@ -616,7 +616,7 @@ fn eval_optional(store: &Store, names: ~[~str], context: QueryContext, term: Alg
 		}
 		result::Err(_mesg) =>
 		{
-			result::Ok(~[])
+			result::Ok(Solution {namespaces: ~[], rows: ~[]})
 		}
 	}
 }
@@ -729,10 +729,10 @@ fn order_by(context: QueryContext, solution: Solution, ordering: ~[Expr]) -> res
 	
 	let err_mesg = @mut ~"";
 	
-	let solution = std::sort::merge_sort(|x, y| {compare_rows(err_mesg, ordering, context, *x, *y)}, solution);	// TODO: probably dont want to de-reference the pointers
+	let rows = std::sort::merge_sort(|x, y| {compare_rows(err_mesg, ordering, context, *x, *y)}, solution.rows);	// TODO: probably dont want to de-reference the pointers
 	if str::is_empty(*err_mesg)
 	{
-		result::Ok(solution)
+		result::Ok(Solution {namespaces: copy solution.namespaces, rows: rows})
 	}
 	else
 	{
@@ -743,25 +743,25 @@ fn order_by(context: QueryContext, solution: Solution, ordering: ~[Expr]) -> res
 fn make_distinct(solution: Solution) -> result::Result<Solution, ~str>
 {
 	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
-	let solution = std::sort::merge_sort(|x, y| {*x < *y}, solution);	// TODO: probably dont want to de-reference the pointers
+	let rows = std::sort::merge_sort(|x, y| {*x < *y}, solution.rows);	// TODO: probably dont want to de-reference the pointers
 	
 	let mut result = ~[];
-	vec::reserve(result, vec::len(solution));
+	vec::reserve(result, vec::len(rows));
 	
 	let mut i = 0;
-	while i < vec::len(solution)
+	while i < vec::len(rows)
 	{
-		let row = solution[i];
+		let row = rows[i];
 		vec::push(result, row);
 		
 		i = i + 1;
-		while i < vec::len(solution) && row == solution[i]
+		while i < vec::len(rows) && row == rows[i]
 		{
 			i += 1;
 		}
 	}
 	
-	return result::Ok(result);
+	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
 }
 
 fn eval(names: ~[~str], context: QueryContext) -> Selector
@@ -786,9 +786,9 @@ fn eval(names: ~[~str], context: QueryContext) -> Selector
 					match context.limit
 					{
 						// Optionally limit the solution.
-						option::Some(limit) if limit < vec::len(solution) =>
+						option::Some(limit) if limit < vec::len(solution.rows) =>
 						{
-							result::Ok(vec::slice(solution, 0, limit))
+							result::Ok(Solution {namespaces: solution.namespaces, rows: vec::slice(solution.rows, 0, limit)})
 						}
 						_ =>
 						{

@@ -1,6 +1,7 @@
 use io::WriterUtil;
 use std::map::*;
 use object::*;
+use solution::*;
 use test_data::*;
 use test_helpers::*;
 
@@ -227,27 +228,27 @@ fn replace()
 #[test]
 fn trivial_bgp() 
 {
-	let group1 = ~[];
-	let group2 = ~[
+	let group1 = Solution {namespaces: ~[], rows: ~[]};
+	let group2 = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(25i64))],
 		~[(~"age", IntValue(18i64))]
-	];
+	]};
 	
-	assert check_bgp(~[group1, group2], ~[]);
-	assert check_bgp(~[group2, group1], ~[]);
+	assert check_bgp(~[group1, group2], Solution {namespaces: ~[], rows: ~[]});
+	assert check_bgp(~[group2, group1], Solution {namespaces: ~[], rows: ~[]});
 }
 
 #[test]
 fn identical_bgp()
 {
-	let group1 = ~[
+	let group1 = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(25i64))],		// TODO: use some fancy regex, remember \1 is atually $1
 		~[(~"age", IntValue(18i64))]
-	];
-	let group2 = ~[
+	]};
+	let group2 = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(25i64))],
 		~[(~"age", IntValue(18i64))]
-	];
+	]};
 	let expected = group2;
 	
 	assert check_bgp(~[group1, group2], expected);
@@ -257,20 +258,20 @@ fn identical_bgp()
 #[test]
 fn disjoint1_bgp()
 {
-	let group1 = ~[
+	let group1 = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(25i64))],
 		~[(~"age", IntValue(18i64))]
-	];
-	let group2 = ~[
+	]};
+	let group2 = Solution {namespaces: ~[], rows: ~[
 		~[(~"name", StringValue(~"Bob", ~""))],
 		~[(~"name", StringValue(~"Ted", ~""))]
-	];
-	let expected = ~[
+	]};
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))],
 		~[(~"age", IntValue(25i64)), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(25i64)), (~"name", StringValue(~"Ted", ~""))]
-	];
+	]};
 	
 	assert check_bgp(~[group1, group2], expected);
 	assert check_bgp(~[group2, group1], expected);
@@ -279,20 +280,20 @@ fn disjoint1_bgp()
 #[test]
 fn disjoint2_bgp() 
 {
-	let group1 = ~[
+	let group1 = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(25i64)), (~"job", StringValue(~"cowboy", ~""))],
 		~[(~"age", IntValue(18i64)), (~"job", StringValue(~"muckraker", ~""))]
-	];
-	let group2 = ~[
+	]};
+	let group2 = Solution {namespaces: ~[], rows: ~[
 		~[(~"id", StringValue(~"bbb", ~"")), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"id", StringValue(~"ttt", ~"")), (~"name", StringValue(~"Ted", ~""))]
-	];
-	let expected = ~[
+	]};
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(18i64)), (~"id", StringValue(~"bbb", ~"")), (~"job", StringValue(~"muckraker", ~"")), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(18i64)), (~"id", StringValue(~"ttt", ~"")), (~"job", StringValue(~"muckraker", ~"")), (~"name", StringValue(~"Ted", ~""))],
 		~[(~"age", IntValue(25i64)), (~"id", StringValue(~"bbb", ~"")), (~"job", StringValue(~"cowboy", ~"")), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(25i64)), (~"id", StringValue(~"ttt", ~"")), (~"job", StringValue(~"cowboy", ~"")), (~"name", StringValue(~"Ted", ~""))]
-	];
+	]};
 	
 	assert check_bgp(~[group1, group2], expected);
 	assert check_bgp(~[group2, group1], expected);
@@ -301,21 +302,21 @@ fn disjoint2_bgp()
 #[test]
 fn asymmetric_bgp() 
 {
-	let group1 = ~[
+	let group1 = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(33i64))],
 		~[(~"age", IntValue(25i64))],
 		~[(~"age", IntValue(18i64))]
-	];
-	let group2 = ~[
+	]};
+	let group2 = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(88i64)), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
-	];
+	]};
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
-	];
+	]};
 	
 	assert check_bgp(~[group1, group2], expected);
 	assert check_bgp(~[group2, group1], expected);
@@ -324,20 +325,20 @@ fn asymmetric_bgp()
 #[test]
 fn symmetric_bgp() 
 {
-	let group1 = ~[
+	let group1 = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(33i64))],
 		~[(~"age", IntValue(25i64))],
 		~[(~"age", IntValue(18i64))]
-	];
-	let group2 = ~[
+	]};
+	let group2 = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(88i64)), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
-	];
-	let expected = ~[
+	]};
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
-	];
+	]};
 	
 	assert check_bgp(~[group1, group2], expected);
 	assert check_bgp(~[group2, group1], expected);
@@ -346,20 +347,20 @@ fn symmetric_bgp()
 #[test]
 fn path_bgp() 
 {
-	let group1 = ~[
+	let group1 = Solution {namespaces: ~[], rows: ~[
 		~[(~"name", StringValue(~"Bob", ~"")), (~"id", StringValue(~"bbb", ~""))],
 		~[(~"name", StringValue(~"Ted", ~"")), (~"id", StringValue(~"ttt", ~""))],
 		~[(~"name", StringValue(~"George", ~"")), (~"id", StringValue(~"ggg", ~""))]
-	];
-	let group2 = ~[
+	]};
+	let group2 = Solution {namespaces: ~[], rows: ~[
 		~[(~"id", StringValue(~"ttt", ~"")), (~"age", IntValue(18i64))],
 		~[(~"id", StringValue(~"bbb", ~"")), (~"age", IntValue(88i64))],
 		~[(~"id", StringValue(~"zzz", ~"")), (~"age", IntValue(38i64))]
-	];
-	let expected = ~[
+	]};
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"age", IntValue(88i64)), (~"id", StringValue(~"bbb", ~"")), (~"name", StringValue(~"Bob", ~""))],
 		~[(~"age", IntValue(18i64)), (~"id", StringValue(~"ttt", ~"")), (~"name", StringValue(~"Ted", ~""))]
-	];
+	]};
 	
 	assert check_bgp(~[group1, group2], expected);
 	assert check_bgp(~[group2, group1], expected);
@@ -368,17 +369,17 @@ fn path_bgp()
 #[test]
 fn incompatible_bgp() 
 {
-	let group1 = ~[
+	let group1 = Solution {namespaces: ~[], rows: ~[
 		~[(~"name", StringValue(~"Bob", ~"")), (~"id", StringValue(~"bbb", ~""))],
 		~[(~"name", StringValue(~"Ted", ~"")), (~"id", StringValue(~"ttt", ~""))],
 		~[(~"name", StringValue(~"George", ~"")), (~"id", StringValue(~"ggg", ~""))]
-	];
-	let group2 = ~[
+	]};
+	let group2 = Solution {namespaces: ~[], rows: ~[
 		~[(~"id", StringValue(~"tyt", ~"")), (~"age", IntValue(18i64))],
 		~[(~"id", StringValue(~"bxb", ~"")), (~"age", IntValue(88i64))],
 		~[(~"id", StringValue(~"zzz", ~"")), (~"age", IntValue(38i64))]
-	];
-	let expected = ~[];
+	]};
+	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
 	assert check_bgp(~[group1, group2], expected);
 	assert check_bgp(~[group2, group1], expected);
@@ -387,17 +388,17 @@ fn incompatible_bgp()
 #[test]
 fn multiple_bgp() 
 {
-	let group1 = ~[
+	let group1 = Solution {namespaces: ~[], rows: ~[
 		~[(~"name", StringValue(~"Bob", ~"")), (~"id", StringValue(~"bbb", ~""))],
 		~[(~"name", StringValue(~"Ted", ~"")), (~"id", StringValue(~"ttt", ~""))],
 		~[(~"name", StringValue(~"George", ~"")), (~"id", StringValue(~"ggg", ~""))]
-	];
-	let group2 = ~[
+	]};
+	let group2 = Solution {namespaces: ~[], rows: ~[
 		~[(~"id", StringValue(~"tyt", ~"")), (~"age", IntValue(18i64))],
 		~[(~"id", StringValue(~"bxb", ~"")), (~"age", IntValue(88i64))],
 		~[(~"id", StringValue(~"zzz", ~"")), (~"age", IntValue(38i64))]
-	];
-	let expected = ~[];
+	]};
+	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
 	assert check_bgp(~[group1, group2], expected);
 	assert check_bgp(~[group2, group1], expected);

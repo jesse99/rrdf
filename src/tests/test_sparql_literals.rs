@@ -1,5 +1,6 @@
 use std::map::*;
 use object::*;
+use solution::*;
 use store::*;
 use test_helpers::*;
 
@@ -18,9 +19,9 @@ fn string1_match()
 {
 	let expr = ~"SELECT ?s ?p WHERE {?s ?p 'Ned'}";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -30,9 +31,9 @@ fn string2_match()
 {
 	let expr = ~"SELECT ?s ?p WHERE {?s ?p \"Ned\"}";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -46,9 +47,9 @@ fn long_string1_match()
 		(~"v:fn", StringValue(~"Name\nTitle", ~""))
 	]);
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Some_Guy"))), (~"p", IriValue(v(~"fn")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -62,9 +63,9 @@ fn long_string2_match()
 		(~"v:fn", StringValue(~"Bob \"Bob\n", ~""))
 	]);
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Some_Guy"))), (~"p", IriValue(v(~"fn")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -86,9 +87,9 @@ fn language_tags()
 {
 	let expr = ~"SELECT ?s WHERE {?s ?p \"guten tag\"@en-US}";
 	let store = fancy_types();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(~"http://blah#Jones"))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -98,11 +99,11 @@ fn iri_match()
 {
 	let expr = ~"SELECT ?s WHERE {?s <http://www.w3.org/2006/vcard/ns#nickname> ?z}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark")))],
 		~[(~"s", IriValue(got(~"Jon_Snow")))],
 		~[(~"s", IriValue(got(~"Sandor_Clegane")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -113,10 +114,10 @@ fn subject_match()
 {
 	let expr = ~"SELECT ?p WHERE {<http://awoiaf.westeros.org/index.php/Sandor_Clegane> ?p ?z}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"p", IriValue(v(~"fn")))],
 		~[(~"p", IriValue(v(~"nickname")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -126,7 +127,7 @@ fn strings_dont_match_uris()
 {
 	let expr = ~"SELECT ?p WHERE {\"got:Sandor_Clegane\" ?p ?z}";
 	let store = test_data::got_cast3();
-	let expected = ~[];
+	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -136,9 +137,9 @@ fn typed_literal_match()
 {
 	let expr = ~"SELECT ?s ?p WHERE {?s ?p \"Ned\"^^<http://www.w3.org/2001/XMLSchema#string>}";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -155,9 +156,9 @@ WHERE
 	?s ?p \"Ned\"^^xsd:string
 }";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -174,10 +175,10 @@ fn int_literal()
 		(~"v:age", IntValue(23i64))
 	]);
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Another_Guy")))],
 		~[(~"s", IriValue(got(~"Some_Guy")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -190,9 +191,9 @@ fn signed_int_literal()
 	store.add(~"got:Some_Guy", ~[(~"v:age", IntValue(23i64))]);
 	store.add(~"got:Another_Guy", ~[(~"v:age", IntValue(-23i64))]);
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Another_Guy")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -205,10 +206,10 @@ fn decimal_literal()
 	store.add(~"got:Some_Guy", ~[(~"v:age", FloatValue(3.14f64))]);
 	store.add(~"got:Another_Guy", ~[(~"v:age", FloatValue(3.14f64))]);
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Another_Guy")))],
 		~[(~"s", IriValue(got(~"Some_Guy")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -225,9 +226,9 @@ fn signed_decimal_literal()
 		(~"v:age", FloatValue(-3.14f64))
 	]);
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Another_Guy")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -244,10 +245,10 @@ fn double_literal()
 		(~"v:age", FloatValue(3.14f64))
 	]);
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Another_Guy")))],
 		~[(~"s", IriValue(got(~"Some_Guy")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -264,9 +265,9 @@ fn boolean_literal()
 		(~"v:male", BoolValue(false))
 	]);
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"A_Woman")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -287,10 +288,10 @@ fn datetime()
 		(~"v:born", literal_to_object(@~"1999-05-31T13:22:00-05:00", @~"http://www.w3.org/2001/XMLSchema#dateTime", @~""))
 	]);
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 //		~[(~"s", IriValue(got(~"A_Woman")))],
 		~[(~"s", IriValue(got(~"Some_Guy")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }

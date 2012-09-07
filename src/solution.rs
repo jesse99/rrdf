@@ -2,8 +2,10 @@
 use Option = option::Option;
 use object::*;
 
-// Note that solutions must be sendable types so that queries can be off-loaded
-// onto tasks.
+/// Name of a namespace plus the IRI it expands to.
+///
+/// This is a sendable type.
+type Namespace = {prefix: ~str, path: ~str};
 
 /// Result of matching a triple with a SPARQL query.
 ///
@@ -12,9 +14,12 @@ type SolutionRow = ~[(~str, Object)];
 
 /// Result of a SPARQL query.
 /// 
-/// Note that the solution_methods impl provides a number of convenience methods
-/// to simplify result retrieval.
-type Solution = ~[SolutionRow];
+/// Note that this is a sendable type.
+struct Solution
+{
+	namespaces: ~[Namespace],
+	rows: ~[SolutionRow];
+}
 
 trait SolutionTrait
 {
@@ -34,16 +39,16 @@ trait SolutionRowTrait
 	pure fn search(name: ~str) -> Option<Object>;
 }
 
-impl  Solution : SolutionTrait 
+impl  &Solution : SolutionTrait 
 {
 	pure fn get(row: uint, name: ~str) -> Object
 	{
-		self[row].get(name)
+		self.rows[row].get(name)
 	}
 	
 	pure fn search(row: uint, name: ~str) -> Option<Object>
 	{
-		self[row].search(name)
+		self.rows[row].search(name)
 	}
 	
 	pure fn sort() -> Solution
@@ -91,7 +96,7 @@ impl  Solution : SolutionTrait
 		
 		unchecked
 		{
-			std::sort::merge_sort(solution_row_le, self)
+			Solution {namespaces: copy self.namespaces, rows: std::sort::merge_sort(solution_row_le, self.rows)}
 		}
 	}
 }

@@ -116,9 +116,6 @@ type Predicate = ~str;
 /// ('https://github.com/jesse99/rrdf', 'http://purl.org/dc/terms/creator', 'Jesse Jones')
 type Triple = {subject: Subject, predicate: Predicate, object: Object};
 
-/// Name of a namespace plus the IRI it expands to.
-type Namespace = {prefix: ~str, path: ~str};
-
 /// Predicate and object associated with a subject.
 type Entry = {predicate: ~str, object: Object};
 
@@ -134,6 +131,8 @@ struct Store : ToStr
 	subjects: hashmap<@~str, @DVec<Entry>>;
 	extensions: hashmap<@~str, ExtensionFn>;
 	mut next_blank: int;
+	
+	// TODO: add a drop method (to make Stores non-copyable)
 	
 	fn to_str() -> ~str
 	{

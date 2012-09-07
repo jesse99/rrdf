@@ -1,5 +1,6 @@
 use std::map::*;
 use object::*;
+use solution::*;
 use store::*;
 use test_helpers::*;
 
@@ -23,10 +24,10 @@ fn trivial()
 {
 	let expr = ~"SELECT ?s ?p ?o WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"fn"))), (~"o", StringValue(~"Eddard Stark", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname"))), (~"o", StringValue(~"Ned", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -36,10 +37,10 @@ fn out_of_order()
 {
 	let expr = ~"SELECT ?o ?s ?p WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"o", StringValue(~"Eddard Stark", ~"")), (~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"fn")))],
 		~[(~"o", StringValue(~"Ned", ~"")), (~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -49,10 +50,10 @@ fn long_names()
 {
 	let expr = ~"SELECT ?subject ?p ?obj WHERE {?subject ?p ?obj}";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"subject", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"fn"))), (~"obj", StringValue(~"Eddard Stark", ~""))],
 		~[(~"subject", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname"))), (~"obj", StringValue(~"Ned", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -62,10 +63,10 @@ fn keyword_case()
 {
 	let expr = ~"SeLecT ?s ?p ?o where {?s ?p ?o}";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"fn"))), (~"o", StringValue(~"Eddard Stark", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname"))), (~"o", StringValue(~"Ned", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -93,10 +94,10 @@ fn unbound_variable()
 {
 	let expr = ~"SELECT ?s ?p ?z WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"fn")))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -106,7 +107,7 @@ fn no_match()
 {
 	let expr = ~"SELECT ?s ?p WHERE {?s ?p \"Peter Pan\"}";
 	let store = test_data::got_cast1();
-	let expected = ~[];
+	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -119,7 +120,7 @@ fn comment()
 		?s ?p \"Peter Pan\"
 	}";
 	let store = test_data::got_cast1();
-	let expected = ~[];
+	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -133,9 +134,9 @@ fn simple_path()
 		?z <http://www.w3.org/2006/vcard/ns#organisation-name> ?org
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"org", StringValue(~"Small Council", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -159,7 +160,7 @@ fn unmatched_path()
 		(~"wiki:class", StringValue(~"mammalia", ~"")),
 	]);
 	
-	let expected = ~[];
+	let expected = Solution {namespaces: ~[], rows: ~[]};
 	assert check_solution(store, expr, expected);
 }
 
@@ -178,7 +179,7 @@ fn unmatched_path2()
 	
 	let store = test_data::animals();
 	
-	let expected = ~[];
+	let expected = Solution {namespaces: ~[], rows: ~[]};
 	assert check_solution(store, expr, expected);
 }
 
@@ -198,7 +199,7 @@ fn unmatched_path3()
 	
 	let store = test_data::animals();
 	
-	let expected = ~[];
+	let expected = Solution {namespaces: ~[], rows: ~[]};
 	assert check_solution(store, expr, expected);
 }
 
@@ -210,10 +211,10 @@ fn select_all()
 		<http://awoiaf.westeros.org/index.php/Sandor_Clegane> ?p ?o
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"p", IriValue(v(~"fn"))), (~"o", StringValue(~"Sandor Clegane", ~""))],
 		~[(~"p", IriValue(v(~"nickname"))), (~"o", StringValue(~"The Hound", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -229,9 +230,9 @@ fn prefixes()
 		?z v:organisation-name ?org
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"org", StringValue(~"Small Council", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -249,11 +250,11 @@ fn options1()
 		}
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"name", StringValue(~"Eddard Stark", ~"")), (~"title", StringValue(~"Lord", ~""))],
 		~[(~"name", StringValue(~"Jon Snow", ~""))],
 		~[(~"name", StringValue(~"Sandor Clegane", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -270,11 +271,11 @@ fn options2()
 		OPTIONAL {?s v:pet ?pet}
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"name", StringValue(~"Eddard Stark", ~"")), (~"title", StringValue(~"Lord", ~""))],
 		~[(~"name", StringValue(~"Jon Snow", ~"")), (~"pet", StringValue(~"Ghost", ~""))],
 		~[(~"name", StringValue(~"Sandor Clegane", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -301,9 +302,9 @@ fn filter_constant()
 	store.add(~"got:Sandor_Clegane", ~[
 		(~"v:age", IntValue(35i64))
 	]);
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -329,9 +330,9 @@ fn filter_typed_literal()
 	store.add(~"got:Sandor_Clegane", ~[
 		(~"v:age", IntValue(35i64))
 	]);
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -380,9 +381,9 @@ fn filter_binary()
 	store.add(~"got:Sandor_Clegane", ~[
 		(~"v:age", IntValue(35i64))
 	]);
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -407,9 +408,9 @@ fn filter_bound()
 	store.add(~"got:Sandor_Clegane", ~[
 		(~"v:age", IntValue(35i64))
 	]);
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -434,10 +435,10 @@ fn filter_if()
 	store.add(~"got:Sandor_Clegane", ~[
 		(~"v:age", IntValue(35i64))
 	]);
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark")))],
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -462,9 +463,9 @@ fn filter_coalesce()
 	store.add(~"got:Sandor_Clegane", ~[
 		(~"v:age", IntValue(35i64))
 	]);
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -489,9 +490,9 @@ fn filter_term_fn()
 	store.add(~"got:Sandor_Clegane", ~[
 		(~"v:age", IntValue(35i64))
 	]);
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -516,10 +517,10 @@ fn filter_str_fn()
 	store.add(~"got:Sandor_Clegane", ~[
 		(~"v:age", IntValue(35i64))
 	]);
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark")))],
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -544,9 +545,9 @@ fn filter_numeric()
 	store.add(~"got:Sandor_Clegane", ~[
 		(~"v:age", IntValue(35i64))
 	]);
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -562,11 +563,11 @@ fn filter_optional()
 		OPTIONAL {?s v:nickname ?nick . FILTER CONTAINS(?nick, \" \")}
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"name", StringValue(~"Eddard Stark", ~""))],
 		~[(~"name", StringValue(~"Jon Snow", ~"")), (~"nick", StringValue(~"Lord Snow", ~""))],
 		~[(~"name", StringValue(~"Sandor Clegane", ~"")), (~"nick", StringValue(~"The Hound", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -582,7 +583,7 @@ fn order_by()
 		FILTER (!ISBLANK(?s) && !ISBLANK(?o))
 	} ORDER BY ?s ?o";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Eddard Stark", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Lord", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Ned", ~""))],
@@ -593,7 +594,7 @@ fn order_by()
 		
 		~[(~"s", IriValue(got(~"Sandor_Clegane"))), (~"o", StringValue(~"Sandor Clegane", ~""))],
 		~[(~"s", IriValue(got(~"Sandor_Clegane"))), (~"o", StringValue(~"The Hound", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -624,7 +625,7 @@ fn order_by_desc()
 		FILTER (!ISBLANK(?s) && !ISBLANK(?o))
 	} ORDER BY ASC(?s) DESC(?o)";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Ned", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Lord", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Eddard Stark", ~""))],
@@ -635,7 +636,7 @@ fn order_by_desc()
 		
 		~[(~"s", IriValue(got(~"Sandor_Clegane"))), (~"o", StringValue(~"The Hound", ~""))],
 		~[(~"s", IriValue(got(~"Sandor_Clegane"))), (~"o", StringValue(~"Sandor Clegane", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -651,13 +652,13 @@ fn limit()
 		FILTER (!ISBLANK(?s) && !ISBLANK(?o))
 	} ORDER BY ?s ?o LIMIT 4";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Eddard Stark", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Lord", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Ned", ~""))],
 		
 		~[(~"s", IriValue(got(~"Jon_Snow"))), (~"o", StringValue(~"Ghost", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -673,7 +674,7 @@ fn big_limit()
 		FILTER (!ISBLANK(?s) && !ISBLANK(?o))
 	} ORDER BY ?s ?o LIMIT 400";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Eddard Stark", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Lord", ~""))],
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"o", StringValue(~"Ned", ~""))],
@@ -684,7 +685,7 @@ fn big_limit()
 		
 		~[(~"s", IriValue(got(~"Sandor_Clegane"))), (~"o", StringValue(~"Sandor Clegane", ~""))],
 		~[(~"s", IriValue(got(~"Sandor_Clegane"))), (~"o", StringValue(~"The Hound", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -700,9 +701,9 @@ fn bind()
 		BIND (CONCAT(?o, ?o) AS ?d)
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"d", StringValue(~"LordLord", ~""))],
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -717,10 +718,10 @@ fn extensions()
 		BIND(rrdf:pname(?p) AS ?pp) 
 	}";
 	let store = test_data::got_cast1();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"sp", StringValue(~"got:Eddard_Stark", ~"")), (~"pp", StringValue(~"v:fn", ~""))],
 		~[(~"sp", StringValue(~"got:Eddard_Stark", ~"")), (~"pp", StringValue(~"v:nickname", ~""))]
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -734,11 +735,11 @@ fn distinct()
 		FILTER (!ISBLANK(?s))
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"s", IriValue(got(~"Eddard_Stark")))],
 		~[(~"s", IriValue(got(~"Jon_Snow")))],
 		~[(~"s", IriValue(got(~"Sandor_Clegane")))],
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -755,13 +756,13 @@ fn pname_with_blank()
 			BIND(rrdf:pname(?subject) AS ?name) .
 		} ORDER BY ?name";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"name", StringValue(~"_:jon-org-1", ~""))],
 		~[(~"name", StringValue(~"_:ned-org-0", ~""))],
 		~[(~"name", StringValue(~"got:Eddard_Stark", ~""))],
 		~[(~"name", StringValue(~"got:Jon_Snow", ~""))],
 		~[(~"name", StringValue(~"got:Sandor_Clegane", ~""))],
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -781,9 +782,9 @@ fn animals1()
 	
 	let store = test_data::animals();
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"subject", IriValue(wiki(~"grizzly")))],
-	];
+	]};
 	assert check_solution(store, expr, expected);
 }
 
@@ -802,14 +803,14 @@ fn animals2()
 	
 	let store = test_data::animals();
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"phylum", StringValue(~"arthropoda", ~"")), (~"family", StringValue(~"theridiidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"salmonidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"orycteropodidae", ~""))],
 		~[(~"phylum", StringValue(~"arthropoda", ~"")), (~"family", StringValue(~"lampyridae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"giraffidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"ursidae", ~""))],
-	];
+	]};
 	assert check_solution(store, expr, expected);
 }
 
@@ -829,11 +830,11 @@ fn animals3()
 	
 	let store = test_data::animals();
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"orycteropodidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"giraffidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"ursidae", ~""))],
-	];
+	]};
 	assert check_solution(store, expr, expected);
 }
 
@@ -857,11 +858,11 @@ fn animals4()
 	
 	let store = test_data::animals();
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"orycteropodidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"giraffidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"ursidae", ~""))],
-	];
+	]};
 	assert check_solution(store, expr, expected);
 }
 
@@ -885,11 +886,11 @@ fn animals5()
 	
 	let store = test_data::animals();
 	
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"orycteropodidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"giraffidae", ~"")), (~"habitat", StringValue(~"savannah", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"ursidae", ~""))],
-	];
+	]};
 	assert check_solution(store, expr, expected);
 }
 
@@ -907,10 +908,10 @@ fn blank_query1()
 		?b v:organisation-unit ?unit
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[
+	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"b", BlankValue(~"_:ned-org-0")), (~"name", StringValue(~"Small Council", ~"")), (~"unit", StringValue(~"Hand", ~""))],
 		~[(~"b", BlankValue(~"_:jon-org-1")), (~"name", StringValue(~"Night's Watch", ~"")), (~"unit", StringValue(~"Stewards", ~""))],
-	];
+	]};
 	
 	assert check_solution(store, expr, expected);
 }
@@ -930,7 +931,7 @@ fn bad_optional()
 		OPTIONAL {?s v:pet ?pet}
 	}";
 	let store = test_data::got_cast3();
-	let expected = ~[];
+	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
 	assert check_solution(store, expr, expected);
 }

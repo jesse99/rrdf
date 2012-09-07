@@ -34,7 +34,7 @@ fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
 {
 	fn convert_bindings(group: Solution) -> ~[~str]
 	{
-		do vec::map(group)
+		do vec::map(group.rows)
 		|row|
 		{
 			let mut entries = ~[];
@@ -159,24 +159,24 @@ fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
 					let actual = actual.sort();
 					
 					// OK if they are both empty.
-					if vec::is_empty(actual) && vec::is_empty(expected)
+					if vec::is_empty(actual.rows) && vec::is_empty(expected.rows)
 					{
 						return true;
 					}
 					
 					// Both sides should have the same number of rows.
-					if vec::len(actual) != vec::len(expected)
+					if vec::len(actual.rows) != vec::len(expected.rows)
 					{
 						print_failure(#fmt["Actual result had %? rows but expected %? rows.", 
-							vec::len(actual), vec::len(expected)], actual, expected);
+							vec::len(actual.rows), vec::len(expected.rows)], actual, expected);
 						return false;
 					}
 					
 					// Actual should have only the expected values.
-					for vec::eachi(actual)
+					for vec::eachi(actual.rows)
 					|i, row1|
 					{
-						let row2 = expected[i];
+						let row2 = expected.rows[i];
 						if vec::len(row1) != vec::len(row2)
 						{
 							print_failure(#fmt["Row %? had size %? but expected %?.",
@@ -273,7 +273,7 @@ fn check_solution_err(store: Store, expr: ~str, expected: ~str) -> bool
 // ---- Private Functions -----------------------------------------------------
 fn print_result(value: Solution)
 {
-	for vec::eachi(value)
+	for vec::eachi(value.rows)
 	|i, row|
 	{
 		let mut entries = ~[];
