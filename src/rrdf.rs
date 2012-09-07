@@ -28,7 +28,6 @@ use StringValue = object::StringValue; export StringValue;
 use TypedValue = object::TypedValue; export TypedValue;
 use UnboundValue = object::UnboundValue; export UnboundValue;
 
-use create_store = store::create_store; export create_store;
 use Entry = store::Entry; export Entry;
 use ExtensionFn = store::ExtensionFn; export ExtensionFn;
 use get_blank_name = store::get_blank_name; export get_blank_name;

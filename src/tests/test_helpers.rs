@@ -58,7 +58,7 @@ fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
 	for vec::each(vec::slice(groups, 1, groups.len())) 
 	|group|
 	{
-		let store = create_store(~[], @std::map::str_hash());
+		let store = Store(~[], &std::map::box_str_hash());
 		actual = join_solutions(&store, ~[~"*"], actual, group, false);
 	}
 	

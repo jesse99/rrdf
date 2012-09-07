@@ -71,10 +71,10 @@ fn long_string2_match()
 
 fn fancy_types() -> Store
 {
-	let store = create_store(~[
+	let store = Store(~[
 		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		{prefix: ~"x", path: ~"http://blah#"}
-		], @std::map::str_hash());
+		], &std::map::box_str_hash());
 	
 	store.add(~"x:Hans", ~[(~"x:greeting", StringValue(~"guten tag", ~"de"))]);
 	store.add(~"x:Jones", ~[(~"x:greeting", StringValue(~"guten tag", ~"en-US"))]);

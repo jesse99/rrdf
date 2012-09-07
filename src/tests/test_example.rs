@@ -15,10 +15,10 @@ fn monsters() -> Store
 	// Vector of function name and function pointer tuples. These
 	// represent user defined functions that may be called from
 	// within SPARQL queries.
-	let extensions = @std::map::str_hash();
+	let extensions = std::map::box_str_hash();
 	
 	// Create an empty triple store.
-	let store = create_store(namespaces, extensions);
+	let store = Store(namespaces, &extensions);
 	
 	// Start adding statements to the store. Individual triples may be added,
 	// containers, aggregates, reified statements, and predicates/objects

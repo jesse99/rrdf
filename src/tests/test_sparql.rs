@@ -153,7 +153,7 @@ fn unmatched_path()
 		?subject wiki:class \"arachnid\"
 	}";
 	
-	let store = create_store(~[{prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @std::map::str_hash());
+	let store = Store(~[{prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], &std::map::box_str_hash());
 	store.add(~"wiki:giraffe", ~[
 		(~"wiki:phylum", StringValue(~"chordata", ~"")),
 		(~"wiki:class", StringValue(~"mammalia", ~"")),

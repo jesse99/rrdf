@@ -356,7 +356,7 @@ fn iterate_matches(store: &Store, spattern: Pattern, callback: fn (Option<Bindin
 		Constant(IriValue(subject)) | Constant(BlankValue(subject)) =>
 		{
 			// Optimization for a common case where we are attempting to match a specific subject.
-			let candidate = store.subjects.find(subject);
+			let candidate = store.subjects.find(@subject);
 			if option::is_some(candidate)
 			{
 				info!("--- matched subject %?", subject);
@@ -373,7 +373,7 @@ fn iterate_matches(store: &Store, spattern: Pattern, callback: fn (Option<Bindin
 			|subject, entries|
 			{
 				debug!("--- trying subject %?", subject);
-				if !invoke(subject, spattern, entries, callback)
+				if !invoke(*subject, spattern, entries, callback)
 				{
 					return;
 				}
@@ -771,7 +771,7 @@ fn eval(names: ~[~str], context: QueryContext) -> Selector
 	|store: &Store| 
 	{
 		info!("algebra: %s", algebra_to_str(store, &context.algebra));
-		let context = {namespaces: store.namespaces, extensions: store.extensions, ..context};
+		let context = {namespaces: @store.namespaces, extensions: @store.extensions, ..context};
 		do eval_algebra(store, names, context).chain()
 		|solution|
 		{

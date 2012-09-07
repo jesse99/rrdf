@@ -280,11 +280,11 @@ type TernaryFn = fn (Object, Object, Object) -> Object;
 fn eval_extension(context: QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
-	match context.extensions.find(fname)
+	match context.extensions.find(@fname)
 	{
 		option::Some(f) =>
 		{
-			f(context.namespaces, args)
+			f(context.namespaces, &args)
 		}
 		option::None =>
 		{

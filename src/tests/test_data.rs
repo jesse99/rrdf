@@ -8,10 +8,10 @@ use store::*;
 
 fn got_cast1() -> Store
 {
-	let store = create_store(~[
+	let store = Store(~[
 		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		{prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
-		], @std::map::str_hash());
+		], @std::map::box_str_hash());
 	store.add(~"got:Eddard_Stark", ~[
 		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
 		(~"v:nickname", StringValue(~"Ned", ~""))
@@ -21,10 +21,10 @@ fn got_cast1() -> Store
 
 fn got_cast3() -> Store
 {
-	let store = create_store(~[
+	let store = Store(~[
 		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		{prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
-		], @std::map::str_hash());
+		], @std::map::box_str_hash());
 	
 	store.add(~"got:Eddard_Stark", ~[
 		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
@@ -55,7 +55,7 @@ fn got_cast3() -> Store
 
 fn animals() -> Store
 {
-	let store = create_store(~[{prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @std::map::str_hash());
+	let store = Store(~[{prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @std::map::box_str_hash());
 	
 	store.add(~"wiki:aardvark", ~[
 		(~"wiki:phylum", StringValue(~"chordata", ~"")),

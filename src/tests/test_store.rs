@@ -42,11 +42,11 @@ fn iteration()
 #[test]
 fn references()
 {
-	let store = create_store(~[
+	let store = Store(~[
 		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		{prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"},
 		{prefix: ~"foo", path: ~"http://www.whatever.org/"}
-		], @std::map::str_hash());
+		], &std::map::box_str_hash());
 		
 	store.add(~"got:Eddard_Stark", ~[
 		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
@@ -113,7 +113,7 @@ fn blank_nodes()
 #[test]
 fn container() 
 {
-	let store = create_store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
+	let store = Store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::box_str_hash());
 	store.add_alt(~"got:places", ~[IriValue(~"got:The_Wall"), IriValue(~"got:Winterfell")]);
 	
 	let mut actual = ~[];
@@ -135,7 +135,7 @@ fn container()
 #[test]
 fn list0() 
 {
-	let store = create_store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
+	let store = Store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::box_str_hash());
 	store.add_list(~"got:westeros", ~"got:cities", ~[]);
 	
 	let mut actual = ~[];
@@ -156,7 +156,7 @@ fn list0()
 #[test]
 fn list1() 
 {
-	let store = create_store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], @std::map::str_hash());
+	let store = Store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::box_str_hash());
 	store.add_list(~"got:westeros", ~"got:cities", ~[StringValue(~"Lanisport", ~"")]);
 	
 	let mut actual = ~[];
@@ -408,9 +408,9 @@ fn get_blanks()
 {
 	let store = got_cast1();
 	
-	let f1 = get_blank_name(store, ~"foo");
-	let f2 = get_blank_name(store, ~"foo");
-	let f3 = get_blank_name(store, ~"foo");
+	let f1 = get_blank_name(&store, ~"foo");
+	let f2 = get_blank_name(&store, ~"foo");
+	let f3 = get_blank_name(&store, ~"foo");
 	
 	assert f1 != f2;
 	assert f2 != f3;
