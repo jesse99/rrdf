@@ -53,35 +53,6 @@ type QueryContext =
 
 // --------------------------------------------------------------------------------------
 // TODO: should be in object.rs (see rust bug 3352)
-fn object_to_str(store: &Store, obj: Object) -> ~str
-{
-	match obj
-	{
-		TypedValue(value, kind) =>
-		{
-			fmt!("\"%s^^\"%s", value, contract_uri(store.namespaces, kind))
-		}
-		IriValue(iri) =>
-		{
-			let result = contract_uri(store.namespaces, iri);
-			if result != iri
-			{
-				result
-			}
-			else
-			{
-				~"<" + iri + ~">"
-			}
-		}
-		_ =>
-		{
-			obj.to_str()
-		}
-	}
-}
-
-// --------------------------------------------------------------------------------------
-// TODO: should be in object.rs (see rust bug 3352)
 fn get_object(row: SolutionRow, name: ~str) -> Object
 {
 	match row.search(name)
@@ -176,22 +147,6 @@ fn get_blank_name(store: &Store, prefix: ~str) -> ~str
 	store.next_blank += 1;
 	
 	fmt!("_:%s-%?", prefix, suffix)
-}
-
-/// Returns either the iri or the prefixed version of the iri.
-fn contract_uri(namespaces: ~[Namespace], iri: ~str) -> ~str
-{
-	match vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
-	{
-		option::Some(ns) =>
-		{
-			fmt!("%s:%s", ns.prefix, str::slice(iri, str::len(ns.path), str::len(iri)))
-		}
-		option::None =>
-		{
-			iri
-		}
-	}
 }
 
 trait StoreTrait

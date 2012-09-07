@@ -107,7 +107,16 @@ impl  &Solution : ToStr
 {
 	fn to_str() -> ~str
 	{
-		~"foo"
+		let mut result = ~"";		// TODO: need to replace this with some sort of StringBuilder
+		
+		for self.rows.eachi
+		|i, row|
+		{
+			let entries = do row.map |r| {fmt!("%s: %s", r.first(), r.second().to_friendly_str(self.namespaces))};
+			result += fmt!("%? %s\n", i, str::connect(entries, ", "));
+		}
+		
+		result
 	}
 }
 

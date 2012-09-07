@@ -30,7 +30,7 @@ fn pattern_to_str(store: &Store, pattern: Pattern) -> ~str
 		}
 		Constant(c) =>
 		{
-			object_to_str(store, c)
+			c.to_friendly_str(store.namespaces)
 		}
 	}
 }
@@ -74,7 +74,7 @@ fn solution_row_to_str(store: &Store, row: SolutionRow) -> ~str
 	|entry|
 	{
 		let name = entry.first();
-		let value = object_to_str(store, entry.second());
+		let value = entry.second().to_friendly_str(store.namespaces);
 		vec::push(entries, fmt!("%s: %s", name, value));
 	};
 	str::connect(entries, ~", ")
@@ -385,7 +385,7 @@ fn iterate_matches(store: &Store, spattern: Pattern, callback: fn (Option<Bindin
 // Returns the named bindings.
 fn eval_basic(store: &Store, names: ~[~str], matcher: TriplePattern) -> result::Result<Solution, ~str>
 {
-	let mut rows = Solution {namespaces: ~[], rows: ~[]};
+	let mut rows = Solution {namespaces: copy store.namespaces, rows: ~[]};
 	
 	// Iterate over the matching subjects,
 	for iterate_matches(store, matcher.subject)
@@ -423,11 +423,11 @@ fn eval_basic(store: &Store, names: ~[~str], matcher: TriplePattern) -> result::
 				{
 					if sbinding.is_some()
 					{
-						info!("basic %s matched (%s, %s, %s)", triple_pattern_to_str(store, matcher), object_to_str(store, sbinding.get().value), contract_uri(store.namespaces, entry.predicate), object_to_str(store, entry.object));
+						info!("basic %s matched (%s, %s, %s)", triple_pattern_to_str(store, matcher), sbinding.get().value.to_friendly_str(store.namespaces), contract_uri(store.namespaces, entry.predicate), entry.object.to_friendly_str(store.namespaces));
 					}
 					else
 					{
-						info!("basic %s matched (*, %s, %s)", triple_pattern_to_str(store, matcher), contract_uri(store.namespaces, entry.predicate), object_to_str(store, entry.object));
+						info!("basic %s matched (*, %s, %s)", triple_pattern_to_str(store, matcher), contract_uri(store.namespaces, entry.predicate), entry.object.to_friendly_str(store.namespaces));
 					}
 					vec::push(rows.rows, filter_row(names, bindings));
 				}
@@ -579,7 +579,7 @@ fn eval_group(store: &Store, context: QueryContext, in_names: ~[~str], terms: ~[
 								if solution.rows.is_empty()
 								{
 									info!("term%? %s matched nothing", i, algebra_to_str(store, term));
-									return result::Ok(Solution {namespaces : ~[], rows: ~[]});
+									return result::Ok(Solution {namespaces : copy store.namespaces, rows: ~[]});
 								}
 								else if result.rows.is_not_empty()
 								{
@@ -616,7 +616,7 @@ fn eval_optional(store: &Store, names: ~[~str], context: QueryContext, term: Alg
 		}
 		result::Err(_mesg) =>
 		{
-			result::Ok(Solution {namespaces: ~[], rows: ~[]})
+			result::Ok(Solution {namespaces: copy store.namespaces, rows: ~[]})
 		}
 	}
 }

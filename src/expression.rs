@@ -215,7 +215,7 @@ fn expr_to_str(store: &Store, expr: Expr) -> ~str
 	{
 		ConstantExpr(o) =>
 		{
-			object_to_str(store, o)
+			o.to_friendly_str(store.namespaces)
 		}
 		VariableExpr(v) =>
 		{
