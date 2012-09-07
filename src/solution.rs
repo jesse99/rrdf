@@ -39,7 +39,7 @@ trait SolutionRowMethods
 	pure fn search(name: ~str) -> Option<Object>;
 }
 
-impl  &Solution : SolutionMethods, ToStr
+impl  &Solution : SolutionMethods
 {
 	pure fn get(row: uint, name: ~str) -> Object
 	{
@@ -99,7 +99,12 @@ impl  &Solution : SolutionMethods, ToStr
 			Solution {namespaces: copy self.namespaces, rows: std::sort::merge_sort(solution_row_le, self.rows)}
 		}
 	}
-	
+}
+
+// TODO: This should be in the impl above, but is not because of
+// https://github.com/mozilla/rust/issues/3410
+impl  &Solution : ToStr
+{
 	fn to_str() -> ~str
 	{
 		~"foo"
