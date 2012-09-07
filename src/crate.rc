@@ -6,7 +6,7 @@
 #[license = "MIT"];
 
 #[warn(non_camel_case_types)]; 
-#[allow(implicit_copies)];
+#[allow(implicit_copies)];							// TODO: enable more of these
 #[allow(non_implicitly_copyable_typarams)];
 #[allow(deprecated_mode)];
 #[allow(deprecated_pattern)];

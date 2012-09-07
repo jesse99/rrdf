@@ -96,7 +96,7 @@ type ExtensionFn = fn@ (namespaces: &~[Namespace], args: &~[Object]) -> Object;
 /// Stores triples in a more or less efficient format.
 ///
 /// Note that these are not intended to be copied.
-struct Store : ToStr
+struct Store
 {
 	namespaces: ~[Namespace];
 	subjects: hashmap<@~str, @DVec<Entry>>;
@@ -104,23 +104,6 @@ struct Store : ToStr
 	mut next_blank: int;
 	
 	// TODO: add a drop method (to make Stores non-copyable)
-	
-	fn to_str() -> ~str
-	{
-		let mut result = ~"";
-		
-		for self.subjects.each()
-		|subject, entries|
-		{
-			for (*entries).eachi()
-			|i, entry|
-			{
-				result += fmt!("%?: <%s>  <%s>  %s}\n", i, *subject, entry.predicate, entry.object.to_str());
-			}
-		};
-		
-		return result;
-	}
 }
 
 /// Initializes a store object.
@@ -405,6 +388,26 @@ impl  &Store : StoreTrait
 				self.subjects.insert(@subject, @dvec::from_vec(~[mut entry]));
 			}
 		}
+	}
+}
+
+impl &Store : ToStr
+{
+	fn to_str() -> ~str
+	{
+		let mut result = ~"";
+		
+		for self.subjects.each()
+		|subject, entries|
+		{
+			for (*entries).eachi()
+			|i, entry|
+			{
+				result += fmt!("%?: <%s>  <%s>  %s}\n", i, *subject, entry.predicate, entry.object.to_str());
+			}
+		};
+		
+		return result;
 	}
 }
 
