@@ -21,7 +21,7 @@ struct Solution
 	rows: ~[SolutionRow];
 }
 
-trait SolutionTrait
+trait SolutionMethods
 {
 	pure fn get(row: uint, name: ~str) -> Object;
 	pure fn search(row: uint, name: ~str) -> Option<Object>;
@@ -32,14 +32,14 @@ trait SolutionTrait
 	pure fn sort() -> Solution;
 }
 
-trait SolutionRowTrait
+trait SolutionRowMethods
 {
 	pure fn get(name: ~str) -> Object;
 	pure fn contains(name: ~str) -> bool;
 	pure fn search(name: ~str) -> Option<Object>;
 }
 
-impl  &Solution : SolutionTrait 
+impl  &Solution : SolutionMethods, ToStr
 {
 	pure fn get(row: uint, name: ~str) -> Object
 	{
@@ -99,9 +99,14 @@ impl  &Solution : SolutionTrait
 			Solution {namespaces: copy self.namespaces, rows: std::sort::merge_sort(solution_row_le, self.rows)}
 		}
 	}
+	
+	fn to_str() -> ~str
+	{
+		~"foo"
+	}
 }
 
-impl  SolutionRow : SolutionRowTrait 
+impl  SolutionRow : SolutionRowMethods 
 {
 	pure fn get(name: ~str) -> Object
 	{
