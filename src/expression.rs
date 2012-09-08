@@ -37,7 +37,7 @@ fn expr_to_str(store: &Store, expr: Expr) -> ~str
 	}
 }
 
-fn eval_expr(context: query::QueryContext, bindings: ~[(~str, Object)], expr: Expr) -> Object
+fn eval_expr(context: &query::QueryContext, bindings: ~[(~str, Object)], expr: Expr) -> Object
 {
 	let result = match expr
 	{
@@ -86,7 +86,7 @@ type UnaryFn = fn (Object) -> Object;
 type BinaryFn = fn (Object, Object) -> Object;
 type TernaryFn = fn (Object, Object, Object) -> Object;
 
-fn eval_extension(context: query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
+fn eval_extension(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match context.extensions.find(@fname)
@@ -102,7 +102,7 @@ fn eval_extension(context: query::QueryContext, bindings: ~[(~str, Object)], fna
 	}
 }
 
-fn eval_call(context: query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
+fn eval_call(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match fname

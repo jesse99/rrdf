@@ -1118,13 +1118,13 @@ fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, S
 		// eval will set namespaces and extensions
 		if vec::is_not_empty(namespaces)
 		{
-			let context = {namespaces: @~[], extensions: @box_str_hash(), algebra: expand(namespaces, algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
-			result::Ok(eval(names, context))
+			let context = QueryContext {namespaces: @~[], extensions: @box_str_hash(), algebra: expand(namespaces, algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			result::Ok(eval(names, &context))
 		}
 		else
 		{
-			let context = {namespaces: @~[], extensions: @box_str_hash(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
-			result::Ok(eval(names, context))
+			let context = QueryContext {namespaces: @~[], extensions: @box_str_hash(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			result::Ok(eval(names, &context))
 		}
 	}
 	else

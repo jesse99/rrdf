@@ -29,17 +29,17 @@ enum Algebra
 	Filter(expression::Expr)
 }
 
-type QueryContext =
+struct QueryContext
 {
-	namespaces: @~[Namespace],
-	extensions: @hashmap<@~str, ExtensionFn>,
-	algebra: Algebra,
-	order_by: ~[expression::Expr],
-	distinct: bool,
-	limit: Option<uint>,
-	rng: rand::Rng,		// for RAND
-	timestamp: Tm		// for NOW
-};
+	let namespaces: @~[Namespace];
+	let extensions: @hashmap<@~str, ExtensionFn>;
+	let algebra: Algebra;
+	let order_by: ~[expression::Expr];
+	let distinct: bool;
+	let limit: Option<uint>;
+	let rng: rand::Rng;		// for RAND
+	let timestamp: Tm;		// for NOW
+}
 
 /// The function returned by compile and invoked to execute a SPARQL query. 
 /// 
@@ -476,7 +476,7 @@ fn eval_basic(store: &Store, names: ~[~str], matcher: TriplePattern) -> result::
 	result::Ok(rows)
 }
 
-fn filter_solution(context: QueryContext, names: ~[~str], solution: Solution, expr: Expr) -> result::Result<Solution, ~str>
+fn filter_solution(context: &QueryContext, names: ~[~str], solution: Solution, expr: Expr) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution.rows));
@@ -505,7 +505,7 @@ fn filter_solution(context: QueryContext, names: ~[~str], solution: Solution, ex
 	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
 }
 
-fn bind_solution(context: QueryContext, names: ~[~str], solution: Solution, expr: Expr, name: ~str) -> result::Result<Solution, ~str>
+fn bind_solution(context: &QueryContext, names: ~[~str], solution: Solution, expr: Expr, name: ~str) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution.rows));
@@ -538,7 +538,7 @@ fn bind_solution(context: QueryContext, names: ~[~str], solution: Solution, expr
 	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
 }
 
-fn eval_group(store: &Store, context: QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<Solution, ~str>
+fn eval_group(store: &Store, context: &QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<Solution, ~str>
 {
 	let mut result = Solution {namespaces: copy store.namespaces, rows: ~[]};
 	
@@ -590,7 +590,7 @@ fn eval_group(store: &Store, context: QueryContext, in_names: ~[~str], terms: ~[
 			}
 			_ =>
 			{
-				match eval_algebra(store, ~[~"*"], {algebra: *term ,.. context})
+				match eval_algebra(store, ~[~"*"], &QueryContext {algebra: *term, ..*context})
 				{
 					result::Ok(solution) =>
 					{
@@ -636,9 +636,9 @@ fn eval_group(store: &Store, context: QueryContext, in_names: ~[~str], terms: ~[
 	return result::Ok(result);
 }
 
-fn eval_optional(store: &Store, names: ~[~str], context: QueryContext, term: Algebra) -> result::Result<Solution, ~str>
+fn eval_optional(store: &Store, names: ~[~str], context: &QueryContext, term: Algebra) -> result::Result<Solution, ~str>
 {
-	match eval_algebra(store, names, {algebra: term, ..context})
+	match eval_algebra(store, names, &QueryContext {algebra: term, ..*context})
 	{
 		result::Ok(solution) =>
 		{
@@ -651,7 +651,7 @@ fn eval_optional(store: &Store, names: ~[~str], context: QueryContext, term: Alg
 	}
 }
 
-fn eval_algebra(store: &Store, names: ~[~str], context: QueryContext) -> result::Result<Solution, ~str>
+fn eval_algebra(store: &Store, names: ~[~str], context: &QueryContext) -> result::Result<Solution, ~str>
 {
 	match context.algebra
 	{
@@ -681,7 +681,7 @@ fn eval_algebra(store: &Store, names: ~[~str], context: QueryContext) -> result:
 	}
 }
 
-fn eval_order_expr(context: QueryContext, row: SolutionRow, expr: Expr) -> (bool, Object)
+fn eval_order_expr(context: &QueryContext, row: SolutionRow, expr: Expr) -> (bool, Object)
 {
 	match expr
 	{
@@ -717,13 +717,13 @@ fn compare_order_values(lhs: (bool, Object), rhs: (bool, Object)) -> result::Res
 	}
 }
 
-fn order_by(context: QueryContext, solution: Solution, ordering: ~[Expr]) -> result::Result<Solution, ~str>
+fn order_by(context: &QueryContext, solution: Solution, ordering: ~[Expr]) -> result::Result<Solution, ~str>
 {
 	// TODO
 	// Probably more efficient to do the evaluation in a pre-pass. Looks like rust requires 2N comparisons in the worst case.
 	// http://www.codecodex.com/wiki/Merge_sort#Analysis
 	// Or maybe just do an in place sort.
-	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[Expr], context: QueryContext, row1: SolutionRow, row2: SolutionRow) -> bool
+	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[Expr], context: &QueryContext, row1: SolutionRow, row2: SolutionRow) -> bool
 	{
 		unchecked
 		{
@@ -794,15 +794,15 @@ fn make_distinct(solution: Solution) -> result::Result<Solution, ~str>
 	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
 }
 
-fn eval(names: ~[~str], context: QueryContext) -> Selector
+fn eval(names: ~[~str], context: &QueryContext) -> Selector
 {
 	let names = names;
-	let context = copy context;
+	let context = copy *context;
 	|store: &Store| 
 	{
 		info!("algebra: %s", algebra_to_str(store, &context.algebra));
-		let context = {namespaces: @store.namespaces, extensions: @store.extensions, ..context};
-		do eval_algebra(store, names, context).chain()
+		let context = QueryContext {namespaces: @store.namespaces, extensions: @store.extensions, ..context};
+		do eval_algebra(store, names, &context).chain()
 		|solution|
 		{
 			// Optionally remove duplicates.
@@ -810,7 +810,7 @@ fn eval(names: ~[~str], context: QueryContext) -> Selector
 			|solution|
 			{
 				// Optionally sort the solution.
-				do result::chain(if vec::is_not_empty(context.order_by) {order_by(context, solution, context.order_by)} else {result::Ok(solution)})
+				do result::chain(if vec::is_not_empty(context.order_by) {order_by(&context, solution, context.order_by)} else {result::Ok(solution)})
 				|solution|
 				{
 					match context.limit

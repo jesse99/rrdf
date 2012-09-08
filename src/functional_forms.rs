@@ -17,7 +17,7 @@ fn bound_fn(operand: Object) -> Object
 	}
 }
 
-fn eval_if(context: query::QueryContext, bindings: ~[(~str, Object)], args: ~[@expression::Expr]) -> Object
+fn eval_if(context: &query::QueryContext, bindings: ~[(~str, Object)], args: ~[@expression::Expr]) -> Object
 {
 	if vec::len(args) == 3u
 	{
@@ -51,7 +51,7 @@ fn eval_if(context: query::QueryContext, bindings: ~[(~str, Object)], args: ~[@e
 	}
 }
 
-fn eval_coalesce(context: query::QueryContext, bindings: ~[(~str, Object)], args: ~[@expression::Expr]) -> Object
+fn eval_coalesce(context: &query::QueryContext, bindings: ~[(~str, Object)], args: ~[@expression::Expr]) -> Object
 {
 	for vec::each(args)
 	|arg|
