@@ -1,6 +1,7 @@
 //! Used when evaluating a SPARQL query. Clients will not ordinarily use this.
 // The sparql parser operates by building a sequence of matcher functions and
 // then creating a selector function using the select function.
+use std::map::*;
 use dvec::*;
 use expression::*;
 use object::*;
@@ -10,6 +11,35 @@ use store::*;
 
 export join_solutions, eval, Pattern, Variable, Constant, Algebra, TriplePattern, QueryContext,
 	Basic, Group, Optional, Bind, Filter, Selector;
+
+enum Pattern
+{
+	Variable(~str),
+	Constant(Object)
+}
+
+type TriplePattern = {subject: Pattern, predicate: Pattern, object: Pattern};
+
+enum Algebra
+{
+	Basic(TriplePattern),
+	Group(~[@Algebra]),
+	Optional(@Algebra),
+	Bind(expression::Expr, ~str),
+	Filter(expression::Expr)
+}
+
+type QueryContext =
+{
+	namespaces: @~[Namespace],
+	extensions: @hashmap<@~str, ExtensionFn>,
+	algebra: Algebra,
+	order_by: ~[expression::Expr],
+	distinct: bool,
+	limit: Option<uint>,
+	rng: rand::Rng,		// for RAND
+	timestamp: Tm		// for NOW
+};
 
 /// The function returned by compile and invoked to execute a SPARQL query. 
 /// 

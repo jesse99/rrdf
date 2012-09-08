@@ -1,5 +1,4 @@
 //! SPARQL FILTER expressions.
-//use functional_forms::{eval_if, eval_coalesce, bound_fn, sameterm_fn};
 use functions_on_dates::*;
 use functions_on_numerics::*;
 use functions_on_strings::*;
@@ -9,206 +8,16 @@ use operators::*;
 use solution::*;
 use store::*;
 
-export expr_to_str, eval_expr, ConstantExpr, VariableExpr, CallExpr, ExtensionExpr,
-	eval_if, eval_coalesce, bound_fn, sameterm_fn;
-	
-// --------------------------------------------------------------------------------------
-// TODO: This stuff should be in functional_forms.rs (see rust bug 3352)
-fn bound_fn(operand: Object) -> Object
+export Expr, expr_to_str, eval_expr, ConstantExpr, VariableExpr, CallExpr, ExtensionExpr;
+
+enum Expr
 {
-	match operand
-	{
-		UnboundValue(_name) =>
-		{
-			BoolValue(false)
-		}
-		_ =>
-		{
-			BoolValue(true)
-		}
-	}
+	ConstantExpr(Object),
+	VariableExpr(~str),
+	CallExpr(~str, ~[@Expr]),			// function name + arguments
+	ExtensionExpr(~str, ~[@Expr])	// function name + arguments
 }
 
-fn eval_if(context: QueryContext, bindings: ~[(~str, Object)], args: ~[@Expr]) -> Object
-{
-	if vec::len(args) == 3u
-	{
-		let predicate = eval_expr(context, bindings, *args[0]);
-		match get_ebv(predicate)
-		{
-			result::Ok(true) =>
-			{
-				eval_expr(context, bindings, *args[1])
-			}
-			result::Ok(false) =>
-			{
-				eval_expr(context, bindings, *args[2])
-			}
-			result::Err(err) =>
-			{
-				ErrorValue(~"IF: " + err)
-			}
-		}
-	}
-	else
-	{
-		if vec::len(args) == 1u
-		{
-			ErrorValue(~"IF accepts 3 arguments but was called with 1 argument.")
-		}
-		else
-		{
-			ErrorValue(fmt!("IF accepts 3 arguments but was called with %? arguments.", vec::len(args)))
-		}
-	}
-}
-
-fn eval_coalesce(context: QueryContext, bindings: ~[(~str, Object)], args: ~[@Expr]) -> Object
-{
-	for vec::each(args)
-	|arg|
-	{
-		let candidate = eval_expr(context, bindings, *arg);
-		match candidate
-		{
-			UnboundValue(*) | InvalidValue(*) | ErrorValue(*) =>
-			{
-				// try the next argument
-			}
-			_ =>
-			{
-				return candidate;
-			}
-		}
-	}
-	
-	return ErrorValue(~"COALESCE: all arguments failed to evaluate");
-}
-
-fn sameterm_fn(lhs: Object, rhs: Object) -> Object
-{
-	match lhs
-	{
-		BoolValue(lvalue) =>
-		{
-			match rhs
-			{
-				BoolValue(rvalue) =>
-				{
-					BoolValue(lvalue == rvalue)
-				}
-				_ =>
-				{
-					BoolValue(false)
-				}
-			}
-		}
-		IntValue(lvalue) =>
-		{
-			match rhs
-			{
-				IntValue(rvalue) =>
-				{
-					BoolValue(lvalue == rvalue)	// TODO: when we introduce type codes we'll need to check them here
-				}
-				_ =>
-				{
-					BoolValue(false)
-				}
-			}
-		}
-		FloatValue(lvalue) =>
-		{
-			match rhs
-			{
-				FloatValue(rvalue) =>
-				{
-					BoolValue(lvalue == rvalue)	// TODO: when we introduce type codes we'll need to check them here
-				}
-				_ =>
-				{
-					BoolValue(false)
-				}
-			}
-		}
-		DateTimeValue(lvalue) =>
-		{
-			match rhs
-			{
-				DateTimeValue(rvalue) =>
-				{
-					BoolValue(lvalue == rvalue)
-				}
-				_ =>
-				{
-					BoolValue(false)
-				}
-			}
-		}
-		StringValue(lvalue, llang) =>
-		{
-			match rhs
-			{
-				StringValue(rvalue, rlang) =>		// TODO: when we introduce type codes we'll need to check them here
-				{
-					BoolValue(str::to_lower(llang) == str::to_lower(rlang) && lvalue == rvalue)
-				}
-				_ =>
-				{
-					BoolValue(false)
-				}
-			}
-		}
-		TypedValue(lvalue, ltype) =>
-		{
-			match rhs
-			{
-				TypedValue(rvalue, rtype) =>
-				{
-					BoolValue(ltype == rtype && lvalue == rvalue)
-				}
-				_ =>
-				{
-					BoolValue(false)
-				}
-			}
-		}
-		IriValue(lvalue) =>
-		{
-			match rhs
-			{
-				IriValue(rvalue) =>
-				{
-					BoolValue(lvalue == rvalue)
-				}
-				_ =>
-				{
-					BoolValue(false)
-				}
-			}
-		}
-		BlankValue(lvalue) =>
-		{
-			match rhs
-			{
-				BlankValue(rvalue) =>
-				{
-					BoolValue(lvalue == rvalue)
-				}
-				_ =>
-				{
-					BoolValue(false)
-				}
-			}
-		}
-		_ =>
-		{
-			BoolValue(false)
-		}
-	}
-}
-
-// --------------------------------------------------------------------------------------
 fn expr_to_str(store: &Store, expr: Expr) -> ~str
 {
 	match expr
@@ -228,7 +37,7 @@ fn expr_to_str(store: &Store, expr: Expr) -> ~str
 	}
 }
 
-fn eval_expr(context: QueryContext, bindings: ~[(~str, Object)], expr: Expr) -> Object
+fn eval_expr(context: query::QueryContext, bindings: ~[(~str, Object)], expr: Expr) -> Object
 {
 	let result = match expr
 	{
@@ -256,11 +65,11 @@ fn eval_expr(context: QueryContext, bindings: ~[(~str, Object)], expr: Expr) -> 
 		}
 		CallExpr(~"if_fn", args) =>				// special case this because it is supposed to short circuit
 		{
-			eval_if(context, bindings, args)
+			functional_forms::eval_if(context, bindings, args)
 		}
 		CallExpr(~"coalesce_fn", args) =>		// special case this because it is variadic
 		{
-			eval_coalesce(context, bindings, args)
+			functional_forms::eval_coalesce(context, bindings, args)
 		}
 		CallExpr(fname, args) =>
 		{
@@ -277,7 +86,7 @@ type UnaryFn = fn (Object) -> Object;
 type BinaryFn = fn (Object, Object) -> Object;
 type TernaryFn = fn (Object, Object, Object) -> Object;
 
-fn eval_extension(context: QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
+fn eval_extension(context: query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match context.extensions.find(@fname)
@@ -293,7 +102,7 @@ fn eval_extension(context: QueryContext, bindings: ~[(~str, Object)], fname: ~st
 	}
 }
 
-fn eval_call(context: QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
+fn eval_call(context: query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
 	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match fname
@@ -362,11 +171,11 @@ fn eval_call(context: QueryContext, bindings: ~[(~str, Object)], fname: ~str, ar
 		// functional forms
 		~"bound_fn" =>
 		{
-			eval_call1(fname, @bound_fn, args)
+			eval_call1(fname, @functional_forms::bound_fn, args)
 		}
 		~"sameterm_fn" =>
 		{
-			eval_call2(fname, @sameterm_fn, args)
+			eval_call2(fname, @functional_forms::sameterm_fn, args)
 		}
 		// functions on terms
 		~"isiri_fn" =>

@@ -7,66 +7,8 @@ use solution::*;
 export Subject, Predicate, Triple, Namespace, Entry, ExtensionFn, Store, make_triple_blank, 
 	make_triple_str, make_triple_uri, StoreTrait, store_methods, to_str, base_iter, get_blank_name, contract_uri;
 export expand_uri;			// this should be internal
-export Expr, Pattern, Variable, Constant, TriplePattern, Algebra, Basic, Group, Optional, Bind, Filter,
-	ConstantExpr, VariableExpr, CallExpr, ExtensionExpr, QueryContext, object_to_str, get_object;
-
-// --------------------------------------------------------------------------------------
-// TODO: should be in expression.rs (see rust bug 3352)
-enum Expr
-{
-	ConstantExpr(Object),
-	VariableExpr(~str),
-	CallExpr(~str, ~[@Expr]),			// function name + arguments
-	ExtensionExpr(~str, ~[@Expr])	// function name + arguments
-}
-
-// --------------------------------------------------------------------------------------
-// TODO: should be in query.rs (see rust bug 3352)
-enum Pattern
-{
-	Variable(~str),
-	Constant(Object)
-}
-
-type TriplePattern = {subject: Pattern, predicate: Pattern, object: Pattern};
-
-enum Algebra
-{
-	Basic(TriplePattern),
-	Group(~[@Algebra]),
-	Optional(@Algebra),
-	Bind(Expr, ~str),
-	Filter(Expr)
-}
-
-type QueryContext =
-{
-	namespaces: @~[Namespace],
-	extensions: @hashmap<@~str, ExtensionFn>,
-	algebra: Algebra,
-	order_by: ~[Expr],
-	distinct: bool,
-	limit: Option<uint>,
-	rng: rand::Rng,		// for RAND
-	timestamp: Tm		// for NOW
-};
-
-// --------------------------------------------------------------------------------------
-// TODO: should be in object.rs (see rust bug 3352)
-fn get_object(row: SolutionRow, name: ~str) -> Object
-{
-	match row.search(name)
-	{
-		option::Some(value) =>
-		{
-			value
-		}
-		option::None =>
-		{
-			UnboundValue(name)
-		}
-	}
-}
+export Basic, Group, Optional, Bind, Filter,
+	ConstantExpr, VariableExpr, CallExpr, ExtensionExpr, object_to_str;
 
 // --------------------------------------------------------------------------------------
 /// An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
@@ -130,6 +72,22 @@ fn get_blank_name(store: &Store, prefix: ~str) -> ~str
 	store.next_blank += 1;
 	
 	fmt!("_:%s-%?", prefix, suffix)
+}
+
+/// Returns either the iri or the prefixed version of the iri.
+fn contract_uri(namespaces: &[{prefix: ~str, path: ~str}], iri: &str) -> ~str
+{
+	match vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
+	{
+		option::Some(ns) =>
+		{
+			fmt!("%s:%s", ns.prefix, str::slice(iri, str::len(ns.path), str::len(iri)))
+		}
+		option::None =>
+		{
+			iri.to_unique()
+		}
+	}
 }
 
 trait StoreTrait

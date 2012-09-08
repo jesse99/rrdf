@@ -28,24 +28,6 @@ enum Object				// TODO: once we support serialization we'll need to add somethin
 	ErrorValue(~str)			// err mesg
 }
 
-
-// TODO: should be in store.rs (see rust bug 3352)
-/// Returns either the iri or the prefixed version of the iri.
-fn contract_uri(namespaces: &[{prefix: ~str, path: ~str}], iri: &str) -> ~str
-{
-	match vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
-	{
-		option::Some(ns) =>
-		{
-			fmt!("%s:%s", ns.prefix, str::slice(iri, str::len(ns.path), str::len(iri)))
-		}
-		option::None =>
-		{
-			iri.to_unique()
-		}
-	}
-}
-
 impl Object
 {
 	fn to_friendly_str(namespaces: &[{prefix: ~str, path: ~str}]) -> ~str
@@ -54,11 +36,11 @@ impl Object
 		{
 			TypedValue(value, kind) =>
 			{
-				fmt!("\"%s^^\"%s", value, contract_uri(namespaces, kind))
+				fmt!("\"%s^^\"%s", value, store::contract_uri(namespaces, kind))
 			}
 			IriValue(iri) =>
 			{
-				let result = contract_uri(namespaces, iri);
+				let result = store::contract_uri(namespaces, iri);
 				if result != iri
 				{
 					result
