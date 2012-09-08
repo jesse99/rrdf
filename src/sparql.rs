@@ -6,7 +6,7 @@ use query::*;
 use store::*;
 use object::*;
 
-export selector, compile;
+export compile;
 
 fn bool_literal(value: @~str) -> Pattern
 {
