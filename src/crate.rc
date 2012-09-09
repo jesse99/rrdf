@@ -24,6 +24,7 @@ mod functions_on_terms;
 mod object;
 mod operators;
 mod query;
+mod rrdf;
 mod solution;
 mod sparql;
 mod store;
