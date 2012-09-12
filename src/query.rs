@@ -31,14 +31,14 @@ enum Algebra
 
 struct QueryContext
 {
-	let namespaces: @~[Namespace];
-	let extensions: @hashmap<@~str, ExtensionFn>;
-	let algebra: Algebra;
-	let order_by: ~[expression::Expr];
-	let distinct: bool;
-	let limit: Option<uint>;
-	let rng: rand::Rng;		// for RAND
-	let timestamp: Tm;		// for NOW
+	pub namespaces: @~[Namespace],
+	pub extensions: @hashmap<@~str, ExtensionFn>,
+	pub algebra: Algebra,
+	pub order_by: ~[expression::Expr],
+	pub distinct: bool,
+	pub limit: Option<uint>,
+	pub rng: rand::Rng,		// for RAND
+	pub timestamp: Tm,		// for NOW
 }
 
 /// The function returned by compile and invoked to execute a SPARQL query. 

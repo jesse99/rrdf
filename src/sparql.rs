@@ -445,7 +445,7 @@ fn pn_chars_or_dot_or_plx(chars: @[char], index: uint) -> uint
 	}
 }
 
-fn ws<T: copy owned>(parser: Parser<T>) -> Parser<T>
+fn ws<T: Copy Owned>(parser: Parser<T>) -> Parser<T>
 {
 	|input: State|
 	{
@@ -493,12 +493,12 @@ fn ws<T: copy owned>(parser: Parser<T>) -> Parser<T>
 	}
 }
 
-trait MyParserTrait<T: copy owned>
+trait MyParserTrait<T: Copy Owned>
 {
 	fn ws() -> Parser<T>;
 }
 
-impl<T: copy owned> Parser<T> : MyParserTrait<T>
+impl<T: Copy Owned> Parser<T> : MyParserTrait<T>
 {
 	fn ws() -> Parser<T>
 	{

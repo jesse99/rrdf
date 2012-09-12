@@ -372,6 +372,44 @@ impl Object
 	}
 }
 
+// TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
+impl Object : cmp::Ord
+{
+	pure fn lt(&&other: Object) -> bool
+	{
+		unchecked {self.to_str() < other.to_str()}
+	}
+	
+	pure fn le(&&other: Object) -> bool
+	{
+		unchecked {self.to_str() <= other.to_str()}
+	}
+	
+	pure fn ge(&&other: Object) -> bool
+	{
+		unchecked {self.to_str() > other.to_str()}
+	}
+	
+	pure fn gt(&&other: Object) -> bool
+	{
+		unchecked {self.to_str() >= other.to_str()}
+	}
+}
+
+// TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
+impl Object : cmp::Eq
+{
+	pure fn eq(&&other: Object) -> bool
+	{
+		unchecked {self.to_str() == other.to_str()}
+	}
+	
+	pure fn ne(&&other: Object) -> bool
+	{
+		unchecked {self.to_str() != other.to_str()}
+	}
+}
+
 impl  Object : ToStr 
 {
 	fn to_str() -> ~str

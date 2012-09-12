@@ -32,6 +32,20 @@ type Triple = {subject: Subject, predicate: Predicate, object: Object};
 /// Predicate and object associated with a subject.
 type Entry = {predicate: ~str, object: Object};
 
+// TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
+impl Entry : cmp::Eq
+{
+	pure fn eq(&&other: Entry) -> bool
+	{
+		self.predicate == other.predicate && self.object == other.object
+	}
+	
+	pure fn ne(&&other: Entry) -> bool
+	{
+		!self.eq(other)
+	}
+}
+
 /// SPARQL extension function.
 type ExtensionFn = fn@ (namespaces: &~[Namespace], args: &~[Object]) -> Object;
 
@@ -40,10 +54,10 @@ type ExtensionFn = fn@ (namespaces: &~[Namespace], args: &~[Object]) -> Object;
 /// Note that these are not intended to be copied.
 struct Store
 {
-	namespaces: ~[Namespace];
-	subjects: hashmap<@~str, @DVec<Entry>>;
-	extensions: hashmap<@~str, ExtensionFn>;
-	mut next_blank: int;
+	pub namespaces: ~[Namespace],
+	pub subjects: hashmap<@~str, @DVec<Entry>>,
+	pub extensions: hashmap<@~str, ExtensionFn>,
+	pub mut next_blank: int,
 	
 	// TODO: add a drop method (to make Stores non-copyable)
 }

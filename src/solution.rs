@@ -17,8 +17,8 @@ type SolutionRow = ~[(~str, Object)];
 /// Note that this is a sendable type.
 struct Solution
 {
-	namespaces: ~[Namespace],
-	rows: ~[SolutionRow];
+	pub namespaces: ~[Namespace],
+	pub rows: ~[SolutionRow],
 }
 
 trait SolutionMethods
