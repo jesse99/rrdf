@@ -59,6 +59,8 @@ struct Store
 	pub extensions: hashmap<@~str, ExtensionFn>,
 	pub mut next_blank: int,
 	
+	drop {}
+	
 	// TODO: add a drop method (to make Stores non-copyable)
 }
 
