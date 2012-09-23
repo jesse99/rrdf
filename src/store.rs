@@ -4,19 +4,13 @@ use std::map::*;
 use object::*;
 use solution::*;
 
-export Subject, Predicate, Triple, Namespace, Entry, ExtensionFn, Store, make_triple_blank, 
-	make_triple_str, make_triple_uri, StoreTrait, store_methods, to_str, base_iter, get_blank_name, contract_uri;
-export expand_uri;			// this should be internal
-export Basic, Group, Optional, Bind, Filter,
-	ConstantExpr, VariableExpr, CallExpr, ExtensionExpr, object_to_str;
-
 // --------------------------------------------------------------------------------------
 /// An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)
 /// or a blank node (_1).
-type Subject = ~str;
+pub type Subject = ~str;
 
 /// An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date).
-type Predicate = ~str;
+pub type Predicate = ~str;
 
 /// A relationship between a subject and an object.
 /// 
@@ -27,10 +21,10 @@ type Predicate = ~str;
 /// Here is a psuedo-code example:
 /// 
 /// ('https://github.com/jesse99/rrdf', 'http://purl.org/dc/terms/creator', 'Jesse Jones')
-type Triple = {subject: Subject, predicate: Predicate, object: Object};
+pub type Triple = {subject: Subject, predicate: Predicate, object: Object};
 
 /// Predicate and object associated with a subject.
-type Entry = {predicate: ~str, object: Object};
+pub type Entry = {predicate: ~str, object: Object};
 
 // TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
 impl Entry : cmp::Eq
@@ -47,16 +41,16 @@ impl Entry : cmp::Eq
 }
 
 /// SPARQL extension function.
-type ExtensionFn = fn@ (namespaces: &~[Namespace], args: &~[Object]) -> Object;
+pub type ExtensionFn = fn@ (namespaces: &~[Namespace], args: &~[Object]) -> Object;
 
 /// Stores triples in a more or less efficient format.
 ///
 /// Note that these are not intended to be copied.
-struct Store
+pub struct Store
 {
 	pub namespaces: ~[Namespace],
-	pub subjects: hashmap<@~str, @DVec<Entry>>,
-	pub extensions: hashmap<@~str, ExtensionFn>,
+	pub subjects: HashMap<@~str, @DVec<Entry>>,
+	pub extensions: HashMap<@~str, ExtensionFn>,
 	pub mut next_blank: int,
 	
 	drop {}
@@ -69,11 +63,11 @@ struct Store
 /// xsd, rdf, rdfs, and owl namespaces are automatically added. An rrdf:pname extension is
 /// automatically added which converts an IriValue to a StringValue using namespaces (or
 /// simply stringifies it if none of the namespaces paths match).
-fn Store(namespaces: ~[Namespace], extensions: &hashmap<@~str, ExtensionFn>) -> Store
+pub fn Store(namespaces: ~[Namespace], extensions: &HashMap<@~str, ExtensionFn>) -> Store
 {
 	let store = Store {
 		namespaces: default_namespaces() + namespaces,
-		subjects: std::map::box_str_hash(),
+		subjects: HashMap(),
 		extensions: copy *extensions,
 		next_blank: 0,
 	};
@@ -82,7 +76,7 @@ fn Store(namespaces: ~[Namespace], extensions: &hashmap<@~str, ExtensionFn>) -> 
 	store
 }
 
-fn get_blank_name(store: &Store, prefix: ~str) -> ~str
+pub fn get_blank_name(store: &Store, prefix: ~str) -> ~str
 {
 	let suffix = store.next_blank;
 	store.next_blank += 1;
@@ -91,7 +85,7 @@ fn get_blank_name(store: &Store, prefix: ~str) -> ~str
 }
 
 /// Returns either the iri or the prefixed version of the iri.
-fn contract_uri(namespaces: &[{prefix: ~str, path: ~str}], iri: &str) -> ~str
+pub fn contract_uri(namespaces: &[{prefix: ~str, path: ~str}], iri: &str) -> ~str
 {
 	match vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
 	{
@@ -106,7 +100,7 @@ fn contract_uri(namespaces: &[{prefix: ~str, path: ~str}], iri: &str) -> ~str
 	}
 }
 
-trait StoreTrait
+pub trait StoreTrait
 {
 	/// Efficient addition of triples to the store.
 	/// 
@@ -202,7 +196,7 @@ impl  &Store : StoreTrait
 			}
 			option::None =>
 			{
-				self.subjects.insert(@subject, @dvec::from_vec(~[mut entry]));
+				self.subjects.insert(@subject, @dvec::from_vec(~[entry]));
 			}
 		}
 	}
@@ -243,7 +237,7 @@ impl  &Store : StoreTrait
 		|value|
 		{
 			let next = get_blank_name(self, prefix);
-			self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#first", object: value});
+			self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#first", object: *value});
 			self.add_triple(~[], {subject: blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: BlankValue(next)});
 			blank = next;
 		};
@@ -278,7 +272,7 @@ impl  &Store : StoreTrait
 		for vec::each(keys)
 		|key|
 		{
-			self.subjects.remove(key);
+			self.subjects.remove(*key);
 		};
 	}
 	
@@ -359,7 +353,7 @@ impl  &Store : StoreTrait
 			}
 			option::None =>
 			{
-				self.subjects.insert(@subject, @dvec::from_vec(~[mut entry]));
+				self.subjects.insert(@subject, @dvec::from_vec(~[entry]));
 			}
 		}
 	}
@@ -388,9 +382,9 @@ impl &Store : ToStr
 impl Store : BaseIter<Triple>
 {
 	/// Calls the blk for each triple in the store (in an undefined order).
-	pure fn each(blk: fn(Triple) -> bool)
+	pure fn each(blk: fn(v: &Triple) -> bool)
 	{
-		unchecked		// TODO: remove once bug 3372 is fixed
+		unsafe		// TODO: remove once bug 3372 is fixed
 		{
 			for self.subjects.each()
 			|subject, entries|
@@ -399,7 +393,7 @@ impl Store : BaseIter<Triple>
 				|entry|
 				{
 					let triple = {subject: *subject, predicate: entry.predicate, object: entry.object};
-					if !blk(triple)
+					if !blk(&triple)
 					{
 						return;
 					}
@@ -410,7 +404,7 @@ impl Store : BaseIter<Triple>
 	
 	pure fn size_hint() -> Option<uint>
 	{
-		unchecked
+		unsafe
 		{
 			option::Some(self.subjects.size())
 		}
@@ -491,7 +485,7 @@ fn expand_entry(namespaces: ~[Namespace], entry: (~str, Object)) -> Entry
 	{predicate: expand_uri(namespaces, entry.first()), object: expand_object(namespaces, entry.second())}
 }
 
-fn make_triple_blank(store: Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+fn make_triple_blank(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -500,7 +494,7 @@ fn make_triple_blank(store: Store, subject: ~str, predicate: ~str, value: ~str) 
 	}
 }
 
-fn make_triple_str(store: Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+fn make_triple_str(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -509,7 +503,7 @@ fn make_triple_str(store: Store, subject: ~str, predicate: ~str, value: ~str) ->
 	}
 }
 
-fn make_triple_uri(store: Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+fn make_triple_uri(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -520,12 +514,12 @@ fn make_triple_uri(store: Store, subject: ~str, predicate: ~str, value: ~str) ->
 
 impl uint : BaseIter<uint>
 {
-	pure fn each(blk: fn(&&uint) -> bool)
+	pure fn each(blk: fn(v: &uint) -> bool)
 	{
 		let mut i = 0u;
 		while i < self
 		{
-			if (!blk(i))
+			if (!blk(&i))
 			{
 				return;
 			}

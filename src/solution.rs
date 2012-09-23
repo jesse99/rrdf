@@ -55,7 +55,7 @@ impl  &Solution : SolutionMethods
 	{
 		pure fn solution_row_le(x: &SolutionRow, y: &SolutionRow) -> bool
 		{
-			unchecked
+			unsafe
 			{
 				if x.len() < y.len()
 				{
@@ -94,7 +94,7 @@ impl  &Solution : SolutionMethods
 			}
 		}
 		
-		unchecked
+		unsafe
 		{
 			Solution {namespaces: copy self.namespaces, rows: std::sort::merge_sort(solution_row_le, self.rows)}
 		}

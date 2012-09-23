@@ -8,9 +8,7 @@ use operators::*;
 use solution::*;
 use store::*;
 
-export Expr, expr_to_str, eval_expr, ConstantExpr, VariableExpr, CallExpr, ExtensionExpr;
-
-enum Expr
+pub enum Expr
 {
 	ConstantExpr(Object),
 	VariableExpr(~str),
@@ -18,7 +16,7 @@ enum Expr
 	ExtensionExpr(~str, ~[@Expr])	// function name + arguments
 }
 
-fn expr_to_str(store: &Store, expr: Expr) -> ~str
+pub fn expr_to_str(store: &Store, expr: Expr) -> ~str
 {
 	match expr
 	{
@@ -37,7 +35,7 @@ fn expr_to_str(store: &Store, expr: Expr) -> ~str
 	}
 }
 
-fn eval_expr(context: &query::QueryContext, bindings: ~[(~str, Object)], expr: Expr) -> Object
+pub fn eval_expr(context: &query::QueryContext, bindings: ~[(~str, Object)], expr: Expr) -> Object
 {
 	let result = match expr
 	{

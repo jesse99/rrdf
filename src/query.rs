@@ -9,18 +9,15 @@ use operators::*;
 use solution::*;
 use store::*;
 
-export join_solutions, eval, Pattern, Variable, Constant, Algebra, TriplePattern, QueryContext,
-	Basic, Group, Optional, Bind, Filter, Selector;
-
-enum Pattern
+pub enum Pattern
 {
 	Variable(~str),
 	Constant(Object)
 }
 
-type TriplePattern = {subject: Pattern, predicate: Pattern, object: Pattern};
+pub type TriplePattern = {subject: Pattern, predicate: Pattern, object: Pattern};
 
-enum Algebra
+pub enum Algebra
 {
 	Basic(TriplePattern),
 	Group(~[@Algebra]),
@@ -29,10 +26,10 @@ enum Algebra
 	Filter(expression::Expr)
 }
 
-struct QueryContext
+pub struct QueryContext
 {
 	pub namespaces: @~[Namespace],
-	pub extensions: @hashmap<@~str, ExtensionFn>,
+	pub extensions: @HashMap<@~str, ExtensionFn>,
 	pub algebra: Algebra,
 	pub order_by: ~[expression::Expr],
 	pub distinct: bool,
@@ -44,7 +41,7 @@ struct QueryContext
 /// The function returned by compile and invoked to execute a SPARQL query. 
 /// 
 /// Returns a solution or a 'runtime' error.
-type Selector = fn@ (s: &Store) -> result::Result<Solution, ~str>;
+pub type Selector = fn@ (s: &Store) -> result::Result<Solution, ~str>;
 
 type Binding = {name: ~str, value: Object};
 
@@ -134,7 +131,7 @@ fn solution_to_str(store: &Store, solution: Solution) -> ~str
 //
 // Where a cross product is compatible if, for every identical name, the values
 // are also identical.
-fn join_solutions(store: &Store, names: ~[~str], group1: Solution, group2: Solution, optional_join: bool) -> Solution
+pub fn join_solutions(store: &Store, names: ~[~str], group1: Solution, group2: Solution, optional_join: bool) -> Solution
 {
 	fn compatible_binding(name1: ~str, value1: Object, rhs: SolutionRow) -> bool
 	{
@@ -180,7 +177,7 @@ fn join_solutions(store: &Store, names: ~[~str], group1: Solution, group2: Solut
 				option::None() =>
 				{
 					// This is a binding in rhs but not lhs, so we need to add it to the result.
-					vec::push(result, entry2);
+					vec::push(result, *entry2);
 				}
 			}
 		}
@@ -201,23 +198,23 @@ fn join_solutions(store: &Store, names: ~[~str], group1: Solution, group2: Solut
 			for vec::each(group2.rows)
 			|rhs|
 			{
-				if compatible_row(lhs, rhs)
+				if compatible_row(*lhs, *rhs)
 				{
-					let unioned = union_rows(lhs, rhs);
+					let unioned = union_rows(*lhs, *rhs);
 					info!("   added: %s", solution_row_to_str(store, unioned));
 					vec::push(result, filter_row(names, unioned));
 				}
 				else
 				{
-					debug!("   not compatible: %s and %s", solution_row_to_str(store, lhs), solution_row_to_str(store, rhs));
+					debug!("   not compatible: %s and %s", solution_row_to_str(store, *lhs), solution_row_to_str(store, *rhs));
 				}
 			}
 			if vec::len(result) == count && optional_join
 			{
 				// With OPTIONAL we need to add the lhs row even if we failed to find
 				// any compatible rhs rows.
-				info!("   optional: %s", solution_row_to_str(store, lhs));
-				vec::push(result, filter_row(names, lhs));
+				info!("   optional: %s", solution_row_to_str(store, *lhs));
+				vec::push(result, filter_row(names, *lhs));
 			}
 		}
 	}
@@ -484,12 +481,12 @@ fn filter_solution(context: &QueryContext, names: ~[~str], solution: Solution, e
 	for vec::each(solution.rows)
 	|row|
 	{
-		let value = eval_expr(context, row, expr);
+		let value = eval_expr(context, *row, expr);
 		match get_ebv(value)
 		{
 			result::Ok(true) =>
 			{
-				vec::push(result, filter_row(names, row));
+				vec::push(result, filter_row(names, *row));
 			}
 			result::Ok(false) =>
 			{
@@ -513,7 +510,7 @@ fn bind_solution(context: &QueryContext, names: ~[~str], solution: Solution, exp
 	for vec::each(solution.rows)
 	|row|
 	{
-		let value = eval_expr(context, row, expr);
+		let value = eval_expr(context, *row, expr);
 		match value
 		{
 			UnboundValue(name) =>
@@ -725,7 +722,7 @@ fn order_by(context: &QueryContext, solution: Solution, ordering: ~[Expr]) -> re
 	// Or maybe just do an in place sort.
 	pure fn compare_rows(err_mesg: @mut ~str, ordering: ~[Expr], context: &QueryContext, row1: SolutionRow, row2: SolutionRow) -> bool
 	{
-		unchecked
+		unsafe
 		{
 			let order1 = vec::map(ordering, |o| {eval_order_expr(context, row1, o)});
 			let order2 = vec::map(ordering, |o| {eval_order_expr(context, row2, o)});
@@ -794,7 +791,7 @@ fn make_distinct(solution: Solution) -> result::Result<Solution, ~str>
 	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
 }
 
-fn eval(names: ~[~str], context: &QueryContext) -> Selector
+pub fn eval(names: ~[~str], context: &QueryContext) -> Selector
 {
 	let names = names;
 	let context = copy *context;

@@ -56,7 +56,7 @@ fn eval_coalesce(context: &query::QueryContext, bindings: ~[(~str, Object)], arg
 	for vec::each(args)
 	|arg|
 	{
-		let candidate = expression::eval_expr(context, bindings, *arg);
+		let candidate = expression::eval_expr(context, bindings, **arg);
 		match candidate
 		{
 			UnboundValue(*) | InvalidValue(*) | ErrorValue(*) =>

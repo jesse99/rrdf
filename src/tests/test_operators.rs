@@ -78,7 +78,7 @@ fn operator_equals()
 	assert check_operands(op_equals(IriValue(~"foo"), IriValue(~"foo")), BoolValue(true));
 	assert check_operands(op_equals(BlankValue(~"foo"), BlankValue(~"foo")), BoolValue(true)); 
 	
-	assert check_operands(op_equals(IntValue(3i64), BoolValue(true)), ErrorValue(~"=: expected numeric value but found BoolValue(1)."));
+	assert check_operands(op_equals(IntValue(3i64), BoolValue(true)), ErrorValue(~"=: expected numeric value but found BoolValue(true)."));
 	assert check_operands(op_equals(BoolValue(true), UnboundValue(~"foo")), ErrorValue(~"=: ?foo was not bound."));
 	assert check_operands(op_equals(BoolValue(true), InvalidValue(~"foo", ~"some:type")), ErrorValue(~"=: 'foo' is not a valid some:type"));
 	assert check_operands(op_equals(BoolValue(true), ErrorValue(~"foo")), ErrorValue(~"=: foo"));
@@ -102,7 +102,7 @@ fn operator_not_equals()
 	assert check_operands(op_not_equals(IriValue(~"foo"), IriValue(~"foo")), BoolValue(false));
 	assert check_operands(op_not_equals(BlankValue(~"foo"), BlankValue(~"foo")), BoolValue(false));
 	
-	assert check_operands(op_not_equals(IntValue(3i64), BoolValue(true)), ErrorValue(~"!=: expected numeric value but found BoolValue(1)."));
+	assert check_operands(op_not_equals(IntValue(3i64), BoolValue(true)), ErrorValue(~"!=: expected numeric value but found BoolValue(true)."));
 	assert check_operands(op_not_equals(BoolValue(true), UnboundValue(~"foo")), ErrorValue(~"!=: ?foo was not bound."));
 	assert check_operands(op_not_equals(BoolValue(true), InvalidValue(~"foo", ~"some:type")), ErrorValue(~"!=: 'foo' is not a valid some:type"));
 	assert check_operands(op_not_equals(BoolValue(true), ErrorValue(~"foo")), ErrorValue(~"!=: foo"));
@@ -123,8 +123,8 @@ fn operator_less_than()
 	assert check_operands(op_less_than(IriValue(~"foo"), IriValue(~"foo")), BoolValue(false));
 	assert check_operands(op_less_than(BlankValue(~"foo"), BlankValue(~"foo")), BoolValue(false));
 	
-	assert check_operands(op_less_than(BoolValue(true), BoolValue(true)), ErrorValue(~"<: expected numeric, dateTime, string, or explicitly typed value but found BoolValue(1)."));
-	assert check_operands(op_less_than(IntValue(3i64), BoolValue(true)), ErrorValue(~"<: expected numeric value but found BoolValue(1)."));
+	assert check_operands(op_less_than(BoolValue(true), BoolValue(true)), ErrorValue(~"<: expected numeric, dateTime, string, or explicitly typed value but found BoolValue(true)."));
+	assert check_operands(op_less_than(IntValue(3i64), BoolValue(true)), ErrorValue(~"<: expected numeric value but found BoolValue(true)."));
 }
 
 #[test]
@@ -140,7 +140,7 @@ fn operator_multiply()
 {
 	assert check_operands(op_multiply(IntValue(6i64), IntValue(2i64)), IntValue(12i64));
 	assert check_operands(op_multiply(IntValue(3i64), FloatValue(4.0f64)), FloatValue(12.0f64));
-	assert check_operands(op_multiply(IntValue(3i64), BoolValue(true)), ErrorValue(~"*: expected numeric value but found BoolValue(1)."));
+	assert check_operands(op_multiply(IntValue(3i64), BoolValue(true)), ErrorValue(~"*: expected numeric value but found BoolValue(true)."));
 }
 
 #[test]

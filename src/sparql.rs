@@ -1,12 +1,18 @@
 //! Compiles a SRARQL query into a function that can be applied to a store value.
 use std::map::*;
 use std::time;
-use rparse::rparse::*;
+//use rparse::rparse::*;
 use query::*;
 use store::*;
 use object::*;
 
-export compile;
+use rparse::c99_parsers::{identifier, decimal_number, octal_number, hex_number, float_number, char_literal, string_literal, comment, line_comment};
+use rparse::parsers::{ParseStatus, ParseFailed, anycp, CharParsers, 
+	match0, match1, match1_0, scan, seq2_ret_str, seq3_ret_str, seq4_ret_str, seq5_ret_str, StringParsers,
+	fails, forward_ref, or_v, ret, seq2, seq3, seq4, seq5, seq6, seq7, seq8, seq9, seq2_ret0, seq2_ret1, seq3_ret0, seq3_ret1, seq3_ret2, seq4_ret0, 
+	seq4_ret1, seq4_ret2, seq4_ret3, GenericParsers, Combinators, optional_str};
+use rparse::misc::{EOT, is_alpha, is_digit, is_alphanum, is_print, is_whitespace};
+use rparse::types::{Parser, State, Status, Succeeded, Failed, Blah};
 
 fn bool_literal(value: @~str) -> Pattern
 {
@@ -1118,12 +1124,12 @@ fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, S
 		// eval will set namespaces and extensions
 		if vec::is_not_empty(namespaces)
 		{
-			let context = QueryContext {namespaces: @~[], extensions: @box_str_hash(), algebra: expand(namespaces, algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			let context = QueryContext {namespaces: @~[], extensions: @HashMap(), algebra: expand(namespaces, algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
 			result::Ok(eval(names, &context))
 		}
 		else
 		{
-			let context = QueryContext {namespaces: @~[], extensions: @box_str_hash(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			let context = QueryContext {namespaces: @~[], extensions: @HashMap(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
 			result::Ok(eval(names, &context))
 		}
 	}
@@ -1136,7 +1142,7 @@ fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, S
 /// Returns either a function capable of matching triples or a parse error.
 /// 
 /// Expr can be a subset of http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"SPARQL\".
-fn compile(expr: ~str) -> result::Result<Selector, ~str>
+pub fn compile(expr: ~str) -> result::Result<Selector, ~str>
 {
 	let parser = make_parser();
 	do result::chain_err(parser.parse(@~"sparql", expr))

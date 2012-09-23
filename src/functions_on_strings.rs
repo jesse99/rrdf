@@ -1,10 +1,7 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 use object::*;
 
-export strlen_fn, substr2_fn, substr3_fn, ucase_fn, lcase_fn, strstarts_fn, strends_fn, contains_fn, strbefore_fn, 
-strafter_fn, encode_for_uri_fn, concat_fn, langmatches_fn;
-
-fn str_str_helper(fname: ~str, arg1: Object, arg2: Object, callback: fn@ (~str, ~str, ~str, ~str) -> Object) -> Object
+pub fn str_str_helper(fname: ~str, arg1: Object, arg2: Object, callback: fn@ (~str, ~str, ~str, ~str) -> Object) -> Object
 {
 	match arg1
 	{
@@ -36,7 +33,7 @@ fn str_str_helper(fname: ~str, arg1: Object, arg2: Object, callback: fn@ (~str, 
 	}
 }
 
-fn strlen_fn(operand: Object) -> Object
+pub fn strlen_fn(operand: Object) -> Object
 {
 	match operand
 	{
@@ -51,7 +48,7 @@ fn strlen_fn(operand: Object) -> Object
 	}
 }
 
-fn substr2_fn(value: Object, loc: Object) -> Object
+pub fn substr2_fn(value: Object, loc: Object) -> Object
 {
 	match value
 	{
@@ -93,7 +90,7 @@ fn substr2_fn(value: Object, loc: Object) -> Object
 	}
 }
 
-fn substr3_fn(value: Object, loc: Object, len: Object) -> Object
+pub fn substr3_fn(value: Object, loc: Object, len: Object) -> Object
 {
 	match value
 	{
@@ -145,7 +142,7 @@ fn substr3_fn(value: Object, loc: Object, len: Object) -> Object
 	}
 }
 
-fn ucase_fn(operand: Object) -> Object
+pub fn ucase_fn(operand: Object) -> Object
 {
 	match operand
 	{
@@ -160,7 +157,7 @@ fn ucase_fn(operand: Object) -> Object
 	}
 }
 
-fn lcase_fn(operand: Object) -> Object
+pub fn lcase_fn(operand: Object) -> Object
 {
 	match operand
 	{
@@ -175,7 +172,7 @@ fn lcase_fn(operand: Object) -> Object
 	}
 }
 
-fn strstarts_fn(arg1: Object, arg2: Object) -> Object
+pub fn strstarts_fn(arg1: Object, arg2: Object) -> Object
 {
 	do str_str_helper(~"STRSTARTS", arg1, arg2)
 	|value1, value2, _lang1, _lang2|
@@ -184,7 +181,7 @@ fn strstarts_fn(arg1: Object, arg2: Object) -> Object
 	}
 }
 
-fn strends_fn(arg1: Object, arg2: Object) -> Object
+pub fn strends_fn(arg1: Object, arg2: Object) -> Object
 {
 	do str_str_helper(~"STRENDS", arg1, arg2)
 	|value1, value2, _lang1, _lang2|
@@ -193,7 +190,7 @@ fn strends_fn(arg1: Object, arg2: Object) -> Object
 	}
 }
 
-fn contains_fn(arg1: Object, arg2: Object) -> Object
+pub fn contains_fn(arg1: Object, arg2: Object) -> Object
 {
 	do str_str_helper(~"CONTAINS", arg1, arg2)
 	|value1, value2, _lang1, _lang2|
@@ -202,7 +199,7 @@ fn contains_fn(arg1: Object, arg2: Object) -> Object
 	}
 }
 
-fn strbefore_fn(arg1: Object, arg2: Object) -> Object
+pub fn strbefore_fn(arg1: Object, arg2: Object) -> Object
 {
 	do str_str_helper(~"STRBEFORE", arg1, arg2)
 	|value1, value2, lang1, _lang2|
@@ -221,7 +218,7 @@ fn strbefore_fn(arg1: Object, arg2: Object) -> Object
 	}
 }
 
-fn strafter_fn(arg1: Object, arg2: Object) -> Object
+pub fn strafter_fn(arg1: Object, arg2: Object) -> Object
 {
 	do str_str_helper(~"STRAFTER", arg1, arg2)
 	|value1, value2, lang1, _lang2|
@@ -264,7 +261,7 @@ fn is_unreserved(ch: char) -> bool
 	}
 }
 
-fn encode_for_uri_fn(operand: Object) -> Object
+pub fn encode_for_uri_fn(operand: Object) -> Object
 {
 	match operand
 	{
@@ -295,7 +292,7 @@ fn encode_for_uri_fn(operand: Object) -> Object
 	}
 }
 
-fn concat_fn(operand: ~[Object]) -> Object
+pub fn concat_fn(operand: ~[Object]) -> Object
 {
 	let mut result = ~"";
 	let mut languages = ~[];
@@ -330,7 +327,7 @@ fn concat_fn(operand: ~[Object]) -> Object
 	}
 }
 
-fn langmatches_fn(arg1: Object, arg2: Object) -> Object
+pub fn langmatches_fn(arg1: Object, arg2: Object) -> Object
 {
 	match arg1
 	{

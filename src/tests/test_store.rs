@@ -30,12 +30,12 @@ fn iteration()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, triple);
+		vec::push(actual, *triple);
 	};
 	
 	let expected = ~[
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned")
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned")
 	];
 	assert check_triples(actual, expected);
 }
@@ -47,7 +47,7 @@ fn references()
 		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		{prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"},
 		{prefix: ~"foo", path: ~"http://www.whatever.org/"}
-		], &std::map::box_str_hash());
+		], &std::map::HashMap());
 		
 	store.add(~"got:Eddard_Stark", ~[
 		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
@@ -62,15 +62,15 @@ fn references()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, triple);
+		vec::push(actual, *triple);
 	};
 	
 	// The store will have full URIs (make_triple_* does the expansion as well).
 	let expected = ~[
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned"),
-		make_triple_uri(store, ~"got:Eddard_Stark", ~"foo:child", ~"got:Jon_Snow"),
-		make_triple_str(store, ~"got:Jon_Snow", ~"v:fn", ~"Jon Snow")
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned"),
+		make_triple_uri(&store, ~"got:Eddard_Stark", ~"foo:child", ~"got:Jon_Snow"),
+		make_triple_str(&store, ~"got:Jon_Snow", ~"v:fn", ~"Jon Snow")
 	];
 	
 	assert check_triples(actual, expected);
@@ -85,27 +85,27 @@ fn blank_nodes()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, triple);
+		vec::push(actual, *triple);
 	};
 	
 	let expected = ~[
-		make_triple_str(store, ~"_:jon-org-1", ~"v:organisation-name", ~"Night's Watch"),
-		make_triple_str(store, ~"_:jon-org-1", ~"v:organisation-unit", ~"Stewards"),
-		make_triple_str(store, ~"_:ned-org-0", ~"v:organisation-name", ~"Small Council"),
-		make_triple_str(store, ~"_:ned-org-0", ~"v:organisation-unit", ~"Hand"),
+		make_triple_str(&store, ~"_:jon-org-1", ~"v:organisation-name", ~"Night's Watch"),
+		make_triple_str(&store, ~"_:jon-org-1", ~"v:organisation-unit", ~"Stewards"),
+		make_triple_str(&store, ~"_:ned-org-0", ~"v:organisation-name", ~"Small Council"),
+		make_triple_str(&store, ~"_:ned-org-0", ~"v:organisation-unit", ~"Hand"),
 		
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned"),
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:honorific-prefix", ~"Lord"),
-		make_triple_blank(store, ~"got:Eddard_Stark", ~"v:org", ~"ned-org-0"),
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned"),
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:honorific-prefix", ~"Lord"),
+		make_triple_blank(&store, ~"got:Eddard_Stark", ~"v:org", ~"ned-org-0"),
 		
-		make_triple_str(store, ~"got:Jon_Snow", ~"v:fn", ~"Jon Snow"),
-		make_triple_str(store, ~"got:Jon_Snow", ~"v:nickname", ~"Lord Snow"),
-		make_triple_str(store, ~"got:Jon_Snow", ~"v:pet", ~"Ghost"),
-		make_triple_blank(store, ~"got:Jon_Snow", ~"v:org", ~"jon-org-1"),
+		make_triple_str(&store, ~"got:Jon_Snow", ~"v:fn", ~"Jon Snow"),
+		make_triple_str(&store, ~"got:Jon_Snow", ~"v:nickname", ~"Lord Snow"),
+		make_triple_str(&store, ~"got:Jon_Snow", ~"v:pet", ~"Ghost"),
+		make_triple_blank(&store, ~"got:Jon_Snow", ~"v:org", ~"jon-org-1"),
 		
-		make_triple_str(store, ~"got:Sandor_Clegane", ~"v:fn", ~"Sandor Clegane"),
-		make_triple_str(store, ~"got:Sandor_Clegane", ~"v:nickname", ~"The Hound"),
+		make_triple_str(&store, ~"got:Sandor_Clegane", ~"v:fn", ~"Sandor Clegane"),
+		make_triple_str(&store, ~"got:Sandor_Clegane", ~"v:nickname", ~"The Hound"),
 	];
 	
 	assert check_triples(actual, expected);
@@ -114,20 +114,20 @@ fn blank_nodes()
 #[test]
 fn container() 
 {
-	let store = Store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::box_str_hash());
+	let store = Store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::HashMap());
 	store.add_alt(~"got:places", ~[IriValue(~"got:The_Wall"), IriValue(~"got:Winterfell")]);
 	
 	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
-		vec::push(actual, triple);
+		vec::push(actual, *triple);
 	};
 	
 	let expected = ~[
-		make_triple_blank(store, ~"got:places", ~"rdf:Alt", ~"places-items-0"),
-		make_triple_uri(store, ~"_:places-items-0", ~"rdf:_1", ~"got:The_Wall"),
-		make_triple_uri(store, ~"_:places-items-0", ~"rdf:_2", ~"got:Winterfell")
+		make_triple_blank(&store, ~"got:places", ~"rdf:Alt", ~"places-items-0"),
+		make_triple_uri(&store, ~"_:places-items-0", ~"rdf:_1", ~"got:The_Wall"),
+		make_triple_uri(&store, ~"_:places-items-0", ~"rdf:_2", ~"got:Winterfell")
 	];
 	
 	assert check_triples(actual, expected);
@@ -136,19 +136,19 @@ fn container()
 #[test]
 fn list0() 
 {
-	let store = Store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::box_str_hash());
+	let store = Store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::HashMap());
 	store.add_list(~"got:westeros", ~"got:cities", ~[]);
 	
 	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
-		vec::push(actual, triple);
+		vec::push(actual, *triple);
 	};
 	
 	let expected = ~[
-		make_triple_blank(store, ~"got:westeros", ~"got:cities", ~"cities-0"),
-		make_triple_uri(store, ~"_:cities-0", ~"rdf:rest", ~"rdf:nil")
+		make_triple_blank(&store, ~"got:westeros", ~"got:cities", ~"cities-0"),
+		make_triple_uri(&store, ~"_:cities-0", ~"rdf:rest", ~"rdf:nil")
 	];
 	
 	assert check_triples(actual, expected);
@@ -157,23 +157,23 @@ fn list0()
 #[test]
 fn list1() 
 {
-	let store = Store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::box_str_hash());
+	let store = Store(~[{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::HashMap());
 	store.add_list(~"got:westeros", ~"got:cities", ~[StringValue(~"Lanisport", ~"")]);
 	
 	let mut actual = ~[];
 	for store.each
 	|triple|
 	{
-		vec::push(actual, triple);
+		vec::push(actual, *triple);
 	};
 	
 	let expected = ~[
-		make_triple_blank(store, ~"got:westeros", ~"got:cities", ~"cities-0"),
+		make_triple_blank(&store, ~"got:westeros", ~"got:cities", ~"cities-0"),
 		
-		make_triple_str(store, ~"_:cities-0", ~"rdf:first", ~"Lanisport"),
-		make_triple_blank(store, ~"_:cities-0", ~"rdf:rest", ~"cities-1"),
+		make_triple_str(&store, ~"_:cities-0", ~"rdf:first", ~"Lanisport"),
+		make_triple_blank(&store, ~"_:cities-0", ~"rdf:rest", ~"cities-1"),
 		
-		make_triple_uri(store, ~"_:cities-1", ~"rdf:rest", ~"rdf:nil")
+		make_triple_uri(&store, ~"_:cities-1", ~"rdf:rest", ~"rdf:nil")
 	];
 	
 	assert check_triples(actual, expected);
@@ -189,16 +189,16 @@ fn reify()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, triple);
+		vec::push(actual, *triple);
 	};
 	
 	let expected = ~[
-		make_triple_uri(store, ~"_:wife-0", ~"rdf:type", ~"rdf:Statement"),
-		make_triple_uri(store, ~"_:wife-0", ~"rdf:subject", ~"got:Eddard_Stark"),
-		make_triple_uri(store, ~"_:wife-0", ~"rdf:predicate", ~"got:wife"),
-		make_triple_uri(store, ~"_:wife-0", ~"rdf:object", ~"got:Caitlyn_Stark"),
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned"),
+		make_triple_uri(&store, ~"_:wife-0", ~"rdf:type", ~"rdf:Statement"),
+		make_triple_uri(&store, ~"_:wife-0", ~"rdf:subject", ~"got:Eddard_Stark"),
+		make_triple_uri(&store, ~"_:wife-0", ~"rdf:predicate", ~"got:wife"),
+		make_triple_uri(&store, ~"_:wife-0", ~"rdf:object", ~"got:Caitlyn_Stark"),
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned"),
 	];
 	assert check_triples(actual, expected);
 }
@@ -214,13 +214,13 @@ fn replace()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, triple);
+		vec::push(actual, *triple);
 	};
 	
 	let expected = ~[
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
-		make_triple_str(store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned the Dead"),
-		make_triple_str(store, ~"got:Arya", ~"v:nickname", ~"Underfoot"),
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:fn", ~"Eddard Stark"),
+		make_triple_str(&store, ~"got:Eddard_Stark", ~"v:nickname", ~"Ned the Dead"),
+		make_triple_str(&store, ~"got:Arya", ~"v:nickname", ~"Underfoot"),
 	];
 	assert check_triples(actual, expected);
 }

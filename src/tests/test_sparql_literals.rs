@@ -75,7 +75,7 @@ fn fancy_types() -> Store
 	let store = Store(~[
 		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		{prefix: ~"x", path: ~"http://blah#"}
-		], &std::map::box_str_hash());
+		], &std::map::HashMap());
 	
 	store.add(~"x:Hans", ~[(~"x:greeting", StringValue(~"guten tag", ~"de"))]);
 	store.add(~"x:Jones", ~[(~"x:greeting", StringValue(~"guten tag", ~"en-US"))]);

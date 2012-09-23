@@ -5,9 +5,7 @@ use solution::*;
 use sparql::*;
 use store::*;
 
-export check_bgp, check_strs, check_operands, check_triples, check_solution, check_solution_err;
-
-fn check_strs(actual: ~str, expected: ~str) -> bool
+pub fn check_strs(actual: ~str, expected: ~str) -> bool
 {
 	if actual != expected
 	{
@@ -17,7 +15,7 @@ fn check_strs(actual: ~str, expected: ~str) -> bool
 	return true;
 }
 
-fn check_operands(actual: Object, expected: Object) -> bool
+pub fn check_operands(actual: Object, expected: Object) -> bool
 {
 	if actual != expected
 	{
@@ -30,7 +28,7 @@ fn check_operands(actual: Object, expected: Object) -> bool
 	return true;
 }
 
-fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
+pub fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
 {
 	fn convert_bindings(group: Solution) -> ~[~str]
 	{
@@ -58,8 +56,8 @@ fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
 	for vec::each(vec::slice(groups, 1, groups.len())) 
 	|group|
 	{
-		let store = Store(~[], &std::map::box_str_hash());
-		actual = join_solutions(&store, ~[~"*"], actual, group, false);
+		let store = Store(~[], &std::map::HashMap());
+		actual = join_solutions(&store, ~[~"*"], actual, *group, false);
 	}
 	
 	// Form this point forward we are dealing with [str] instead of [[binding]].
@@ -92,7 +90,7 @@ fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
 	return true;
 }
 
-fn check_triples(actual: ~[Triple], expected: ~[Triple]) -> bool
+pub fn check_triples(actual: ~[Triple], expected: ~[Triple]) -> bool
 {
 	fn dump_triples(actual: ~[Triple])
 	{
@@ -144,7 +142,7 @@ fn check_triples(actual: ~[Triple], expected: ~[Triple]) -> bool
 	return true;
 }
 
-fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
+pub fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
 {
 	info!("----------------------------------------------------");
 	let expected = expected.sort();
@@ -227,7 +225,7 @@ fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
 	}
 }
 
-fn check_solution_err(store: Store, expr: ~str, expected: ~str) -> bool
+pub fn check_solution_err(store: Store, expr: ~str, expected: ~str) -> bool
 {
 	info!("----------------------------------------------------");
 	match compile(expr)
