@@ -12,7 +12,7 @@ use rparse::parsers::{ParseStatus, ParseFailed, anycp, CharParsers,
 	fails, forward_ref, or_v, ret, seq2, seq3, seq4, seq5, seq6, seq7, seq8, seq9, seq2_ret0, seq2_ret1, seq3_ret0, seq3_ret1, seq3_ret2, seq4_ret0, 
 	seq4_ret1, seq4_ret2, seq4_ret3, GenericParsers, Combinators, optional_str};
 use rparse::misc::{EOT, is_alpha, is_digit, is_alphanum, is_print, is_whitespace};
-use rparse::types::{Parser, State, Status, Succeeded, Failed, Blah};
+use rparse::types::{Parser, State, Status, Succeeded, Failed};
 
 fn bool_literal(value: @~str) -> Pattern
 {
@@ -494,7 +494,7 @@ fn ws<T: Copy Owned>(parser: Parser<T>) -> Parser<T>
 				}
 			}
 			
-			result::Ok({new_state: {index: i, line: line ,.. pass.new_state}, value: pass.value})
+			result::Ok(Succeeded {new_state: State {index: i, line: line ,.. pass.new_state}, value: pass.value})
 		}
 	}
 }
