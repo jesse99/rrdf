@@ -5,19 +5,19 @@ pub fn str_str_helper(fname: ~str, arg1: &Object, arg2: &Object, callback: fn@ (
 {
 	match *arg1
 	{
-		StringValue(value1, lang1) =>
+		StringValue(ref value1, ref lang1) =>
 		{
 			match *arg2
 			{
-				StringValue(value2, lang2) =>
+				StringValue(ref value2, ref lang2) =>
 				{
-					if str::to_lower(lang1) == str::to_lower(lang2) || str::is_empty(lang2)
+					if str::to_lower(*lang1) == str::to_lower(*lang2) || str::is_empty(*lang2)
 					{
-						callback(value1, value2, lang1, lang2)
+						callback(*value1, *value2, *lang1, *lang2)
 					}
 					else
 					{
-						ErrorValue(fmt!("%s: '%s' and '%s' are incompatible languages.", fname, lang1, lang2))
+						ErrorValue(fmt!("%s: '%s' and '%s' are incompatible languages.", fname, *lang1, *lang2))
 					}
 				}
 				_ =>
@@ -37,9 +37,9 @@ pub fn strlen_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		StringValue(value, _lang) =>
+		StringValue(ref value, ref _lang) =>
 		{
-			IntValue(str::len(value) as i64)
+			IntValue(str::len(*value) as i64)
 		}
 		_ =>
 		{
@@ -52,17 +52,17 @@ pub fn substr2_fn(value: &Object, loc: &Object) -> Object
 {
 	match *value
 	{
-		StringValue(source, lang) =>
+		StringValue(ref source, copy lang) =>
 		{
 			match *loc
 			{
 				IntValue(startingLoc) =>
 				{
 					let begin = (startingLoc - 1i64) as uint;		// for some stupid reason the indexes are 1-based
-					let end = str::len(source);
+					let end = str::len(*source);
 					if startingLoc >= 1i64 && begin <= end
 					{
-						StringValue(str::slice(source, begin, end), copy lang)
+						StringValue(str::slice(*source, begin, end), lang)
 					}
 					else if startingLoc == 0i64
 					{
@@ -94,7 +94,7 @@ pub fn substr3_fn(value: &Object, loc: &Object, len: &Object) -> Object
 {
 	match *value
 	{
-		StringValue(source, lang) =>
+		StringValue(ref source, copy lang) =>
 		{
 			match *loc
 			{
@@ -106,9 +106,9 @@ pub fn substr3_fn(value: &Object, loc: &Object, len: &Object) -> Object
 						{
 							let begin = (startingLoc - 1i64) as uint;		// for some stupid reason the indexes are 1-based
 							let end = begin + length as uint;
-							if startingLoc >= 1i64 && end <= str::len(source)
+							if startingLoc >= 1i64 && end <= str::len(*source)
 							{
-								StringValue(str::slice(source, begin, end), copy lang)
+								StringValue(str::slice(*source, begin, end), lang)
 							}
 							else if startingLoc == 0i64
 							{
@@ -146,9 +146,9 @@ pub fn ucase_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		StringValue(value, lang) =>
+		StringValue(ref value, copy lang) =>
 		{
-			StringValue(str::to_upper(value), copy lang)
+			StringValue(str::to_upper(*value), lang)
 		}
 		_ =>
 		{
@@ -161,9 +161,9 @@ pub fn lcase_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		StringValue(value, lang) =>
+		StringValue(ref value, copy lang) =>
 		{
-			StringValue(str::to_lower(value), copy lang)
+			StringValue(str::to_lower(*value), lang)
 		}
 		_ =>
 		{
@@ -265,12 +265,12 @@ pub fn encode_for_uri_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		StringValue(value, lang) =>
+		StringValue(ref value, copy lang) =>
 		{
 			let mut result = ~"";
-			str::reserve(result, str::len(value));
+			str::reserve(result, str::len(*value));
 			
-			for str::each_char(value)
+			for str::each_char(*value)
 			|ch|
 			{
 				if is_unreserved(ch)
@@ -283,7 +283,7 @@ pub fn encode_for_uri_fn(operand: &Object) -> Object
 				}
 			}
 			
-			StringValue(result, copy lang)
+			StringValue(result, lang)
 		}
 		_ =>
 		{
@@ -302,12 +302,12 @@ pub fn concat_fn(operand: ~[Object]) -> Object
 	{
 		match part
 		{
-			StringValue(value, lang) =>
+			StringValue(ref value, copy lang) =>
 			{
-				result += value;
+				result += *value;
 				if !vec::contains(languages, lang)
 				{
-					vec::push(languages, copy lang);
+					vec::push(languages, lang);
 				}
 			}
 			_ =>
@@ -331,13 +331,13 @@ pub fn langmatches_fn(arg1: &Object, arg2: &Object) -> Object
 {
 	match *arg1
 	{
-		StringValue(_value1, lang1) =>
+		StringValue(ref _value1, ref lang1) =>
 		{
 			match *arg2
 			{
-				StringValue(_value2, lang2) =>
+				StringValue(ref _value2, ref lang2) =>
 				{
-					BoolValue(str::to_lower(lang1) == str::to_lower(lang2))
+					BoolValue(str::to_lower(*lang1) == str::to_lower(*lang2))
 				}
 				_ =>
 				{

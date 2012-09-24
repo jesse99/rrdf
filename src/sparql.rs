@@ -48,13 +48,13 @@ fn pattern_to_expr(pattern: &Pattern) -> expression::Expr
 {
 	match *pattern
 	{
-		Variable(name) =>
+		Variable(copy name) =>
 		{
-			expression::VariableExpr(copy name)
+			expression::VariableExpr(name)
 		}
-		Constant(value) =>
+		Constant(copy value) =>
 		{
-			expression::ConstantExpr(copy value)
+			expression::ConstantExpr(value)
 		}
 	}
 }
@@ -63,17 +63,17 @@ fn expand_expr(namespaces: ~[Namespace], expr: &expression::Expr) -> expression:
 {
 	match *expr
 	{
-		expression::ConstantExpr(IriValue(value)) =>
+		expression::ConstantExpr(IriValue(ref value)) =>
 		{
-			expression::ConstantExpr(IriValue(expand_uri(namespaces, value)))
+			expression::ConstantExpr(IriValue(expand_uri(namespaces, *value)))
 		}
-		expression::ConstantExpr(TypedValue(value, kind)) =>
+		expression::ConstantExpr(TypedValue(copy value, ref kind)) =>
 		{
-			expression::ConstantExpr(literal_to_object(@copy value, @expand_uri(namespaces, kind), @~""))
+			expression::ConstantExpr(literal_to_object(@value, @expand_uri(namespaces, *kind), @~""))
 		}
-		expression::CallExpr(fname, expressions) =>
+		expression::CallExpr(copy fname, ref expressions) =>
 		{
-			expression::CallExpr(copy fname, vec::map(expressions, |e| {@expand_expr(namespaces, e)}))
+			expression::CallExpr(fname, vec::map(*expressions, |e| {@expand_expr(namespaces, e)}))
 		}
 		_ =>
 		{
@@ -86,13 +86,13 @@ fn expand_pattern(namespaces: ~[Namespace], pattern: &Pattern) -> Pattern
 {
 	match *pattern
 	{
-		Constant(IriValue(value)) =>
+		Constant(IriValue(ref value)) =>
 		{
-			Constant(IriValue(expand_uri(namespaces, value)))
+			Constant(IriValue(expand_uri(namespaces, *value)))
 		}
-		Constant(TypedValue(value, kind)) =>
+		Constant(TypedValue(copy value, ref kind)) =>
 		{
-			Constant(literal_to_object(@copy value, @expand_uri(namespaces, kind), @~""))
+			Constant(literal_to_object(@value, @expand_uri(namespaces, *kind), @~""))
 		}
 		_ =>
 		{
@@ -114,17 +114,17 @@ fn expand(namespaces: ~[Namespace], algebra: &Algebra) -> Algebra
 		{
 			Basic(expand_triple(namespaces, pattern))
 		}
-		Group(terms) =>
+		Group(ref terms) =>
 		{
-			Group(vec::map(terms, |term| {@expand(namespaces, term)}))
+			Group(vec::map(*terms, |term| {@expand(namespaces, term)}))
 		}
 		Optional(term) =>
 		{
 			Optional(@expand(namespaces, term))
 		}
-		Bind(ref expr, name) =>
+		Bind(ref expr, copy name) =>
 		{
-			Bind(expand_expr(namespaces, expr), copy name)
+			Bind(expand_expr(namespaces, expr), name)
 		}
 		Filter(ref expr) =>
 		{
@@ -1113,8 +1113,8 @@ fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, S
 {
 	let ((distinct, patterns), algebra, modifiers) = query;
 	
-	let variables = do vec::filter(patterns) |p| {match p {Variable(_l)  => true, _  => false}};
-	let names = do vec::map(variables) |p| {match p {Variable(n)  => copy n, _  => fail}};
+	let variables = do vec::filter(patterns) |p| {match p {Variable(ref _l)  => true, _  => false}};
+	let names = do vec::map(variables) |p| {match p {Variable(copy n)  => n, _  => fail}};
 	
 	let order_by = match modifiers.order_by {option::Some(x)  => x, option::None  => @~[]};
 	

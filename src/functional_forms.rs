@@ -6,7 +6,7 @@ fn bound_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		UnboundValue(_name) =>
+		UnboundValue(*) =>
 		{
 			BoolValue(false)
 		}
@@ -17,9 +17,9 @@ fn bound_fn(operand: &Object) -> Object
 	}
 }
 
-fn eval_if(context: &query::QueryContext, bindings: ~[(~str, Object)], args: ~[@expression::Expr]) -> Object
+fn eval_if(context: &query::QueryContext, bindings: ~[(~str, Object)], args: &~[@expression::Expr]) -> Object
 {
-	if vec::len(args) == 3u
+	if vec::len(*args) == 3u
 	{
 		let predicate = expression::eval_expr(context, bindings, args[0]);
 		match get_ebv(&predicate)
@@ -32,7 +32,7 @@ fn eval_if(context: &query::QueryContext, bindings: ~[(~str, Object)], args: ~[@
 			{
 				expression::eval_expr(context, bindings, args[2])
 			}
-			result::Err(err) =>
+			result::Err(copy err) =>
 			{
 				ErrorValue(~"IF: " + err)
 			}
@@ -40,20 +40,20 @@ fn eval_if(context: &query::QueryContext, bindings: ~[(~str, Object)], args: ~[@
 	}
 	else
 	{
-		if vec::len(args) == 1u
+		if vec::len(*args) == 1u
 		{
 			ErrorValue(~"IF accepts 3 arguments but was called with 1 argument.")
 		}
 		else
 		{
-			ErrorValue(fmt!("IF accepts 3 arguments but was called with %? arguments.", vec::len(args)))
+			ErrorValue(fmt!("IF accepts 3 arguments but was called with %? arguments.", vec::len(*args)))
 		}
 	}
 }
 
-fn eval_coalesce(context: &query::QueryContext, bindings: ~[(~str, Object)], args: ~[@expression::Expr]) -> Object
+fn eval_coalesce(context: &query::QueryContext, bindings: ~[(~str, Object)], args: &~[@expression::Expr]) -> Object
 {
-	for vec::each(args)
+	for vec::each(*args)
 	|arg|
 	{
 		let candidate = expression::eval_expr(context, bindings, *arg);
@@ -119,11 +119,11 @@ fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
 				}
 			}
 		}
-		DateTimeValue(lvalue) =>
+		DateTimeValue(ref lvalue) =>
 		{
 			match *rhs
 			{
-				DateTimeValue(rvalue) =>
+				DateTimeValue(ref rvalue) =>
 				{
 					BoolValue(lvalue == rvalue)
 				}
@@ -133,13 +133,13 @@ fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
 				}
 			}
 		}
-		StringValue(lvalue, llang) =>
+		StringValue(ref lvalue, ref llang) =>
 		{
 			match *rhs
 			{
-				StringValue(rvalue, rlang) =>		// TODO: when we introduce type codes we'll need to check them here
+				StringValue(ref rvalue, ref rlang) =>		// TODO: when we introduce type codes we'll need to check them here
 				{
-					BoolValue(str::to_lower(llang) == str::to_lower(rlang) && lvalue == rvalue)
+					BoolValue(str::to_lower(*llang) == str::to_lower(*rlang) && lvalue == rvalue)
 				}
 				_ =>
 				{
@@ -147,11 +147,11 @@ fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
 				}
 			}
 		}
-		TypedValue(lvalue, ltype) =>
+		TypedValue(ref lvalue, ref ltype) =>
 		{
 			match *rhs
 			{
-				TypedValue(rvalue, rtype) =>
+				TypedValue(ref rvalue, ref rtype) =>
 				{
 					BoolValue(ltype == rtype && lvalue == rvalue)
 				}
@@ -161,11 +161,11 @@ fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
 				}
 			}
 		}
-		IriValue(lvalue) =>
+		IriValue(ref lvalue) =>
 		{
 			match *rhs
 			{
-				IriValue(rvalue) =>
+				IriValue(ref rvalue) =>
 				{
 					BoolValue(lvalue == rvalue)
 				}
@@ -175,11 +175,11 @@ fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
 				}
 			}
 		}
-		BlankValue(lvalue) =>
+		BlankValue(ref lvalue) =>
 		{
 			match *rhs
 			{
-				BlankValue(rvalue) =>
+				BlankValue(ref rvalue) =>
 				{
 					BoolValue(lvalue == rvalue)
 				}

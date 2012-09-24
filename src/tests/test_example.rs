@@ -117,7 +117,7 @@ fn query_monsters()
 			// a row for each monster that matched the query or an eval error.
 			match selector(&store)
 			{
-				result::Ok(solution) =>
+				result::Ok(ref solution) =>
 				{
 					// This will print:
 					// 0: [(name, "Lich"), (weight, 3), (announcement, "You feel a chill.")]
@@ -129,15 +129,15 @@ fn query_monsters()
 						io::println(fmt!("%?: %s", i, row.to_str()));
 					};
 				}
-				result::Err(err) =>
+				result::Err(ref err) =>
 				{
-					io::stderr().write_line(fmt!("Eval error: %s", err));
+					io::stderr().write_line(fmt!("Eval error: %s", *err));
 				}
 			}
 		}
-		result::Err(err) =>
+		result::Err(ref err) =>
 		{
-			io::stderr().write_line(fmt!("Parse error: expected %s", err));
+			io::stderr().write_line(fmt!("Parse error: expected %s", *err));
 		}
 	}
 	

@@ -34,20 +34,20 @@ impl Object
 	{
 		match self
 		{
-			TypedValue(value, kind) =>
+			TypedValue(ref value, ref kind) =>
 			{
-				fmt!("\"%s^^\"%s", value, store::contract_uri(namespaces, kind))
+				fmt!("\"%s^^\"%s", *value, store::contract_uri(namespaces, *kind))
 			}
-			IriValue(iri) =>
+			IriValue(ref iri) =>
 			{
-				let result = store::contract_uri(namespaces, iri);
-				if result != iri
+				let result = store::contract_uri(namespaces, *iri);
+				if result != *iri
 				{
 					result
 				}
 				else
 				{
-					~"<" + iri + ~">"
+					~"<" + *iri + ~">"
 				}
 			}
 			_ =>
@@ -173,9 +173,9 @@ impl Object
 	{
 		match self
 		{
-			DateTimeValue(value) =>
+			DateTimeValue(copy value) =>
 			{
-				copy value
+				value
 			}
 			_ =>
 			{
@@ -188,9 +188,9 @@ impl Object
 	{
 		match self
 		{
-			StringValue(value, _lang) =>
+			StringValue(copy value, ref _lang) =>
 			{
-				copy value
+				value
 			}
 			_ =>
 			{
@@ -203,9 +203,9 @@ impl Object
 	{
 		match self
 		{
-			IriValue(value) =>
+			IriValue(copy value) =>
 			{
-				copy value
+				value
 			}
 			_ =>
 			{
@@ -330,9 +330,9 @@ impl Object
 	{
 		match self
 		{
-			DateTimeValue(value) =>
+			DateTimeValue(copy value) =>
 			{
-				copy value
+				value
 			}
 			_ =>
 			{
@@ -345,9 +345,9 @@ impl Object
 	{
 		match self
 		{
-			StringValue(value, _lang) =>
+			StringValue(copy value, ref _lang) =>
 			{
-				copy value
+				value
 			}
 			_ =>
 			{
@@ -360,9 +360,9 @@ impl Object
 	{
 		match self
 		{
-			IriValue(value) =>
+			IriValue(copy value) =>
 			{
-				copy value
+				value
 			}
 			_ =>
 			{
@@ -428,37 +428,37 @@ impl  Object : ToStr
 			{
 				fmt!("%?", value)
 			}
-			DateTimeValue(value) =>
+			DateTimeValue(ref value) =>
 			{
 				value.rfc3339()
 			}
-			StringValue(value, lang) =>
+			StringValue(ref value, ref lang) =>
 			{
-				if str::is_not_empty(lang) {fmt!("\"%s\"@%s", value, lang)} else {fmt!("\"%s\"", value)}
+				if str::is_not_empty(*lang) {fmt!("\"%s\"@%s", *value, *lang)} else {fmt!("\"%s\"", *value)}
 			}
-			TypedValue(value, kind) =>
+			TypedValue(ref value, ref kind) =>
 			{
-				fmt!("\"%s^^\"%s", value, kind)
+				fmt!("\"%s^^\"%s", *value, *kind)
 			}
-			IriValue(value) =>
+			IriValue(ref value) =>
 			{
-				~"<" + value + ~">"
+				~"<" + *value + ~">"
 			}
-			BlankValue(value) =>
+			BlankValue(copy value) =>
 			{
-				copy value
+				value
 			}
-			UnboundValue(name) =>
+			UnboundValue(ref name) =>
 			{
 				name + ~" is not bound"
 			}
-			InvalidValue(literal, kind) =>
+			InvalidValue(ref literal, ref kind) =>
 			{
-				fmt!("'%s' is not a valid %s", literal, kind)
+				fmt!("'%s' is not a valid %s", *literal, *kind)
 			}
-			ErrorValue(err) =>
+			ErrorValue(copy err) =>
 			{
-				copy err
+				err
 			}
 		}
 	}
@@ -516,9 +516,9 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 					}
 				}
 			{
-				result::Ok(time) =>
+				result::Ok(copy time) =>
 				{
-					DateTimeValue(copy time)
+					DateTimeValue(time)
 				}
 				result::Err(_) =>
 				{
@@ -611,7 +611,7 @@ pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
 {
 	match *operand
 	{
-		InvalidValue(_literal, _type) =>
+		InvalidValue(*) =>
 		{
 			result::Ok(false)
 		}
@@ -619,9 +619,9 @@ pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
 		{
 			result::Ok(value)
 		}
-		StringValue(value, _) | TypedValue(value, _) =>
+		StringValue(ref value, _) | TypedValue(ref value, _) =>
 		{
-			result::Ok(str::is_not_empty(value))
+			result::Ok(str::is_not_empty(*value))
 		}
 		IntValue(value) =>
 		{
@@ -631,13 +631,13 @@ pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
 		{
 			result::Ok(!f64::is_NaN(value) && value != 0f64)
 		}
-		UnboundValue(name) =>
+		UnboundValue(ref name) =>
 		{
-			result::Err(fmt!("?%s is not bound.", name))
+			result::Err(fmt!("?%s is not bound.", *name))
 		}
-		ErrorValue(err) =>
+		ErrorValue(copy err) =>
 		{
-			result::Err(copy err)
+			result::Err(err)
 		}
 		_ =>
 		{
@@ -650,17 +650,17 @@ fn type_error(fname: ~str, operand: &Object, expected: ~str) -> ~str
 {
 	match *operand
 	{
-		UnboundValue(name) =>
+		UnboundValue(ref name) =>
 		{
-			fmt!("%s: ?%s was not bound.", fname, name)
+			fmt!("%s: ?%s was not bound.", fname, *name)
 		}
-		InvalidValue(literal, kind) =>
+		InvalidValue(ref literal, ref kind) =>
 		{
-			fmt!("%s: '%s' is not a valid %s", fname, literal, kind)
+			fmt!("%s: '%s' is not a valid %s", fname, *literal, *kind)
 		}
-		ErrorValue(err) =>
+		ErrorValue(ref err) =>
 		{
-			fmt!("%s: %s", fname, err)
+			fmt!("%s: %s", fname, *err)
 		}
 		_ =>
 		{

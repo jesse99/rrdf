@@ -5,7 +5,7 @@ fn isiri_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		IriValue(_name) =>
+		IriValue(ref _name) =>
 		{
 			BoolValue(true)
 		}
@@ -20,7 +20,7 @@ fn isblank_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		BlankValue(_name) =>
+		BlankValue(ref _name) =>
 		{
 			BoolValue(true)
 		}
@@ -70,9 +70,9 @@ fn lang_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		StringValue(_value, lang) =>
+		StringValue(ref _value, copy lang) =>
 		{
-			StringValue(copy lang, ~"")
+			StringValue(lang, ~"")
 		}
 		_ =>
 		{
@@ -105,9 +105,9 @@ fn datatype_fn(operand: &Object) -> Object
 		{
 			StringValue(~"http://www.w3.org/2001/XMLSchema#string", ~"")
 		}
-		TypedValue(_value, kind) =>
+		TypedValue(ref _value, copy kind) =>
 		{
-			StringValue(copy kind, ~"")
+			StringValue(kind, ~"")
 		}
 		IriValue(*) =>
 		{
@@ -131,9 +131,9 @@ fn strdt_fn(lexical: &Object, kind: &Object) -> Object
 		{
 			match *kind
 			{
-				IriValue(value) =>
+				IriValue(copy value) =>
 				{
-					TypedValue(lexical.to_str(), copy value)
+					TypedValue(lexical.to_str(), value)
 				}
 				_ =>
 				{

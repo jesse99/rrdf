@@ -51,11 +51,11 @@ fn pattern_to_str(store: &Store, pattern: &Pattern) -> ~str
 {
 	match *pattern
 	{
-		Variable(v) =>
+		Variable(ref v) =>
 		{
-			fmt!("?%s", v)
+			fmt!("?%s", *v)
 		}
-		Constant(c) =>
+		Constant(ref c) =>
 		{
 			c.to_friendly_str(store.namespaces)
 		}
@@ -75,7 +75,7 @@ fn algebra_to_str(store: &Store, algebra: &Algebra) -> ~str
 		{
 			triple_pattern_to_str(store, p)
 		}
-		Group(args) =>
+		Group(ref args) =>
 		{
 			fmt!("[%s]", str::connect(do args.map |a| {algebra_to_str(store, a)}, ~", "))
 		}
@@ -83,9 +83,9 @@ fn algebra_to_str(store: &Store, algebra: &Algebra) -> ~str
 		{
 			~"optional " + algebra_to_str(store, a)
 		}
-		Bind(ref e, n) =>
+		Bind(ref e, ref n) =>
 		{
-			fmt!("%s = %s", n, expr_to_str(store, e))
+			fmt!("%s = %s", *n, expr_to_str(store, e))
 		}
 		Filter(ref e) =>
 		{
@@ -258,7 +258,7 @@ fn match_subject(actual: ~str, pattern: &Pattern) -> Match
 {
 	match *pattern
 	{
-		Variable(name) =>
+		Variable(copy name) =>
 		{
 			let value =
 				if actual.starts_with("_:")
@@ -269,17 +269,17 @@ fn match_subject(actual: ~str, pattern: &Pattern) -> Match
 				{
 					IriValue(copy actual)
 				};
-			either::Left({name: copy name, value: value})
+			either::Left({name: name, value: value})
 		}
-		Constant(IriValue(value)) =>
+		Constant(IriValue(ref value)) =>
 		{
-			let matched = actual == value;
+			let matched = actual == *value;
 			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
 			either::Right(matched)
 		}
-		Constant(BlankValue(value)) =>
+		Constant(BlankValue(ref value)) =>
 		{
-			let matched = actual == value;
+			let matched = actual == *value;
 			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
 			either::Right(matched)
 		}
@@ -294,14 +294,14 @@ fn match_predicate(actual: ~str, pattern: &Pattern) -> Match
 {
 	match *pattern
 	{
-		Variable(name) =>
+		Variable(copy name) =>
 		{
 			let value = IriValue(copy actual);
-			either::Left({name: copy name, value: value})
+			either::Left({name: name, value: value})
 		}
-		Constant(IriValue(value)) =>
+		Constant(IriValue(ref value)) =>
 		{
-			let matched = actual == value;
+			let matched = actual == *value;
 			//debug!("Actual predicate %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
 			either::Right(matched)
 		}
@@ -316,9 +316,9 @@ fn match_object(actual: &Object, pattern: &Pattern) -> Match
 {
 	match *pattern
 	{
-		Variable(name) =>
+		Variable(copy name) =>
 		{
-			either::Left({name: copy name, value: copy *actual})
+			either::Left({name: name, value: copy *actual})
 		}
 		Constant(ref expected) =>
 		{
@@ -333,7 +333,7 @@ fn eval_match(&bindings: ~[(~str, Object)], m: Match) -> result::Result<bool, ~s
 {
 	match m
 	{
-		either::Left(binding) =>
+		either::Left(ref binding) =>
 		{
 			if option::is_none(bindings.search(binding.name))
 			{
@@ -380,15 +380,15 @@ fn iterate_matches(store: &Store, spattern: &Pattern, callback: fn (Option<&Bind
 	
 	match *spattern
 	{
-		Constant(IriValue(subject)) | Constant(BlankValue(subject)) =>
+		Constant(IriValue(ref subject)) | Constant(BlankValue(ref subject)) =>
 		{
 			// Optimization for a common case where we are attempting to match a specific subject.
-			let candidate = store.subjects.find(@(copy subject));
+			let candidate = store.subjects.find(@copy *subject);
 			if option::is_some(candidate)
 			{
 				info!("--- matched subject %?", subject);
 				let entries = option::get(candidate);
-				if !invoke(subject, spattern, entries, callback)
+				if !invoke(*subject, spattern, entries, callback)
 				{
 					return;
 				}
@@ -462,9 +462,9 @@ fn eval_basic(store: &Store, names: ~[~str], matcher: &TriplePattern) -> result:
 				{
 					// match failed: try next entry
 				}
-				result::Err(mesg) =>
+				result::Err(copy mesg) =>
 				{
-					return result::Err(copy mesg)
+					return result::Err(mesg)
 				}
 			}
 		}
@@ -492,9 +492,9 @@ fn filter_solution(context: &QueryContext, names: ~[~str], solution: &Solution, 
 			{
 				debug!("FILTER rejected %?", row);
 			}
-			result::Err(err) =>
+			result::Err(copy err) =>
 			{
-				return result::Err(copy err);
+				return result::Err(err);
 			}
 		}
 	}
@@ -513,17 +513,17 @@ fn bind_solution(context: &QueryContext, names: ~[~str], solution: &Solution, ex
 		let value = eval_expr(context, *row, expr);
 		match value
 		{
-			UnboundValue(name) =>
+			UnboundValue(ref name) =>
 			{
-				return result::Err(fmt!("?%s was not bound", name));
+				return result::Err(fmt!("?%s was not bound", *name));
 			}
-			InvalidValue(literal, kind) =>
+			InvalidValue(ref literal, ref kind) =>
 			{
-				return result::Err(fmt!("?%s is not a valid %s", literal, kind));
+				return result::Err(fmt!("?%s is not a valid %s", *literal, *kind));
 			}
-			ErrorValue(mesg) =>
+			ErrorValue(copy mesg) =>
 			{
-				return result::Err(copy mesg);
+				return result::Err(mesg);
 			}
 			_ =>
 			{
@@ -559,29 +559,29 @@ fn eval_group(store: &Store, context: &QueryContext, in_names: ~[~str], terms: ~
 			{
 				match filter_solution(context, names, &result, expr)
 				{
-					result::Ok(solution) =>
+					result::Ok(ref solution) =>
 					{
-						info!("term%? %s matched %s", i, algebra_to_str(store, term), solution_to_str(store, &solution));
-						result = copy solution;		// TODO: icky copy
+						info!("term%? %s matched %s", i, algebra_to_str(store, term), solution_to_str(store, solution));
+						result = copy *solution;		// TODO: icky copy
 					}
-					result::Err(mesg) =>
+					result::Err(copy mesg) =>
 					{
-						return result::Err(copy mesg);
+						return result::Err(mesg);
 					}
 				}
 			}
-			@Bind(ref expr, name) =>
+			@Bind(ref expr, ref name) =>
 			{
-				match bind_solution(context, names, &result, expr, name)
+				match bind_solution(context, names, &result, expr, *name)
 				{
-					result::Ok(solution) =>
+					result::Ok(copy solution) =>
 					{
 						info!("term%? %s matched %s", i, algebra_to_str(store, term), solution_to_str(store, &solution));
-						result = copy solution;		// TODO: icky copy
+						result = solution;		// TODO: icky copy
 					}
-					result::Err(mesg) =>
+					result::Err(copy mesg) =>
 					{
-						return result::Err(copy mesg);
+						return result::Err(mesg);
 					}
 				}
 			}
@@ -589,7 +589,7 @@ fn eval_group(store: &Store, context: &QueryContext, in_names: ~[~str], terms: ~
 			{
 				match eval_algebra(store, ~[~"*"], &QueryContext {algebra: copy *term, ..*context})
 				{
-					result::Ok(solution) =>
+					result::Ok(ref solution) =>
 					{
 						match *term
 						{
@@ -597,7 +597,7 @@ fn eval_group(store: &Store, context: &QueryContext, in_names: ~[~str], terms: ~
 							{
 								if result.rows.is_not_empty()
 								{
-									result = join_solutions(store, names, &result, &solution, true);
+									result = join_solutions(store, names, &result, solution, true);
 									info!("term%? %s matched %s", i, algebra_to_str(store, term), solution_to_str(store, &result));
 								}
 							}
@@ -610,20 +610,20 @@ fn eval_group(store: &Store, context: &QueryContext, in_names: ~[~str], terms: ~
 								}
 								else if result.rows.is_not_empty()
 								{
-									result = join_solutions(store, names, &result, &solution, false);
+									result = join_solutions(store, names, &result, solution, false);
 									info!("term%? %s matched %s", i, algebra_to_str(store, term), solution_to_str(store, &result));
 								}
 								else if i == 0		// the very first pattern in the group has nothing to join with
 								{
-									result = copy solution;	// TODO: icky copy
+									result = copy *solution;	// TODO: icky copy
 									info!("term%? %s matched %s", i, algebra_to_str(store, term), solution_to_str(store, &result));
 								}
 							}
 						}
 					}
-					result::Err(mesg) =>
+					result::Err(copy mesg) =>
 					{
-						return result::Err(copy mesg);
+						return result::Err(mesg);
 					}
 				}
 			}
@@ -637,11 +637,11 @@ fn eval_optional(store: &Store, names: ~[~str], context: &QueryContext, term: &A
 {
 	match eval_algebra(store, names, &QueryContext {algebra: copy *term, ..*context})
 	{
-		result::Ok(solution) =>
+		result::Ok(copy solution) =>
 		{
-			result::Ok(copy solution)		// TODO: icky copy
+			result::Ok(solution)		// TODO: icky copy
 		}
-		result::Err(_mesg) =>
+		result::Err(ref _mesg) =>
 		{
 			result::Ok(Solution {namespaces: copy store.namespaces, rows: ~[]})
 		}
@@ -656,9 +656,9 @@ fn eval_algebra(store: &Store, names: ~[~str], context: &QueryContext) -> result
 		{
 			eval_basic(store, names, pattern)
 		}
-		Group(terms) =>
+		Group(ref terms) =>
 		{
-			eval_group(store, context, names, terms)
+			eval_group(store, context, names, *terms)
 		}
 		Optional(term) =>
 		{
@@ -682,11 +682,11 @@ fn eval_order_expr(context: &QueryContext, row: SolutionRow, expr: &Expr) -> (bo
 {
 	match *expr
 	{
-		CallExpr(~"!desc", e) =>
+		CallExpr(~"!desc", ref e) =>
 		{
 			(false, eval_expr(context, row, e[0])) 
 		}
-		CallExpr(~"!asc", e) =>
+		CallExpr(~"!asc", ref e) =>
 		{
 			(true, eval_expr(context, row, e[0]))
 		}
@@ -742,11 +742,11 @@ fn order_by(context: &QueryContext, solution: &Solution, ordering: ~[Expr]) -> r
 				{
 					x < 0
 				}
-				result::Err(err) =>
+				result::Err(copy err) =>
 				{
 					if str::is_empty(*err_mesg)
 					{
-						*err_mesg = copy err;
+						*err_mesg = err;
 					}
 					false
 				}

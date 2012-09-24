@@ -7,9 +7,9 @@
 
 #[forbid(unused_imports)];
 #[forbid(implicit_copies)];
+#[forbid(deprecated_pattern)];
 #[allow(structural_records)];		// TODO: enable more of these
 #[allow(deprecated_mode)];
-#[allow(deprecated_pattern)];		// TODO: enable this
 #[allow(non_implicitly_copyable_typarams)];
 
 extern mod std;

@@ -18,7 +18,7 @@ fn year_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		DateTimeValue(value) =>
+		DateTimeValue(ref value) =>
 		{
 			IntValue((1900i32 + value.tm_year) as i64)
 		}
@@ -33,7 +33,7 @@ fn month_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		DateTimeValue(value) =>
+		DateTimeValue(ref value) =>
 		{
 			IntValue((1i32 + value.tm_mon) as i64)
 		}
@@ -48,7 +48,7 @@ fn day_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		DateTimeValue(value) =>
+		DateTimeValue(ref value) =>
 		{
 			IntValue(value.tm_mday as i64)
 		}
@@ -63,7 +63,7 @@ fn hours_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		DateTimeValue(value) =>
+		DateTimeValue(ref value) =>
 		{
 			IntValue(value.tm_hour as i64)
 		}
@@ -78,7 +78,7 @@ fn minutes_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		DateTimeValue(value) =>
+		DateTimeValue(ref value) =>
 		{
 			IntValue(value.tm_min as i64)
 		}
@@ -93,7 +93,7 @@ fn seconds_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		DateTimeValue(value) =>
+		DateTimeValue(ref value) =>
 		{
 			IntValue(value.tm_sec as i64)
 		}
@@ -110,7 +110,7 @@ fn tz_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		DateTimeValue(value) =>
+		DateTimeValue(ref value) =>
 		{
 			StringValue(copy value.tm_zone, ~"")		// TODO: doubt this is correct
 		}

@@ -152,7 +152,7 @@ pub fn check_solution(store: &Store, expr: ~str, expected: &Solution) -> bool
 		{
 			match selector(store)
 			{
-				result::Ok(actual) =>
+				result::Ok(ref actual) =>
 				{
 					let actual = actual.sort();
 					
@@ -189,9 +189,9 @@ pub fn check_solution(store: &Store, expr: ~str, expected: &Solution) -> bool
 							let value1 = entry1.second();
 							match row2.search(name1)
 							{
-								option::Some(value2) =>
+								option::Some(ref value2) =>
 								{
-									if value1 != value2
+									if value1 != *value2
 									{
 										print_failure(#fmt["Row %? actual %s was %s but expected %s.",
 											i, name1, value1.to_str(), value2.to_str()], &actual, &expected);
@@ -210,16 +210,16 @@ pub fn check_solution(store: &Store, expr: ~str, expected: &Solution) -> bool
 					
 					return true;
 				}
-				result::Err(mesg) =>
+				result::Err(ref mesg) =>
 				{
-					io::stderr().write_line(fmt!("Eval error: %s", mesg));
+					io::stderr().write_line(fmt!("Eval error: %s", *mesg));
 					return false;
 				}
 			}
 		}
-		result::Err(mesg) =>
+		result::Err(ref mesg) =>
 		{
-			io::stderr().write_line(fmt!("Parse error: %s", mesg));
+			io::stderr().write_line(fmt!("Parse error: %s", *mesg));
 			return false;
 		}
 	}
@@ -239,29 +239,29 @@ pub fn check_solution_err(store: &Store, expr: ~str, expected: ~str) -> bool
 					io::stderr().write_line(fmt!("Expr evaluated but expected to find error '%s'.", expected));
 					return false;
 				}
-				result::Err(mesg) =>
+				result::Err(ref mesg) =>
 				{
-					if str::contains(mesg, expected)
+					if str::contains(*mesg, expected)
 					{
 						return true;
 					}
 					else
 					{
-						io::stderr().write_line(fmt!("Actual eval error was '%s' but expected to find '%s'.", mesg, expected));
+						io::stderr().write_line(fmt!("Actual eval error was '%s' but expected to find '%s'.", *mesg, expected));
 						return false;
 					}
 				}
 			}
 		}
-		result::Err(mesg) =>
+		result::Err(ref mesg) =>
 		{
-			if str::contains(mesg, expected)
+			if str::contains(*mesg, expected)
 			{
 				return true;
 			}
 			else
 			{
-				io::stderr().write_line(fmt!("Actual parse error was '%s' but expected to find '%s'.", mesg, expected));
+				io::stderr().write_line(fmt!("Actual parse error was '%s' but expected to find '%s'.", *mesg, expected));
 				return false;
 			}
 		}

@@ -89,7 +89,7 @@ pub fn contract_uri(namespaces: &[{prefix: ~str, path: ~str}], iri: &str) -> ~st
 {
 	match vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
 	{
-		option::Some(ns) =>
+		option::Some(ref ns) =>
 		{
 			fmt!("%s:%s", ns.prefix, str::slice(iri, str::len(ns.path), str::len(iri)))
 		}
@@ -461,17 +461,17 @@ fn expand_object(namespaces: ~[Namespace], obj: &Object) -> Object
 {
 	match *obj
 	{
-		TypedValue(value, kind) =>
+		TypedValue(copy value, ref kind) =>
 		{
-			TypedValue(copy value, expand_uri(namespaces, kind))
+			TypedValue(value, expand_uri(namespaces, *kind))
 		}
-		IriValue(value) =>
+		IriValue(ref value) =>
 		{
-			IriValue(expand_uri(namespaces, value))
+			IriValue(expand_uri(namespaces, *value))
 		}
-		BlankValue(value) =>
+		BlankValue(ref value) =>
 		{
-			BlankValue(expand_uri(namespaces, value))
+			BlankValue(expand_uri(namespaces, *value))
 		}
 		_ =>
 		{
@@ -554,13 +554,13 @@ fn pname_fn(namespaces: &~[Namespace], args: &~[Object]) -> Object
 	{
 		match args[0]
 		{
-			IriValue(iri) =>
+			IriValue(ref iri) =>
 			{
-				StringValue(contract_uri(*namespaces, iri), ~"")
+				StringValue(contract_uri(*namespaces, *iri), ~"")
 			}
-			BlankValue(name) =>
+			BlankValue(copy name) =>
 			{
-				StringValue(copy name, ~"")
+				StringValue(name, ~"")
 			}
 			_ =>
 			{

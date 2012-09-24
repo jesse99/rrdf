@@ -126,7 +126,7 @@ impl  SolutionRow : SolutionRowMethods
 	{
 		match vec::find(self, |e| {e.first() == name})
 		{
-			option::Some(result) =>
+			option::Some(ref result) =>
 			{
 				result.second()
 			}
@@ -147,7 +147,7 @@ impl  SolutionRow : SolutionRowMethods
 	{
 		match vec::find(self, |e| {e.first() == name})
 		{
-			option::Some(result) =>
+			option::Some(ref result) =>
 			{
 				option::Some(result.second())
 			}

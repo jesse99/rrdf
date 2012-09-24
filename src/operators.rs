@@ -57,11 +57,11 @@ pub fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Resul
 				}
 			}
 		}
-		DateTimeValue(lvalue) =>
+		DateTimeValue(ref lvalue) =>
 		{
 			match *rhs
 			{
-				DateTimeValue(rvalue) =>
+				DateTimeValue(ref rvalue) =>
 				{
 					result::Ok(lvalue == rvalue)
 				}
@@ -71,13 +71,13 @@ pub fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Resul
 				}
 			}
 		}
-		StringValue(lvalue, llang) =>
+		StringValue(ref lvalue, ref llang) =>
 		{
 			match *rhs
 			{
-				StringValue(rvalue, rlang) =>
+				StringValue(ref rvalue, ref rlang) =>
 				{
-					result::Ok(str::to_lower(llang) == str::to_lower(rlang) && lvalue == rvalue)
+					result::Ok(str::to_lower(*llang) == str::to_lower(*rlang) && lvalue == rvalue)
 				}
 				_ =>
 				{
@@ -85,25 +85,25 @@ pub fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Resul
 				}
 			}
 		}
-		TypedValue(lvalue, ltype) =>
+		TypedValue(ref lvalue, ref ltype) =>
 		{
 			match *rhs
 			{
-				TypedValue(rvalue, rtype) =>
+				TypedValue(ref rvalue, ref rtype) =>
 				{
 					result::Ok(ltype == rtype && lvalue == rvalue)
 				}
 				_ =>
 				{
-					result::Err(type_error(operator, rhs, ltype))
+					result::Err(type_error(operator, rhs, *ltype))
 				}
 			}
 		}
-		IriValue(lvalue) =>
+		IriValue(ref lvalue) =>
 		{
 			match *rhs
 			{
-				IriValue(rvalue) =>
+				IriValue(ref rvalue) =>
 				{
 					result::Ok(lvalue == rvalue)
 				}
@@ -113,11 +113,11 @@ pub fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Resul
 				}
 			}
 		}
-		BlankValue(lvalue) =>
+		BlankValue(ref lvalue) =>
 		{
 			match *rhs
 			{
-				BlankValue(rvalue) =>
+				BlankValue(ref rvalue) =>
 				{
 					result::Ok(lvalue == rvalue)
 				}
@@ -185,11 +185,11 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 				}
 			}
 		}
-		DateTimeValue(lvalue) =>
+		DateTimeValue(ref lvalue) =>
 		{
 			match *rhs
 			{
-				DateTimeValue(rvalue) =>
+				DateTimeValue(ref rvalue) =>
 				{
 					let lvalue = lvalue.to_timespec();
 					let rvalue = rvalue.to_timespec();
@@ -209,14 +209,14 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 				}
 			}
 		}
-		StringValue(lvalue, llang) =>
+		StringValue(ref lvalue, ref llang) =>
 		{
 			match *rhs
 			{
-				StringValue(rvalue, rlang) =>
+				StringValue(ref rvalue, ref rlang) =>
 				{
-					let llang = str::to_lower(llang);
-					let rlang = str::to_lower(rlang);
+					let llang = str::to_lower(*llang);
+					let rlang = str::to_lower(*rlang);
 					result::Ok(
 						if llang < rlang || (llang == rlang && lvalue < rvalue) {-1} 
 						else if llang == rlang && lvalue == rvalue {0} 
@@ -233,11 +233,11 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 				}
 			}
 		}
-		TypedValue(lvalue, ltype) =>
+		TypedValue(ref lvalue, ref ltype) =>
 		{
 			match *rhs
 			{
-				TypedValue(rvalue, rtype) =>
+				TypedValue(ref rvalue, ref rtype) =>
 				{
 					result::Ok(
 						if ltype < rtype || (ltype == rtype && lvalue < rvalue) {-1} 
@@ -251,15 +251,15 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 				}
 				_ =>
 				{
-					result::Err(type_error(operator, rhs, ltype))
+					result::Err(type_error(operator, rhs, *ltype))
 				}
 			}
 		}
-		IriValue(lvalue) =>
+		IriValue(ref lvalue) =>
 		{
 			match *rhs
 			{
-				IriValue(rvalue) =>
+				IriValue(ref rvalue) =>
 				{
 					result::Ok(
 						if lvalue < rvalue {-1} 
@@ -291,7 +291,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 				}
 			}
 		}
-		BlankValue(lvalue) =>
+		BlankValue(ref lvalue) =>
 		{
 			match *rhs
 			{
@@ -299,7 +299,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 				{
 					result::Ok(1)
 				}
-				BlankValue(rvalue) =>
+				BlankValue(ref rvalue) =>
 				{
 					result::Ok(
 						if lvalue < rvalue {-1} 
@@ -329,9 +329,9 @@ pub fn op_not(operand: &Object) -> Object
 		{
 			BoolValue(!value)
 		}
-		result::Err(err) =>
+		result::Err(copy err) =>
 		{
-			ErrorValue(copy err)
+			ErrorValue(err)
 		}
 	}
 }
@@ -457,9 +457,9 @@ pub fn op_equals(lhs: &Object, rhs: &Object) -> Object
 		{
 			BoolValue(value)
 		}
-		result::Err(err) =>
+		result::Err(copy err) =>
 		{
-			ErrorValue(copy err)
+			ErrorValue(err)
 		}
 	}
 }
@@ -472,9 +472,9 @@ pub fn op_not_equals(lhs: &Object, rhs: &Object) -> Object
 		{
 			BoolValue(!value)
 		}
-		result::Err(err) =>
+		result::Err(copy err) =>
 		{
-			ErrorValue(copy err)
+			ErrorValue(err)
 		}
 	}
 }
@@ -487,9 +487,9 @@ pub fn op_less_than(lhs: &Object, rhs: &Object) -> Object
 		{
 			BoolValue(value < 0)
 		}
-		result::Err(err) =>
+		result::Err(copy err) =>
 		{
-			ErrorValue(copy err)
+			ErrorValue(err)
 		}
 	}
 }
@@ -502,9 +502,9 @@ pub fn op_less_than_or_equal(lhs: &Object, rhs: &Object) -> Object
 		{
 			BoolValue(value <= 0)
 		}
-		result::Err(err) =>
+		result::Err(copy err) =>
 		{
-			ErrorValue(copy err)
+			ErrorValue(err)
 		}
 	}
 }
@@ -517,9 +517,9 @@ pub fn op_greater_than(lhs: &Object, rhs: &Object) -> Object
 		{
 			BoolValue(value > 0)
 		}
-		result::Err(err) =>
+		result::Err(copy err) =>
 		{
-			ErrorValue(copy err)
+			ErrorValue(err)
 		}
 	}
 }
@@ -532,9 +532,9 @@ pub fn op_greater_than_or_equal(lhs: &Object, rhs: &Object) -> Object
 		{
 			BoolValue(value >= 0)
 		}
-		result::Err(err) =>
+		result::Err(copy err) =>
 		{
-			ErrorValue(copy err)
+			ErrorValue(err)
 		}
 	}
 }

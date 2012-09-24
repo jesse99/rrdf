@@ -20,15 +20,15 @@ pub fn expr_to_str(store: &Store, expr: &Expr) -> ~str
 {
 	match *expr
 	{
-		ConstantExpr(o) =>
+		ConstantExpr(ref o) =>
 		{
 			o.to_friendly_str(store.namespaces)
 		}
-		VariableExpr(v) =>
+		VariableExpr(ref v) =>
 		{
-			fmt!("?%s", v)
+			fmt!("?%s", *v)
 		}
-		CallExpr(n, args) | ExtensionExpr(n, args) =>
+		CallExpr(ref n, ref args) | ExtensionExpr(ref n, ref args) =>
 		{
 			n + str::connect(do args.map |a| {expr_to_str(store, a)}, ~", ")
 		}
@@ -39,37 +39,37 @@ pub fn eval_expr(context: &query::QueryContext, bindings: ~[(~str, Object)], exp
 {
 	let result = match *expr
 	{
-		ConstantExpr(value) =>
+		ConstantExpr(copy value) =>
 		{
-			copy value
+			value
 		}
-		VariableExpr(name) =>
+		VariableExpr(copy name) =>
 		{
 			match bindings.search(name)
 			{
-				option::Some(value) =>
+				option::Some(ref value) =>
 				{
-					copy value
+					copy *value
 				}
 				option::None =>
 				{
-					UnboundValue(copy name)
+					UnboundValue(name)
 				}
 			}
 		}
-		ExtensionExpr(fname, args) =>
+		ExtensionExpr(copy fname, ref args) =>
 		{
 			eval_extension(context, bindings, fname, args)
 		}
-		CallExpr(~"if_fn", args) =>				// special case this because it is supposed to short circuit
+		CallExpr(~"if_fn", ref args) =>			// special case this because it is supposed to short circuit
 		{
 			functional_forms::eval_if(context, bindings, args)
 		}
-		CallExpr(~"coalesce_fn", args) =>		// special case this because it is variadic
+		CallExpr(~"coalesce_fn", ref args) =>	// special case this because it is variadic
 		{
 			functional_forms::eval_coalesce(context, bindings, args)
 		}
-		CallExpr(fname, args) =>
+		CallExpr(copy fname, ref args) =>
 		{
 			eval_call(context, bindings, fname, args)
 		}
@@ -84,9 +84,9 @@ type UnaryFn = fn (a1: &Object) -> Object;
 type BinaryFn = fn (a1: &Object, a2: &Object) -> Object;
 type TernaryFn = fn (a1: &Object, a2: &Object, a3: &Object) -> Object;
 
-fn eval_extension(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
+fn eval_extension(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: &~[@Expr]) -> Object
 {
-	let args = do vec::map(args) |a| {eval_expr(context, bindings, a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = do vec::map(*args) |a| {eval_expr(context, bindings, a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match context.extensions.find(@(copy fname))
 	{
 		option::Some(f) =>
@@ -100,9 +100,9 @@ fn eval_extension(context: &query::QueryContext, bindings: ~[(~str, Object)], fn
 	}
 }
 
-fn eval_call(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
+fn eval_call(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: &~[@Expr]) -> Object
 {
-	let args = do vec::map(args) |a| {eval_expr(context, bindings, a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = do vec::map(*args) |a| {eval_expr(context, bindings, a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match fname
 	{
 		// operators
