@@ -2,9 +2,9 @@
 use store::*;
 use object::*;
 
-fn abs_fn(operand: Object) -> Object
+fn abs_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		IntValue(value) =>
 		{
@@ -16,18 +16,18 @@ fn abs_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("ABS: expected numeric but found %?.", operand))
+			ErrorValue(fmt!("ABS: expected numeric but found %?.", *operand))
 		}
 	}
 }
 
-fn round_fn(operand: Object) -> Object
+fn round_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		IntValue(_) =>
 		{
-			operand
+			copy *operand
 		}
 		FloatValue(value) =>
 		{
@@ -35,18 +35,18 @@ fn round_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("ROUND: expected numeric but found %?.", operand))
+			ErrorValue(fmt!("ROUND: expected numeric but found %?.", *operand))
 		}
 	}
 }
 
-fn ceil_fn(operand: Object) -> Object
+fn ceil_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		IntValue(_) =>
 		{
-			operand
+			copy *operand
 		}
 		FloatValue(value) =>
 		{
@@ -54,18 +54,18 @@ fn ceil_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("CEIL: expected numeric but found %?.", operand))
+			ErrorValue(fmt!("CEIL: expected numeric but found %?.", *operand))
 		}
 	}
 }
 
-fn floor_fn(operand: Object) -> Object
+fn floor_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		IntValue(_) =>
 		{
-			operand
+			copy *operand
 		}
 		FloatValue(value) =>
 		{
@@ -73,7 +73,7 @@ fn floor_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("FLOOR: expected numeric but found %?.", operand))
+			ErrorValue(fmt!("FLOOR: expected numeric but found %?.", *operand))
 		}
 	}
 }

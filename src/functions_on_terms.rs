@@ -1,9 +1,9 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 use object::*;
 
-fn isiri_fn(operand: Object) -> Object
+fn isiri_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		IriValue(_name) =>
 		{
@@ -16,9 +16,9 @@ fn isiri_fn(operand: Object) -> Object
 	}
 }
 
-fn isblank_fn(operand: Object) -> Object
+fn isblank_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		BlankValue(_name) =>
 		{
@@ -31,9 +31,9 @@ fn isblank_fn(operand: Object) -> Object
 	}
 }
 
-fn isliteral_fn(operand: Object) -> Object
+fn isliteral_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		BoolValue(*) |  IntValue(*) | FloatValue(*) | DateTimeValue(*) |StringValue(*) | TypedValue(*) =>
 		{
@@ -46,9 +46,9 @@ fn isliteral_fn(operand: Object) -> Object
 	}
 }
 
-fn isnumeric_fn(operand: Object) -> Object
+fn isnumeric_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		IntValue(*) | FloatValue(*) =>
 		{
@@ -61,18 +61,18 @@ fn isnumeric_fn(operand: Object) -> Object
 	}
 }
 
-fn str_fn(operand: Object) -> Object
+fn str_fn(operand: &Object) -> Object
 {
 	StringValue(operand.to_str(), ~"")
 }
 
-fn lang_fn(operand: Object) -> Object
+fn lang_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		StringValue(_value, lang) =>
 		{
-			StringValue(lang, ~"")
+			StringValue(copy lang, ~"")
 		}
 		_ =>
 		{
@@ -81,9 +81,9 @@ fn lang_fn(operand: Object) -> Object
 	}
 }
 
-fn datatype_fn(operand: Object) -> Object
+fn datatype_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		BoolValue(*) =>
 		{
@@ -107,7 +107,7 @@ fn datatype_fn(operand: Object) -> Object
 		}
 		TypedValue(_value, kind) =>
 		{
-			StringValue(kind, ~"")
+			StringValue(copy kind, ~"")
 		}
 		IriValue(*) =>
 		{
@@ -123,17 +123,17 @@ fn datatype_fn(operand: Object) -> Object
 // TODO: add iri_fn
 // TODO: add bnode_fn
 
-fn strdt_fn(lexical: Object, kind: Object) -> Object
+fn strdt_fn(lexical: &Object, kind: &Object) -> Object
 {
-	match lexical
+	match *lexical
 	{
 		BoolValue(*) | IntValue(*) | FloatValue(*) | DateTimeValue(*) | StringValue(*) =>
 		{
-			match kind
+			match *kind
 			{
 				IriValue(value) =>
 				{
-					TypedValue(lexical.to_str(), value)
+					TypedValue(lexical.to_str(), copy value)
 				}
 				_ =>
 				{
@@ -143,18 +143,18 @@ fn strdt_fn(lexical: Object, kind: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("STRDT: expected a simple literal for the first argument but found %?", lexical))
+			ErrorValue(fmt!("STRDT: expected a simple literal for the first argument but found %?", *lexical))
 		}
 	}
 }
 
-fn strlang_fn(lexical: Object, tag: Object) -> Object
+fn strlang_fn(lexical: &Object, tag: &Object) -> Object
 {
-	match lexical
+	match *lexical
 	{
 		BoolValue(*) | IntValue(*) | FloatValue(*) | DateTimeValue(*) | StringValue(*) =>
 		{
-			match tag
+			match *tag
 			{
 				BoolValue(*) | IntValue(*) | FloatValue(*) | DateTimeValue(*) | StringValue(*) =>
 				{
@@ -168,7 +168,7 @@ fn strlang_fn(lexical: Object, tag: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("STRLANG: expected a simple literal for the first argument but found %?", lexical))
+			ErrorValue(fmt!("STRLANG: expected a simple literal for the first argument but found %?", *lexical))
 		}
 	}
 }

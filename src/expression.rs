@@ -12,13 +12,13 @@ pub enum Expr
 {
 	ConstantExpr(Object),
 	VariableExpr(~str),
-	CallExpr(~str, ~[@Expr]),			// function name + arguments
+	CallExpr(~str, ~[@Expr]),		// function name + arguments
 	ExtensionExpr(~str, ~[@Expr])	// function name + arguments
 }
 
-pub fn expr_to_str(store: &Store, expr: Expr) -> ~str
+pub fn expr_to_str(store: &Store, expr: &Expr) -> ~str
 {
-	match expr
+	match *expr
 	{
 		ConstantExpr(o) =>
 		{
@@ -30,18 +30,18 @@ pub fn expr_to_str(store: &Store, expr: Expr) -> ~str
 		}
 		CallExpr(n, args) | ExtensionExpr(n, args) =>
 		{
-			n + str::connect(do args.map |a| {expr_to_str(store, *a)}, ~", ")
+			n + str::connect(do args.map |a| {expr_to_str(store, a)}, ~", ")
 		}
 	}
 }
 
-pub fn eval_expr(context: &query::QueryContext, bindings: ~[(~str, Object)], expr: Expr) -> Object
+pub fn eval_expr(context: &query::QueryContext, bindings: ~[(~str, Object)], expr: &Expr) -> Object
 {
-	let result = match expr
+	let result = match *expr
 	{
 		ConstantExpr(value) =>
 		{
-			value
+			copy value
 		}
 		VariableExpr(name) =>
 		{
@@ -49,11 +49,11 @@ pub fn eval_expr(context: &query::QueryContext, bindings: ~[(~str, Object)], exp
 			{
 				option::Some(value) =>
 				{
-					value
+					copy value
 				}
 				option::None =>
 				{
-					UnboundValue(name)
+					UnboundValue(copy name)
 				}
 			}
 		}
@@ -80,18 +80,18 @@ pub fn eval_expr(context: &query::QueryContext, bindings: ~[(~str, Object)], exp
 }
 
 // ---- Internal Functions ----------------------------------------------------
-type UnaryFn = fn (Object) -> Object;
-type BinaryFn = fn (Object, Object) -> Object;
-type TernaryFn = fn (Object, Object, Object) -> Object;
+type UnaryFn = fn (a1: &Object) -> Object;
+type BinaryFn = fn (a1: &Object, a2: &Object) -> Object;
+type TernaryFn = fn (a1: &Object, a2: &Object, a3: &Object) -> Object;
 
 fn eval_extension(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
-	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
-	match context.extensions.find(@fname)
+	let args = do vec::map(args) |a| {eval_expr(context, bindings, a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	match context.extensions.find(@(copy fname))
 	{
 		option::Some(f) =>
 		{
-			f(context.namespaces, &args)
+			f(&context.namespaces, &args)
 		}
 		option::None =>
 		{
@@ -102,7 +102,7 @@ fn eval_extension(context: &query::QueryContext, bindings: ~[(~str, Object)], fn
 
 fn eval_call(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: ~[@Expr]) -> Object
 {
-	let args = do vec::map(args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = do vec::map(args) |a| {eval_expr(context, bindings, a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match fname
 	{
 		// operators
@@ -331,7 +331,7 @@ fn eval_call1(fname: ~str, fp: @UnaryFn, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 1u
 	{
-		(*fp)(args[0])
+		(*fp)(&args[0])
 	}
 	else
 	{
@@ -343,7 +343,7 @@ fn eval_call2(fname: ~str, fp: @BinaryFn, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 2u
 	{
-		(*fp)(args[0], args[1])
+		(*fp)(&args[0], &args[1])
 	}
 	else
 	{
@@ -362,7 +362,7 @@ fn eval_call3(fname: ~str, fp: @TernaryFn, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 3u
 	{
-		(*fp)(args[0], args[1], args[2])
+		(*fp)(&args[0], &args[1], &args[2])
 	}
 	else
 	{

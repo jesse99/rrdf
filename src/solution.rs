@@ -79,7 +79,7 @@ impl  &Solution : SolutionMethods
 							return false;
 						}
 						
-						let r = operators::compare_values(~"sort", xx.second(), y[i].second());
+						let r = operators::compare_values(~"sort", &xx.second(), &y[i].second());
 						if r == result::Ok(-1)
 						{
 							return true;

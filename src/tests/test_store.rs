@@ -30,7 +30,7 @@ fn iteration()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, *triple);
+		vec::push(actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -62,7 +62,7 @@ fn references()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, *triple);
+		vec::push(actual, copy *triple);
 	};
 	
 	// The store will have full URIs (make_triple_* does the expansion as well).
@@ -85,7 +85,7 @@ fn blank_nodes()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, *triple);
+		vec::push(actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -121,7 +121,7 @@ fn container()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, *triple);
+		vec::push(actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -143,7 +143,7 @@ fn list0()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, *triple);
+		vec::push(actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -164,7 +164,7 @@ fn list1()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, *triple);
+		vec::push(actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -189,7 +189,7 @@ fn reify()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, *triple);
+		vec::push(actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -214,7 +214,7 @@ fn replace()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, *triple);
+		vec::push(actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -234,8 +234,8 @@ fn trivial_bgp()
 		~[(~"age", IntValue(18i64))]
 	]};
 	
-	assert check_bgp(~[group1, group2], Solution {namespaces: ~[], rows: ~[]});
-	assert check_bgp(~[group2, group1], Solution {namespaces: ~[], rows: ~[]});
+	assert check_bgp(~[copy group1, copy group2], &Solution {namespaces: ~[], rows: ~[]});
+	assert check_bgp(~[copy group2, copy group1], &Solution {namespaces: ~[], rows: ~[]});
 }
 
 #[test]
@@ -249,10 +249,10 @@ fn identical_bgp()
 		~[(~"age", IntValue(25i64))],
 		~[(~"age", IntValue(18i64))]
 	]};
-	let expected = group2;
+	let expected = copy group2;
 	
-	assert check_bgp(~[group1, group2], expected);
-	assert check_bgp(~[group2, group1], expected);
+	assert check_bgp(~[copy group1, copy group2], &expected);
+	assert check_bgp(~[copy group2, copy group1], &expected);
 }
 
 #[test]
@@ -273,8 +273,8 @@ fn disjoint1_bgp()
 		~[(~"age", IntValue(25i64)), (~"name", StringValue(~"Ted", ~""))]
 	]};
 	
-	assert check_bgp(~[group1, group2], expected);
-	assert check_bgp(~[group2, group1], expected);
+	assert check_bgp(~[copy group1, copy group2], &expected);
+	assert check_bgp(~[copy group2, copy group1], &expected);
 }
 
 #[test]
@@ -295,8 +295,8 @@ fn disjoint2_bgp()
 		~[(~"age", IntValue(25i64)), (~"id", StringValue(~"ttt", ~"")), (~"job", StringValue(~"cowboy", ~"")), (~"name", StringValue(~"Ted", ~""))]
 	]};
 	
-	assert check_bgp(~[group1, group2], expected);
-	assert check_bgp(~[group2, group1], expected);
+	assert check_bgp(~[copy group1, copy group2], &expected);
+	assert check_bgp(~[copy group2, copy group1], &expected);
 }
 
 #[test]
@@ -318,8 +318,8 @@ fn asymmetric_bgp()
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
 	]};
 	
-	assert check_bgp(~[group1, group2], expected);
-	assert check_bgp(~[group2, group1], expected);
+	assert check_bgp(~[copy group1, copy group2], &expected);
+	assert check_bgp(~[copy group2, copy group1], &expected);
 }
 
 #[test]
@@ -340,8 +340,8 @@ fn symmetric_bgp()
 		~[(~"age", IntValue(18i64)), (~"name", StringValue(~"Ted", ~""))]
 	]};
 	
-	assert check_bgp(~[group1, group2], expected);
-	assert check_bgp(~[group2, group1], expected);
+	assert check_bgp(~[copy group1, copy group2], &expected);
+	assert check_bgp(~[copy group2, copy group1], &expected);
 }
 
 #[test]
@@ -362,8 +362,8 @@ fn path_bgp()
 		~[(~"age", IntValue(18i64)), (~"id", StringValue(~"ttt", ~"")), (~"name", StringValue(~"Ted", ~""))]
 	]};
 	
-	assert check_bgp(~[group1, group2], expected);
-	assert check_bgp(~[group2, group1], expected);
+	assert check_bgp(~[copy group1, copy group2], &expected);
+	assert check_bgp(~[copy group2, copy group1], &expected);
 }
 
 #[test]
@@ -381,8 +381,8 @@ fn incompatible_bgp()
 	]};
 	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
-	assert check_bgp(~[group1, group2], expected);
-	assert check_bgp(~[group2, group1], expected);
+	assert check_bgp(~[copy group1, copy group2], &expected);
+	assert check_bgp(~[copy group2, copy group1], &expected);
 }
 
 #[test]
@@ -400,8 +400,8 @@ fn multiple_bgp()
 	]};
 	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
-	assert check_bgp(~[group1, group2], expected);
-	assert check_bgp(~[group2, group1], expected);
+	assert check_bgp(~[copy group1, copy group2], &expected);
+	assert check_bgp(~[copy group2, copy group1], &expected);
 }
 
 #[test]

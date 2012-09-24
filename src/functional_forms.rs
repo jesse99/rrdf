@@ -2,9 +2,9 @@
 use store::*;
 use object::*;
 
-fn bound_fn(operand: Object) -> Object
+fn bound_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		UnboundValue(_name) =>
 		{
@@ -21,16 +21,16 @@ fn eval_if(context: &query::QueryContext, bindings: ~[(~str, Object)], args: ~[@
 {
 	if vec::len(args) == 3u
 	{
-		let predicate = expression::eval_expr(context, bindings, *args[0]);
-		match get_ebv(predicate)
+		let predicate = expression::eval_expr(context, bindings, args[0]);
+		match get_ebv(&predicate)
 		{
 			result::Ok(true) =>
 			{
-				expression::eval_expr(context, bindings, *args[1])
+				expression::eval_expr(context, bindings, args[1])
 			}
 			result::Ok(false) =>
 			{
-				expression::eval_expr(context, bindings, *args[2])
+				expression::eval_expr(context, bindings, args[2])
 			}
 			result::Err(err) =>
 			{
@@ -56,7 +56,7 @@ fn eval_coalesce(context: &query::QueryContext, bindings: ~[(~str, Object)], arg
 	for vec::each(args)
 	|arg|
 	{
-		let candidate = expression::eval_expr(context, bindings, **arg);
+		let candidate = expression::eval_expr(context, bindings, *arg);
 		match candidate
 		{
 			UnboundValue(*) | InvalidValue(*) | ErrorValue(*) =>
@@ -73,13 +73,13 @@ fn eval_coalesce(context: &query::QueryContext, bindings: ~[(~str, Object)], arg
 	return ErrorValue(~"COALESCE: all arguments failed to evaluate");
 }
 
-fn sameterm_fn(lhs: Object, rhs: Object) -> Object
+fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
 {
-	match lhs
+	match *lhs
 	{
 		BoolValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				BoolValue(rvalue) =>
 				{
@@ -93,7 +93,7 @@ fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 		}
 		IntValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -107,7 +107,7 @@ fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 		}
 		FloatValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				FloatValue(rvalue) =>
 				{
@@ -121,7 +121,7 @@ fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 		}
 		DateTimeValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				DateTimeValue(rvalue) =>
 				{
@@ -135,7 +135,7 @@ fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 		}
 		StringValue(lvalue, llang) =>
 		{
-			match rhs
+			match *rhs
 			{
 				StringValue(rvalue, rlang) =>		// TODO: when we introduce type codes we'll need to check them here
 				{
@@ -149,7 +149,7 @@ fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 		}
 		TypedValue(lvalue, ltype) =>
 		{
-			match rhs
+			match *rhs
 			{
 				TypedValue(rvalue, rtype) =>
 				{
@@ -163,7 +163,7 @@ fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 		}
 		IriValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IriValue(rvalue) =>
 				{
@@ -177,7 +177,7 @@ fn sameterm_fn(lhs: Object, rhs: Object) -> Object
 		}
 		BlankValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				BlankValue(rvalue) =>
 				{

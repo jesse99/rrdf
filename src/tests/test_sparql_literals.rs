@@ -23,7 +23,7 @@ fn string1_match()
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -35,7 +35,7 @@ fn string2_match()
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -51,7 +51,7 @@ fn long_string1_match()
 		~[(~"s", IriValue(got(~"Some_Guy"))), (~"p", IriValue(v(~"fn")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn long_string2_match()
 		~[(~"s", IriValue(got(~"Some_Guy"))), (~"p", IriValue(v(~"fn")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 fn fancy_types() -> Store
@@ -91,7 +91,7 @@ fn language_tags()
 		~[(~"s", IriValue(~"http://blah#Jones"))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -105,7 +105,7 @@ fn iri_match()
 		~[(~"s", IriValue(got(~"Sandor_Clegane")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 // This represents a special case in iterate_matches.
@@ -119,7 +119,7 @@ fn subject_match()
 		~[(~"p", IriValue(v(~"nickname")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -129,7 +129,7 @@ fn strings_dont_match_uris()
 	let store = test_data::got_cast3();
 	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -141,7 +141,7 @@ fn typed_literal_match()
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -160,7 +160,7 @@ WHERE
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -180,7 +180,7 @@ fn int_literal()
 		~[(~"s", IriValue(got(~"Some_Guy")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -195,7 +195,7 @@ fn signed_int_literal()
 		~[(~"s", IriValue(got(~"Another_Guy")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -211,7 +211,7 @@ fn decimal_literal()
 		~[(~"s", IriValue(got(~"Some_Guy")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -230,7 +230,7 @@ fn signed_decimal_literal()
 		~[(~"s", IriValue(got(~"Another_Guy")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -250,7 +250,7 @@ fn double_literal()
 		~[(~"s", IriValue(got(~"Some_Guy")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -269,7 +269,7 @@ fn boolean_literal()
 		~[(~"s", IriValue(got(~"A_Woman")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -293,5 +293,5 @@ fn datetime()
 		~[(~"s", IriValue(got(~"Some_Guy")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }

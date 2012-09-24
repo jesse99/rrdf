@@ -3,13 +3,13 @@ use object::*;
 
 // Operators used within SPARQL FILTER expressions. See 17.2 and related.
 	
-pub fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<bool, ~str>
+pub fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Result<bool, ~str>
 {
-	match lhs
+	match *lhs
 	{
 		BoolValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				BoolValue(rvalue) =>
 				{
@@ -23,7 +23,7 @@ pub fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<
 		}
 		IntValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -41,7 +41,7 @@ pub fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<
 		}
 		FloatValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -59,7 +59,7 @@ pub fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<
 		}
 		DateTimeValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				DateTimeValue(rvalue) =>
 				{
@@ -73,7 +73,7 @@ pub fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<
 		}
 		StringValue(lvalue, llang) =>
 		{
-			match rhs
+			match *rhs
 			{
 				StringValue(rvalue, rlang) =>
 				{
@@ -87,7 +87,7 @@ pub fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<
 		}
 		TypedValue(lvalue, ltype) =>
 		{
-			match rhs
+			match *rhs
 			{
 				TypedValue(rvalue, rtype) =>
 				{
@@ -101,7 +101,7 @@ pub fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<
 		}
 		IriValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IriValue(rvalue) =>
 				{
@@ -115,7 +115,7 @@ pub fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<
 		}
 		BlankValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				BlankValue(rvalue) =>
 				{
@@ -135,13 +135,13 @@ pub fn equal_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<
 }
 
 // See 15.1
-pub fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Result<int, ~str>
+pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Result<int, ~str>
 {
-	match lhs
+	match *lhs
 	{
 		IntValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -164,7 +164,7 @@ pub fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Resul
 		}
 		FloatValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -187,7 +187,7 @@ pub fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Resul
 		}
 		DateTimeValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				DateTimeValue(rvalue) =>
 				{
@@ -211,7 +211,7 @@ pub fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Resul
 		}
 		StringValue(lvalue, llang) =>
 		{
-			match rhs
+			match *rhs
 			{
 				StringValue(rvalue, rlang) =>
 				{
@@ -235,7 +235,7 @@ pub fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Resul
 		}
 		TypedValue(lvalue, ltype) =>
 		{
-			match rhs
+			match *rhs
 			{
 				TypedValue(rvalue, rtype) =>
 				{
@@ -257,7 +257,7 @@ pub fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Resul
 		}
 		IriValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IriValue(rvalue) =>
 				{
@@ -279,7 +279,7 @@ pub fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Resul
 		}
 		UnboundValue(_) =>
 		{
-			match rhs
+			match *rhs
 			{
 				UnboundValue(_) =>
 				{
@@ -293,7 +293,7 @@ pub fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Resul
 		}
 		BlankValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				UnboundValue(_) =>
 				{
@@ -321,7 +321,7 @@ pub fn compare_values(operator: ~str, lhs: Object, rhs: Object) -> result::Resul
 }
 
 // ---- Unary Operators -------------------------------------------------------
-pub fn op_not(operand: Object) -> Object
+pub fn op_not(operand: &Object) -> Object
 {
 	match get_ebv(operand)
 	{
@@ -331,22 +331,22 @@ pub fn op_not(operand: Object) -> Object
 		}
 		result::Err(err) =>
 		{
-			ErrorValue(err)
+			ErrorValue(copy err)
 		}
 	}
 }
 
-pub fn op_unary_plus(operand: Object) -> Object
+pub fn op_unary_plus(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		IntValue(_) =>
 		{
-			operand
+			copy *operand
 		}
 		FloatValue(_) =>
 		{
-			operand
+			copy *operand
 		}
 		_ =>
 		{
@@ -355,9 +355,9 @@ pub fn op_unary_plus(operand: Object) -> Object
 	}
 }
 
-pub fn op_unary_minus(operand: Object) -> Object
+pub fn op_unary_minus(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		IntValue(value) =>
 		{
@@ -375,7 +375,7 @@ pub fn op_unary_minus(operand: Object) -> Object
 }
 
 // ---- Binary Operators -------------------------------------------------------
-pub fn op_or(lhs: Object, rhs: Object) -> Object
+pub fn op_or(lhs: &Object, rhs: &Object) -> Object
 {
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
@@ -412,7 +412,7 @@ pub fn op_or(lhs: Object, rhs: Object) -> Object
 	}
 }
 
-pub fn op_and(lhs: Object, rhs: Object) -> Object
+pub fn op_and(lhs: &Object, rhs: &Object) -> Object
 {
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
@@ -449,7 +449,7 @@ pub fn op_and(lhs: Object, rhs: Object) -> Object
 	}
 }
 
-pub fn op_equals(lhs: Object, rhs: Object) -> Object
+pub fn op_equals(lhs: &Object, rhs: &Object) -> Object
 {
 	match equal_values(~"=", lhs, rhs)
 	{
@@ -459,12 +459,12 @@ pub fn op_equals(lhs: Object, rhs: Object) -> Object
 		}
 		result::Err(err) =>
 		{
-			ErrorValue(err)
+			ErrorValue(copy err)
 		}
 	}
 }
 
-pub fn op_not_equals(lhs: Object, rhs: Object) -> Object
+pub fn op_not_equals(lhs: &Object, rhs: &Object) -> Object
 {
 	match equal_values(~"!=", lhs, rhs)
 	{
@@ -474,12 +474,12 @@ pub fn op_not_equals(lhs: Object, rhs: Object) -> Object
 		}
 		result::Err(err) =>
 		{
-			ErrorValue(err)
+			ErrorValue(copy err)
 		}
 	}
 }
 
-pub fn op_less_than(lhs: Object, rhs: Object) -> Object
+pub fn op_less_than(lhs: &Object, rhs: &Object) -> Object
 {
 	match compare_values(~"<", lhs, rhs)
 	{
@@ -489,12 +489,12 @@ pub fn op_less_than(lhs: Object, rhs: Object) -> Object
 		}
 		result::Err(err) =>
 		{
-			ErrorValue(err)
+			ErrorValue(copy err)
 		}
 	}
 }
 
-pub fn op_less_than_or_equal(lhs: Object, rhs: Object) -> Object
+pub fn op_less_than_or_equal(lhs: &Object, rhs: &Object) -> Object
 {
 	match compare_values(~"<=", lhs, rhs)
 	{
@@ -504,12 +504,12 @@ pub fn op_less_than_or_equal(lhs: Object, rhs: Object) -> Object
 		}
 		result::Err(err) =>
 		{
-			ErrorValue(err)
+			ErrorValue(copy err)
 		}
 	}
 }
 
-pub fn op_greater_than(lhs: Object, rhs: Object) -> Object
+pub fn op_greater_than(lhs: &Object, rhs: &Object) -> Object
 {
 	match compare_values(~">", lhs, rhs)
 	{
@@ -519,12 +519,12 @@ pub fn op_greater_than(lhs: Object, rhs: Object) -> Object
 		}
 		result::Err(err) =>
 		{
-			ErrorValue(err)
+			ErrorValue(copy err)
 		}
 	}
 }
 
-pub fn op_greater_than_or_equal(lhs: Object, rhs: Object) -> Object
+pub fn op_greater_than_or_equal(lhs: &Object, rhs: &Object) -> Object
 {
 	match compare_values(~">=", lhs, rhs)
 	{
@@ -534,18 +534,18 @@ pub fn op_greater_than_or_equal(lhs: Object, rhs: Object) -> Object
 		}
 		result::Err(err) =>
 		{
-			ErrorValue(err)
+			ErrorValue(copy err)
 		}
 	}
 }
 
-pub fn op_multiply(lhs: Object, rhs: Object) -> Object
+pub fn op_multiply(lhs: &Object, rhs: &Object) -> Object
 {
-	match lhs
+	match *lhs
 	{
 		IntValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -564,7 +564,7 @@ pub fn op_multiply(lhs: Object, rhs: Object) -> Object
 		}
 		FloatValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -588,13 +588,13 @@ pub fn op_multiply(lhs: Object, rhs: Object) -> Object
 	}
 }
 
-pub fn op_divide(lhs: Object, rhs: Object) -> Object
+pub fn op_divide(lhs: &Object, rhs: &Object) -> Object
 {
-	match lhs
+	match *lhs
 	{
 		IntValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(0i64) =>
 				{
@@ -617,7 +617,7 @@ pub fn op_divide(lhs: Object, rhs: Object) -> Object
 		}
 		FloatValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -641,13 +641,13 @@ pub fn op_divide(lhs: Object, rhs: Object) -> Object
 	}
 }
 
-pub fn op_add(lhs: Object, rhs: Object) -> Object
+pub fn op_add(lhs: &Object, rhs: &Object) -> Object
 {
-	match lhs
+	match *lhs
 	{
 		IntValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -666,7 +666,7 @@ pub fn op_add(lhs: Object, rhs: Object) -> Object
 		}
 		FloatValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -690,13 +690,13 @@ pub fn op_add(lhs: Object, rhs: Object) -> Object
 	}
 }
 
-pub fn op_subtract(lhs: Object, rhs: Object) -> Object
+pub fn op_subtract(lhs: &Object, rhs: &Object) -> Object
 {
-	match lhs
+	match *lhs
 	{
 		IntValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{
@@ -715,7 +715,7 @@ pub fn op_subtract(lhs: Object, rhs: Object) -> Object
 		}
 		FloatValue(lvalue) =>
 		{
-			match rhs
+			match *rhs
 			{
 				IntValue(rvalue) =>
 				{

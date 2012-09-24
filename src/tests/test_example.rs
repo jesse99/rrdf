@@ -146,6 +146,6 @@ fn query_monsters()
 		~[(~"name", StringValue(~"Mummy", ~"")), (~"weight", IntValue(2))],
 		~[(~"name", StringValue(~"Necromancer", ~"")), (~"weight", IntValue(2))],
 	]};
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 

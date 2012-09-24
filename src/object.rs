@@ -175,7 +175,7 @@ impl Object
 		{
 			DateTimeValue(value) =>
 			{
-				value
+				copy value
 			}
 			_ =>
 			{
@@ -190,7 +190,7 @@ impl Object
 		{
 			StringValue(value, _lang) =>
 			{
-				value
+				copy value
 			}
 			_ =>
 			{
@@ -205,7 +205,7 @@ impl Object
 		{
 			IriValue(value) =>
 			{
-				value
+				copy value
 			}
 			_ =>
 			{
@@ -332,7 +332,7 @@ impl Object
 		{
 			DateTimeValue(value) =>
 			{
-				value
+				copy value
 			}
 			_ =>
 			{
@@ -347,11 +347,11 @@ impl Object
 		{
 			StringValue(value, _lang) =>
 			{
-				value
+				copy value
 			}
 			_ =>
 			{
-				default
+				copy default
 			}
 		}
 	}
@@ -362,11 +362,11 @@ impl Object
 		{
 			IriValue(value) =>
 			{
-				value
+				copy value
 			}
 			_ =>
 			{
-				default
+				copy default
 			}
 		}
 	}
@@ -446,7 +446,7 @@ impl  Object : ToStr
 			}
 			BlankValue(value) =>
 			{
-				value
+				copy value
 			}
 			UnboundValue(name) =>
 			{
@@ -458,7 +458,7 @@ impl  Object : ToStr
 			}
 			ErrorValue(err) =>
 			{
-				err
+				copy err
 			}
 		}
 	}
@@ -473,17 +473,17 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 	{
 		(v, @~"blank", @~"") =>
 		{
-			BlankValue(*v)
+			BlankValue(copy *v)
 		}
 		(v, @~"http://www.w3.org/2001/XMLSchema#anyURI", @~"") =>
 		{
 			if str::starts_with(*v, "_:")
 			{
-				BlankValue(*v)
+				BlankValue(copy *v)
 			}
 			else
 			{
-				IriValue(*v)
+				IriValue(copy *v)
 			}
 		}
 		(v, @~"http://www.w3.org/2001/XMLSchema#boolean", @~"") =>
@@ -498,7 +498,7 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 			}
 			else
 			{
-				InvalidValue(*v, *kind)
+				InvalidValue(copy *v, copy *kind)
 			}
 		}
 		(v, @~"http://www.w3.org/2001/XMLSchema#dateTime", @~"") =>
@@ -518,7 +518,7 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 			{
 				result::Ok(time) =>
 				{
-					DateTimeValue(time)
+					DateTimeValue(copy time)
 				}
 				result::Err(_) =>
 				{
@@ -557,7 +557,7 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 					}
 					else
 					{
-						InvalidValue(*v, *kind)
+						InvalidValue(copy *v, copy *kind)
 					}
 				}
 			}
@@ -579,7 +579,7 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 					}
 					else
 					{
-						InvalidValue(*v, *kind)
+						InvalidValue(copy *v, copy *kind)
 					}
 				}
 			}
@@ -592,11 +592,11 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 		(v, @~"http://www.w3.org/2001/XMLSchema#NCName", l) |
 		(v, @~"http://www.w3.org/2001/XMLSchema#ID", l) =>
 		{
-			StringValue(*v, *l)
+			StringValue(copy *v, copy *l)
 		}
 		(v, k, @~"") =>
 		{
-			TypedValue(*v, *k)
+			TypedValue(copy *v, copy *k)
 		}
 		_ =>
 		{
@@ -607,9 +607,9 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 }
 
 // Effective boolean value, see 17.2.2
-pure fn get_ebv(operand: Object) -> result::Result<bool, ~str>
+pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
 {
-	match operand
+	match *operand
 	{
 		InvalidValue(_literal, _type) =>
 		{
@@ -637,7 +637,7 @@ pure fn get_ebv(operand: Object) -> result::Result<bool, ~str>
 		}
 		ErrorValue(err) =>
 		{
-			result::Err(err)
+			result::Err(copy err)
 		}
 		_ =>
 		{
@@ -646,9 +646,9 @@ pure fn get_ebv(operand: Object) -> result::Result<bool, ~str>
 	}
 }
 
-fn type_error(fname: ~str, operand: Object, expected: ~str) -> ~str
+fn type_error(fname: ~str, operand: &Object, expected: ~str) -> ~str
 {
-	match operand
+	match *operand
 	{
 		UnboundValue(name) =>
 		{
@@ -664,7 +664,7 @@ fn type_error(fname: ~str, operand: Object, expected: ~str) -> ~str
 		}
 		_ =>
 		{
-			fmt!("%s: expected %s value but found %?.", fname, expected, operand)
+			fmt!("%s: expected %s value but found %?.", fname, expected, *operand)
 		}
 	}
 }

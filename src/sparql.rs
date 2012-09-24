@@ -44,24 +44,24 @@ fn iri_literal(value: @~str) -> Pattern
 	Constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#anyURI", @~""))
 }
 
-fn pattern_to_expr(pattern: Pattern) -> expression::Expr
+fn pattern_to_expr(pattern: &Pattern) -> expression::Expr
 {
-	match pattern
+	match *pattern
 	{
 		Variable(name) =>
 		{
-			expression::VariableExpr(name)
+			expression::VariableExpr(copy name)
 		}
 		Constant(value) =>
 		{
-			expression::ConstantExpr(value)
+			expression::ConstantExpr(copy value)
 		}
 	}
 }
 
-fn expand_expr(namespaces: ~[Namespace], expr: expression::Expr) -> expression::Expr
+fn expand_expr(namespaces: ~[Namespace], expr: &expression::Expr) -> expression::Expr
 {
-	match expr
+	match *expr
 	{
 		expression::ConstantExpr(IriValue(value)) =>
 		{
@@ -69,22 +69,22 @@ fn expand_expr(namespaces: ~[Namespace], expr: expression::Expr) -> expression::
 		}
 		expression::ConstantExpr(TypedValue(value, kind)) =>
 		{
-			expression::ConstantExpr(literal_to_object(@value, @expand_uri(namespaces, kind), @~""))
+			expression::ConstantExpr(literal_to_object(@copy value, @expand_uri(namespaces, kind), @~""))
 		}
 		expression::CallExpr(fname, expressions) =>
 		{
-			expression::CallExpr(fname, vec::map(expressions, |e| {@expand_expr(namespaces, *e)}))
+			expression::CallExpr(copy fname, vec::map(expressions, |e| {@expand_expr(namespaces, e)}))
 		}
 		_ =>
 		{
-			expr
+			copy *expr
 		}
 	}
 }
 
-fn expand_pattern(namespaces: ~[Namespace], pattern: Pattern) -> Pattern
+fn expand_pattern(namespaces: ~[Namespace], pattern: &Pattern) -> Pattern
 {
-	match pattern
+	match *pattern
 	{
 		Constant(IriValue(value)) =>
 		{
@@ -92,41 +92,41 @@ fn expand_pattern(namespaces: ~[Namespace], pattern: Pattern) -> Pattern
 		}
 		Constant(TypedValue(value, kind)) =>
 		{
-			Constant(literal_to_object(@value, @expand_uri(namespaces, kind), @~""))
+			Constant(literal_to_object(@copy value, @expand_uri(namespaces, kind), @~""))
 		}
 		_ =>
 		{
-			pattern
+			copy *pattern
 		}
 	}
 }
 
-fn expand_triple(namespaces: ~[Namespace], tp: TriplePattern) -> TriplePattern
+fn expand_triple(namespaces: ~[Namespace], tp: &TriplePattern) -> TriplePattern
 {
-	{subject: expand_pattern(namespaces, tp.subject), predicate: expand_pattern(namespaces, tp.predicate), object: expand_pattern(namespaces, tp.object)}
+	{subject: expand_pattern(namespaces, &tp.subject), predicate: expand_pattern(namespaces, &tp.predicate), object: expand_pattern(namespaces, &tp.object)}
 }
 
-fn expand(namespaces: ~[Namespace], algebra: Algebra) -> Algebra
+fn expand(namespaces: ~[Namespace], algebra: &Algebra) -> Algebra
 {
-	match algebra
+	match *algebra
 	{
-		Basic(pattern) =>
+		Basic(ref pattern) =>
 		{
 			Basic(expand_triple(namespaces, pattern))
 		}
 		Group(terms) =>
 		{
-			Group(vec::map(terms, |term| {@expand(namespaces, *term)}))
+			Group(vec::map(terms, |term| {@expand(namespaces, term)}))
 		}
 		Optional(term) =>
 		{
-			Optional(@expand(namespaces, *term))
+			Optional(@expand(namespaces, term))
 		}
-		Bind(expr, name) =>
+		Bind(ref expr, name) =>
 		{
-			Bind(expand_expr(namespaces, expr), name)
+			Bind(expand_expr(namespaces, expr), copy name)
 		}
-		Filter(expr) =>
+		Filter(ref expr) =>
 		{
 			Filter(expand_expr(namespaces, expr))
 		}
@@ -144,7 +144,7 @@ fn find_dupes(names: ~[~str]) -> ~[~str]
 	{
 		if i+1u < vec::len(names) && name == names[i+1u] && !vec::contains(dupes, name)
 		{
-			vec::push(dupes, name);
+			vec::push(dupes, copy name);
 		}
 	};
 	
@@ -540,8 +540,8 @@ fn binary_expr(term: Parser<expression::Expr>, ops: ~[{oname: ~str, fname: ~str}
 				do vec::foldl(b, *r)
 				|lhs, rhs|
 				{
-					let (i, Right) = rhs;
-					expression::CallExpr(ops[i].fname, ~[@lhs, @Right])
+					let (i, Right) = copy rhs;
+					expression::CallExpr(copy ops[i].fname, ~[@copy lhs, @copy Right])
 				}
 			)
 		}
@@ -564,8 +564,8 @@ fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) -> Pa
 	let ternary = seq7("(".lit().ws(), Expression, ",".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), |_a0, a1, _a2, a3, _a4, a5, _a6| {result::Ok(~[a1, a3, a5])});
 	let variadic = seq3_ret1("(".lit().ws(), Expression.list(",".lit().ws()), ")".lit().ws());
 	
-	macro_rules! unary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), unary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@a]))}) })
-	macro_rules! binary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), binary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@a[0], @a[1]]))}) })
+	macro_rules! unary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), unary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@copy a]))}) })
+	macro_rules! binary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), binary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@copy a[0], @copy a[1]]))}) })
 
 	// [111] BuiltInCall ::= 
 	or_v(@~[
@@ -582,7 +582,7 @@ fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) -> Pa
 		unary_fn!("datatype"),
 		
 		// |	'BOUND' '(' Var ')' 
-		do seq2("BOUND".liti().ws(), var)	|_f, a0| {result::Ok(expression::CallExpr(~"bound_fn", ~[@expression::VariableExpr(*a0)]))},
+		do seq2("BOUND".liti().ws(), var)	|_f, a0| {result::Ok(expression::CallExpr(~"bound_fn", ~[@expression::VariableExpr(copy *a0)]))},
 		
 		// |	'IRI' '(' Expression ')' 
 		// |	'URI' '(' Expression ')' 
@@ -604,11 +604,11 @@ fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) -> Pa
 		unary_fn!("round"),
 		
 		// |	'CONCAT' ExpressionList 
-		do seq2("CONCAT".liti().ws(), variadic)	|_f, a| {result::Ok(expression::CallExpr(~"concat_fn", vec::map(*a, {|e| @e})))},
+		do seq2("CONCAT".liti().ws(), variadic)	|_f, a| {result::Ok(expression::CallExpr(~"concat_fn", vec::map(*a, {|e| @copy e})))},
 		
 		// |	SubstringExpression 
-		do seq2("substr".liti().ws(), binary)	|_f, a| {result::Ok(expression::CallExpr(~"substr2_fn", ~[@a[0], @a[1]]))},
-		do seq2("substr".liti().ws(), ternary)	|_f, a| {result::Ok(expression::CallExpr(~"substr3_fn", ~[@a[0], @a[1], @a[2]]))},
+		do seq2("substr".liti().ws(), binary)	|_f, a| {result::Ok(expression::CallExpr(~"substr2_fn", ~[@copy a[0], @copy a[1]]))},
+		do seq2("substr".liti().ws(), ternary)	|_f, a| {result::Ok(expression::CallExpr(~"substr3_fn", ~[@copy a[0], @copy a[1], @copy a[2]]))},
 		
 		// |	'STRLEN' '(' Expression ')' 
 		unary_fn!("strlen"),
@@ -672,10 +672,10 @@ fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) -> Pa
 		// |	'SHA512' '(' Expression ')' 
 		
 		// |	'COALESCE' ExpressionList 
-		do seq2("COALESCE".liti().ws(), variadic)	|_f, a| {result::Ok(expression::CallExpr(~"coalesce_fn", vec::map(*a, {|e| @e})))},
+		do seq2("COALESCE".liti().ws(), variadic)	|_f, a| {result::Ok(expression::CallExpr(~"coalesce_fn", vec::map(*a, {|e| @copy e})))},
 		
 		// |	'IF' '(' Expression ',' Expression ',' Expression ')' 
-		do seq2("IF".liti().ws(), ternary)	|_f, a| {result::Ok(expression::CallExpr(~"if_fn", ~[@a[0], @a[1], @a[2]]))},
+		do seq2("IF".liti().ws(), ternary)	|_f, a| {result::Ok(expression::CallExpr(~"if_fn", ~[@copy a[0], @copy a[1], @copy a[2]]))},
 		
 		// |	'STRLANG' '(' Expression ',' Expression ')' 
 		binary_fn!("strlang"),
@@ -846,8 +846,8 @@ fn make_parser() -> Parser<Selector>
 	
 	// [118] IRIrefOrFunction ::= IRIref ArgList?
 	let IRIrefOrFunction1 = do seq2(IRIref, ArgList)
-		|i, a| {result::Ok(expression::ExtensionExpr(*i, vec::map(*a, |x| {@x})))};
-	let IRIrefOrFunction2 = do IRIref.thene |v| {ret(expression::ConstantExpr(IriValue(*v)))};
+		|i, a| {result::Ok(expression::ExtensionExpr(copy *i, vec::map(*a, |x| {@copy x})))};
+	let IRIrefOrFunction2 = do IRIref.thene |v| {ret(expression::ConstantExpr(IriValue(copy *v)))};
 	let IRIrefOrFunction = (IRIrefOrFunction1.or(IRIrefOrFunction2));
 	
 	// [98] Var ::= VAR1 | VAR2
@@ -864,10 +864,10 @@ fn make_parser() -> Parser<Selector>
 		BrackettedExpression_ref,
 		IRIrefOrFunction,
 		BuiltInCall,
-		do RDFLiteral.thene |v| {ret(pattern_to_expr(v))},
+		do RDFLiteral.thene |v| {ret(pattern_to_expr(&v))},
 		do NumericLiteral.thene |v| {ret(expression::ConstantExpr(v))},
-		do Var.thene |v| {ret(expression::VariableExpr(*v))},
-		do BooleanLiteral.thene |v| {ret(pattern_to_expr(v))}
+		do Var.thene |v| {ret(expression::VariableExpr(copy *v))},
+		do BooleanLiteral.thene |v| {ret(pattern_to_expr(&v))}
 		]);
 		
 	// [108] UnaryExpression ::= '!' PrimaryExpression | '+' PrimaryExpression | '-' PrimaryExpression | PrimaryExpression
@@ -932,7 +932,7 @@ fn make_parser() -> Parser<Selector>
 	*BrackettedExpression_ptr = BrackettedExpression;
 	
 	// [96] VarOrTerm ::= Var | GraphTerm
-	let VarOrTerm = (Var.thene(|v| {ret(Variable((*v)))})).or(GraphTerm);
+	let VarOrTerm = (Var.thene(|v| {ret(Variable((copy *v)))})).or(GraphTerm);
 	
 	// [95] GraphNode ::= VarOrTerm | TriplesNode
 	let GraphNode = VarOrTerm;
@@ -956,7 +956,7 @@ fn make_parser() -> Parser<Selector>
 	let Path = PathAlternative;
 	
 	// [81] VerbSimple ::= Var
-	let VerbSimple = Var.thene(|v| {ret(Variable((*v)))});
+	let VerbSimple = Var.thene(|v| {ret(Variable((copy *v)))});
 	
 	// [75] Object ::= GraphNode
 	let Object = GraphNode;
@@ -973,7 +973,7 @@ fn make_parser() -> Parser<Selector>
 		
 	// [77] TriplesSameSubjectPath ::= VarOrTerm PropertyListNotEmptyPath | TriplesNode PropertyListPath 
 	let TriplesSameSubjectPath = seq2(VarOrTerm, PropertyListNotEmptyPath,
-		|subject, e| {result::Ok({subject: subject, predicate: e[0], object: e[1]})}).note(~"TriplesSameSubjectPath");
+		|subject, e| {result::Ok({subject: subject, predicate: copy e[0], object: copy e[1]})}).note(~"TriplesSameSubjectPath");
 		
 	// [65] Constraint ::= BrackettedExpression | BuiltInCall | FunctionCall
 	let Constraint = or_v(@~[BrackettedExpression, BuiltInCall]).note(~"Constraint");
@@ -983,7 +983,7 @@ fn make_parser() -> Parser<Selector>
 	
 	// [61] Bind ::= 'BIND' '(' Expression 'AS' Var ')'
 	let bind = seq6("BIND".liti().ws(), "(".lit().ws(), Expression, "AS".liti().ws(), Var, ")".lit().ws(),
-		|_b, _p, e, _a, v, _q| {result::Ok(Bind(e, *v))}).note(~"bind");
+		|_b, _p, e, _a, v, _q| {result::Ok(Bind(e, copy *v))}).note(~"bind");
 	
 	// [58] OptionalGraphPattern ::= 'OPTIONAL' GroupGraphPattern
 	let GroupGraphPattern_ptr = @mut ret(Group(~[]));
@@ -1002,11 +1002,11 @@ fn make_parser() -> Parser<Selector>
 		{
 			if vec::len(*patterns) == 1
 			{
-				result::Ok(Basic(patterns[0]))
+				result::Ok(Basic(copy patterns[0]))
 			}
 			else
 			{
-				result::Ok(Group(vec::map(*patterns, {|p| @Basic(p)})))
+				result::Ok(Group(vec::map(*patterns, {|p| @Basic(copy p)})))
 			}
 		}).note(~"TriplesBlock");
 	
@@ -1033,16 +1033,16 @@ fn make_parser() -> Parser<Selector>
 				}
 				else
 				{
-					*gp
+					copy *gp
 				};
 			
 			if vec::len(patterns) == 1
 			{
-				result::Ok(patterns[0])
+				result::Ok(copy patterns[0])
 			}
 			else
 			{
-				result::Ok(Group(vec::map(patterns, {|p| @p})))
+				result::Ok(Group(vec::map(patterns, {|p| @copy p})))
 			}
 		};
 		
@@ -1060,7 +1060,7 @@ fn make_parser() -> Parser<Selector>
 	// [24] OrderCondition ::= (('ASC' | 'DESC') BrackettedExpression) | (Constraint | Var)
 	let OrderCondition1 = do seq2_ret1("ASC".liti().ws(), BrackettedExpression).thene |v| {ret(expression::CallExpr(~"!asc", ~[@v]))};
 	let OrderCondition2 = do seq2_ret1("DESC".liti().ws(), BrackettedExpression).thene |v| {ret(expression::CallExpr(~"!desc", ~[@v]))};
-	let OrderCondition3 = Constraint.or(do Var.thene |v| {ret(expression::VariableExpr(*v))});
+	let OrderCondition3 = Constraint.or(do Var.thene |v| {ret(expression::VariableExpr(copy *v))});
 	let OrderCondition = or_v(@~[OrderCondition1, OrderCondition2, OrderCondition3]);
 	
 	// [23] OrderClause ::= 'ORDER' 'BY' OrderCondition+
@@ -1075,13 +1075,13 @@ fn make_parser() -> Parser<Selector>
 	
 	// [9] SelectClause ::= 'SELECT' ('DISTINCT' | 'REDUCED')? ((Var | ('(' Expression 'AS' Var ')'))+ | '*')
 	let select_suffix = or_v(@~[
-		(Var.thene(|v| {ret(Variable((*v)))})).r1(),
+		(Var.thene(|v| {ret(Variable((copy *v)))})).r1(),
 		"*".lit().ws().thene(|_x| {ret(@~[Variable(~"*")])})]);
 		
 	let select_mid = ("DISTINCT".liti()).or("REDUCED".liti()).ws().optional();
 		
 	let SelectClause = seq3("SELECT".liti().ws(), select_mid, select_suffix,
-		|_a, b, c| {result::Ok((option::is_some(b), *c))}).note(~"SelectClause");
+		|_a, b, c| {result::Ok((option::is_some(b), copy *c))}).note(~"SelectClause");
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = do seq3(SelectClause, WhereClause, SolutionModifier)
@@ -1089,7 +1089,7 @@ fn make_parser() -> Parser<Selector>
 		
 	// [6] PrefixDecl ::= 'PREFIX' PNAME_NS IRI_REF
 	let PrefixDecl = do seq3("PREFIX".liti().ws(), PNAME_NS.ws(), IRI_REF)
-		|_p, ns, r| {result::Ok({prefix: str::slice(*ns, 0u, str::len(*ns)-1u), path: *r})};
+		|_p, ns, r| {result::Ok({prefix: str::slice(*ns, 0u, str::len(*ns)-1u), path: copy *r})};
 	
 	// [4] Prologue ::= (BaseDecl | PrefixDecl)*
 	let Prologue = PrefixDecl.r0();
@@ -1114,7 +1114,7 @@ fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, S
 	let ((distinct, patterns), algebra, modifiers) = query;
 	
 	let variables = do vec::filter(patterns) |p| {match p {Variable(_l)  => true, _  => false}};
-	let names = do vec::map(variables) |p| {match p {Variable(n)  => n, _  => fail}};
+	let names = do vec::map(variables) |p| {match p {Variable(n)  => copy n, _  => fail}};
 	
 	let order_by = match modifiers.order_by {option::Some(x)  => x, option::None  => @~[]};
 	
@@ -1124,12 +1124,12 @@ fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, S
 		// eval will set namespaces and extensions
 		if vec::is_not_empty(namespaces)
 		{
-			let context = QueryContext {namespaces: @~[], extensions: @HashMap(), algebra: expand(namespaces, algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: expand(namespaces, &algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
 			result::Ok(eval(names, &context))
 		}
 		else
 		{
-			let context = QueryContext {namespaces: @~[], extensions: @HashMap(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
 			result::Ok(eval(names, &context))
 		}
 	}

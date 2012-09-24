@@ -29,7 +29,7 @@ fn trivial()
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname"))), (~"o", StringValue(~"Ned", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -42,7 +42,7 @@ fn out_of_order()
 		~[(~"o", StringValue(~"Ned", ~"")), (~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -55,7 +55,7 @@ fn long_names()
 		~[(~"subject", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname"))), (~"obj", StringValue(~"Ned", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn keyword_case()
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname"))), (~"o", StringValue(~"Ned", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -77,7 +77,7 @@ fn duplicate_select_variables()
 	let expr = ~"SELECT ?s ?s ?o WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	
-	assert check_solution_err(store, expr, ~"Select clause has duplicates: s");
+	assert check_solution_err(&store, expr, ~"Select clause has duplicates: s");
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn duplicate_where_variables()
 	let expr = ~"SELECT ?s ?p ?o WHERE {?s ?s ?o}";
 	let store = test_data::got_cast1();
 	
-	assert check_solution_err(store, expr, ~"Binding s was set more than once.");
+	assert check_solution_err(&store, expr, ~"Binding s was set more than once.");
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn unbound_variable()
 		~[(~"s", IriValue(got(~"Eddard_Stark"))), (~"p", IriValue(v(~"nickname")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -109,7 +109,7 @@ fn no_match()
 	let store = test_data::got_cast1();
 	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -122,7 +122,7 @@ fn comment()
 	let store = test_data::got_cast1();
 	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -138,7 +138,7 @@ fn simple_path()
 		~[(~"org", StringValue(~"Small Council", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -161,7 +161,7 @@ fn unmatched_path()
 	]);
 	
 	let expected = Solution {namespaces: ~[], rows: ~[]};
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -180,7 +180,7 @@ fn unmatched_path2()
 	let store = test_data::animals();
 	
 	let expected = Solution {namespaces: ~[], rows: ~[]};
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -200,7 +200,7 @@ fn unmatched_path3()
 	let store = test_data::animals();
 	
 	let expected = Solution {namespaces: ~[], rows: ~[]};
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -216,7 +216,7 @@ fn select_all()
 		~[(~"p", IriValue(v(~"nickname"))), (~"o", StringValue(~"The Hound", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -234,7 +234,7 @@ fn prefixes()
 		~[(~"org", StringValue(~"Small Council", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -256,7 +256,7 @@ fn options1()
 		~[(~"name", StringValue(~"Sandor Clegane", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -277,7 +277,7 @@ fn options2()
 		~[(~"name", StringValue(~"Sandor Clegane", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 // Note that operators and functions have their own unit tests so there isn't a lot
@@ -306,7 +306,7 @@ fn filter_constant()
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -334,7 +334,7 @@ fn filter_typed_literal()
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -358,7 +358,7 @@ fn filter_non_ebv()
 		(~"v:age", IntValue(35i64))
 	]);
 	
-	assert check_solution_err(store, expr, ~"=: ?agge was not bound.");
+	assert check_solution_err(&store, expr, ~"=: ?agge was not bound.");
 }
 
 #[test]
@@ -385,7 +385,7 @@ fn filter_binary()
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -412,7 +412,7 @@ fn filter_bound()
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -440,7 +440,7 @@ fn filter_if()
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -467,7 +467,7 @@ fn filter_coalesce()
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -494,7 +494,7 @@ fn filter_term_fn()
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -522,7 +522,7 @@ fn filter_str_fn()
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -549,7 +549,7 @@ fn filter_numeric()
 		~[(~"s", IriValue(got(~"Jon_Snow")))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -569,7 +569,7 @@ fn filter_optional()
 		~[(~"name", StringValue(~"Sandor Clegane", ~"")), (~"nick", StringValue(~"The Hound", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -596,7 +596,7 @@ fn order_by()
 		~[(~"s", IriValue(got(~"Sandor_Clegane"))), (~"o", StringValue(~"The Hound", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -611,7 +611,7 @@ fn bad_order_by()
 	} ORDER BY (?s + ?o)";
 	let store = test_data::got_cast3();
 	
-	assert check_solution_err(store, expr, ~"<: +: expected numeric value but found IriValue(~\"http://awoiaf.westeros.org/index.php/Sandor_Clegane\").");
+	assert check_solution_err(&store, expr, ~"<: +: expected numeric value but found IriValue(~\"http://awoiaf.westeros.org/index.php/Sandor_Clegane\").");
 }
 
 #[test]
@@ -638,7 +638,7 @@ fn order_by_desc()
 		~[(~"s", IriValue(got(~"Sandor_Clegane"))), (~"o", StringValue(~"Sandor Clegane", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -660,7 +660,7 @@ fn limit()
 		~[(~"s", IriValue(got(~"Jon_Snow"))), (~"o", StringValue(~"Ghost", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -687,7 +687,7 @@ fn big_limit()
 		~[(~"s", IriValue(got(~"Sandor_Clegane"))), (~"o", StringValue(~"The Hound", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -705,7 +705,7 @@ fn bind()
 		~[(~"d", StringValue(~"LordLord", ~""))],
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -723,7 +723,7 @@ fn extensions()
 		~[(~"sp", StringValue(~"got:Eddard_Stark", ~"")), (~"pp", StringValue(~"v:nickname", ~""))]
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -741,7 +741,7 @@ fn distinct()
 		~[(~"s", IriValue(got(~"Sandor_Clegane")))],
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -764,7 +764,7 @@ fn pname_with_blank()
 		~[(~"name", StringValue(~"got:Sandor_Clegane", ~""))],
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -785,7 +785,7 @@ fn animals1()
 	let expected = Solution {namespaces: ~[], rows: ~[
 		~[(~"subject", IriValue(wiki(~"grizzly")))],
 	]};
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -811,7 +811,7 @@ fn animals2()
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"giraffidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"ursidae", ~""))],
 	]};
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -835,7 +835,7 @@ fn animals3()
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"giraffidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"ursidae", ~""))],
 	]};
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -863,7 +863,7 @@ fn animals4()
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"giraffidae", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"ursidae", ~""))],
 	]};
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -891,7 +891,7 @@ fn animals5()
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"giraffidae", ~"")), (~"habitat", StringValue(~"savannah", ~""))],
 		~[(~"phylum", StringValue(~"chordata", ~"")), (~"family", StringValue(~"ursidae", ~""))],
 	]};
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -913,7 +913,7 @@ fn blank_query1()
 		~[(~"b", BlankValue(~"_:jon-org-1")), (~"name", StringValue(~"Night's Watch", ~"")), (~"unit", StringValue(~"Stewards", ~""))],
 	]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }
 
 #[test]
@@ -933,5 +933,5 @@ fn bad_optional()
 	let store = test_data::got_cast3();
 	let expected = Solution {namespaces: ~[], rows: ~[]};
 	
-	assert check_solution(store, expr, expected);
+	assert check_solution(&store, expr, &expected);
 }

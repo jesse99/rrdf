@@ -6,7 +6,7 @@ fn now_fn(context: &query::QueryContext, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 0u
 	{
-		DateTimeValue(context.timestamp)
+		DateTimeValue(copy context.timestamp)
 	}
 	else
 	{
@@ -14,9 +14,9 @@ fn now_fn(context: &query::QueryContext, args: ~[Object]) -> Object
 	}
 }
 
-fn year_fn(operand: Object) -> Object
+fn year_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		DateTimeValue(value) =>
 		{
@@ -24,14 +24,14 @@ fn year_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("YEAR: expected dateTime but found %?.", operand))
+			ErrorValue(fmt!("YEAR: expected dateTime but found %?.", *operand))
 		}
 	}
 }
 
-fn month_fn(operand: Object) -> Object
+fn month_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		DateTimeValue(value) =>
 		{
@@ -39,14 +39,14 @@ fn month_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("MONTH: expected dateTime but found %?.", operand))
+			ErrorValue(fmt!("MONTH: expected dateTime but found %?.", *operand))
 		}
 	}
 }
 
-fn day_fn(operand: Object) -> Object
+fn day_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		DateTimeValue(value) =>
 		{
@@ -54,14 +54,14 @@ fn day_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("DAY: expected dateTime but found %?.", operand))
+			ErrorValue(fmt!("DAY: expected dateTime but found %?.", *operand))
 		}
 	}
 }
 
-fn hours_fn(operand: Object) -> Object
+fn hours_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		DateTimeValue(value) =>
 		{
@@ -69,14 +69,14 @@ fn hours_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("HOURS: expected dateTime but found %?.", operand))
+			ErrorValue(fmt!("HOURS: expected dateTime but found %?.", *operand))
 		}
 	}
 }
 
-fn minutes_fn(operand: Object) -> Object
+fn minutes_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		DateTimeValue(value) =>
 		{
@@ -84,14 +84,14 @@ fn minutes_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("MINUTES: expected dateTime but found %?.", operand))
+			ErrorValue(fmt!("MINUTES: expected dateTime but found %?.", *operand))
 		}
 	}
 }
 
-fn seconds_fn(operand: Object) -> Object
+fn seconds_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		DateTimeValue(value) =>
 		{
@@ -99,24 +99,24 @@ fn seconds_fn(operand: Object) -> Object
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("SECONDS: expected dateTime but found %?.", operand))
+			ErrorValue(fmt!("SECONDS: expected dateTime but found %?.", *operand))
 		}
 	}
 }
 
 // TODO: add timezone (this is supposed to return a xs:dayTimeDuration, see <http://www.w3.org/TR/xpath-datamodel/#types>)
 
-fn tz_fn(operand: Object) -> Object
+fn tz_fn(operand: &Object) -> Object
 {
-	match operand
+	match *operand
 	{
 		DateTimeValue(value) =>
 		{
-			StringValue(value.tm_zone, ~"")		// TODO: doubt this is correct
+			StringValue(copy value.tm_zone, ~"")		// TODO: doubt this is correct
 		}
 		_ =>
 		{
-			ErrorValue(fmt!("SECONDS: expected dateTime but found %?.", operand))
+			ErrorValue(fmt!("SECONDS: expected dateTime but found %?.", *operand))
 		}
 	}
 }

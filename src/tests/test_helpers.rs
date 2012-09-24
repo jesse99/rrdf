@@ -15,7 +15,7 @@ pub fn check_strs(actual: ~str, expected: ~str) -> bool
 	return true;
 }
 
-pub fn check_operands(actual: Object, expected: Object) -> bool
+pub fn check_operands(actual: &Object, expected: &Object) -> bool
 {
 	if actual != expected
 	{
@@ -28,9 +28,9 @@ pub fn check_operands(actual: Object, expected: Object) -> bool
 	return true;
 }
 
-pub fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
+pub fn check_bgp(groups: ~[Solution], expected: &Solution) -> bool
 {
-	fn convert_bindings(group: Solution) -> ~[~str]
+	fn convert_bindings(group: &Solution) -> ~[~str]
 	{
 		do vec::map(group.rows)
 		|row|
@@ -52,16 +52,16 @@ pub fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
 		};
 	}
 	
-	let mut actual = groups[0];
+	let mut actual = copy groups[0];
 	for vec::each(vec::slice(groups, 1, groups.len())) 
 	|group|
 	{
 		let store = Store(~[], &std::map::HashMap());
-		actual = join_solutions(&store, ~[~"*"], actual, *group, false);
+		actual = join_solutions(&store, ~[~"*"], &actual, group, false);
 	}
 	
 	// Form this point forward we are dealing with [str] instead of [[binding]].
-	let actual = convert_bindings(actual);
+	let actual = convert_bindings(&actual);
 	let expected = convert_bindings(expected);
 	
 	let actual = std::sort::merge_sort(|x, y| *x <= *y, actual);
@@ -77,7 +77,7 @@ pub fn check_bgp(groups: ~[Solution], expected: Solution) -> bool
 	for vec::eachi(actual)
 	|i, arow|
 	{
-		let erow = expected[i];
+		let erow = copy expected[i];
 		
 		if arow != erow
 		{
@@ -115,7 +115,7 @@ pub fn check_triples(actual: ~[Triple], expected: ~[Triple]) -> bool
 	for vec::eachi(actual)
 	|i, atriple|
 	{
-		let etriple = expected[i];
+		let etriple = copy expected[i];
 		
 		if atriple.subject != etriple.subject
 		{
@@ -142,7 +142,7 @@ pub fn check_triples(actual: ~[Triple], expected: ~[Triple]) -> bool
 	return true;
 }
 
-pub fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
+pub fn check_solution(store: &Store, expr: ~str, expected: &Solution) -> bool
 {
 	info!("----------------------------------------------------");
 	let expected = expected.sort();
@@ -150,7 +150,7 @@ pub fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
 	{
 		result::Ok(selector) =>
 		{
-			match selector(&store)
+			match selector(store)
 			{
 				result::Ok(actual) =>
 				{
@@ -166,7 +166,7 @@ pub fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
 					if vec::len(actual.rows) != vec::len(expected.rows)
 					{
 						print_failure(#fmt["Actual result had %? rows but expected %? rows.", 
-							vec::len(actual.rows), vec::len(expected.rows)], actual, expected);
+							vec::len(actual.rows), vec::len(expected.rows)], &actual, &expected);
 						return false;
 					}
 					
@@ -174,11 +174,11 @@ pub fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
 					for vec::eachi(actual.rows)
 					|i, row1|
 					{
-						let row2 = expected.rows[i];
+						let row2 = copy expected.rows[i];
 						if vec::len(row1) != vec::len(row2)
 						{
 							print_failure(#fmt["Row %? had size %? but expected %?.",
-								i, vec::len(row1), vec::len(row2)], actual, expected);
+								i, vec::len(row1), vec::len(row2)], &actual, &expected);
 							return false;
 						}
 						
@@ -194,14 +194,14 @@ pub fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
 									if value1 != value2
 									{
 										print_failure(#fmt["Row %? actual %s was %s but expected %s.",
-											i, name1, value1.to_str(), value2.to_str()], actual, expected);
+											i, name1, value1.to_str(), value2.to_str()], &actual, &expected);
 										return false;
 									}
 								}
 								option::None =>
 								{
 									print_failure(#fmt["Row %? had unexpected ?%s.",
-										i, name1], actual, expected);
+										i, name1], &actual, &expected);
 									return false;
 								}
 							}
@@ -225,14 +225,14 @@ pub fn check_solution(store: Store, expr: ~str, expected: Solution) -> bool
 	}
 }
 
-pub fn check_solution_err(store: Store, expr: ~str, expected: ~str) -> bool
+pub fn check_solution_err(store: &Store, expr: ~str, expected: ~str) -> bool
 {
 	info!("----------------------------------------------------");
 	match compile(expr)
 	{
 		result::Ok(selector) =>
 		{
-			match selector(&store)
+			match selector(store)
 			{
 				result::Ok(_) =>
 				{
@@ -269,7 +269,7 @@ pub fn check_solution_err(store: Store, expr: ~str, expected: ~str) -> bool
 }
 
 // ---- Private Functions -----------------------------------------------------
-fn print_result(value: Solution)
+fn print_result(value: &Solution)
 {
 	for vec::eachi(value.rows)
 	|i, row|
@@ -280,7 +280,7 @@ fn print_result(value: Solution)
 	};
 }
 
-fn print_failure(mesg: ~str, actual: Solution, expected: Solution)
+fn print_failure(mesg: ~str, actual: &Solution, expected: &Solution)
 {
 	io::stderr().write_line(mesg);
 	io::stderr().write_line("Actual:");

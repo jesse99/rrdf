@@ -5,11 +5,11 @@
 #[author = "Jesse Jones"];
 #[license = "MIT"];
 
-#[allow(structural_records)];
-#[warn(unused_imports)];
+#[forbid(unused_imports)];
+#[forbid(implicit_copies)];
+#[allow(structural_records)];		// TODO: enable more of these
 #[allow(deprecated_mode)];
 #[allow(deprecated_pattern)];		// TODO: enable this
-#[allow(implicit_copies)];			// TODO: enable more of these
 #[allow(non_implicitly_copyable_typarams)];
 
 extern mod std;
