@@ -41,7 +41,7 @@ impl Entry : cmp::Eq
 }
 
 /// SPARQL extension function.
-pub type ExtensionFn = fn@ (namespaces: &~[Namespace], args: &~[Object]) -> Object;
+pub type ExtensionFn = fn@ (namespaces: ~[Namespace], args: ~[Object]) -> Object;
 
 /// Stores triples in a more or less efficient format.
 ///
@@ -54,8 +54,6 @@ pub struct Store
 	pub mut next_blank: int,
 	
 	drop {}
-	
-	// TODO: add a drop method (to make Stores non-copyable)
 }
 
 /// Initializes a store object.
@@ -548,15 +546,15 @@ fn after(text: ~str, ch: char) -> ~str
 	}
 }
 
-fn pname_fn(namespaces: &~[Namespace], args: &~[Object]) -> Object
+fn pname_fn(namespaces: ~[Namespace], args: ~[Object]) -> Object
 {
-	if vec::len(*args) == 1u
+	if vec::len(args) == 1u
 	{
 		match args[0]
 		{
 			IriValue(ref iri) =>
 			{
-				StringValue(contract_uri(*namespaces, *iri), ~"")
+				StringValue(contract_uri(namespaces, *iri), ~"")
 			}
 			BlankValue(copy name) =>
 			{
@@ -570,6 +568,6 @@ fn pname_fn(namespaces: &~[Namespace], args: &~[Object]) -> Object
 	}
 	else
 	{
-		ErrorValue(fmt!("rrdf:pname accepts 1 argument but was called with %? arguments.", vec::len(*args)))
+		ErrorValue(fmt!("rrdf:pname accepts 1 argument but was called with %? arguments.", vec::len(args)))
 	}
 }

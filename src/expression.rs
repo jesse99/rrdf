@@ -91,7 +91,7 @@ fn eval_extension(context: &query::QueryContext, bindings: ~[(~str, Object)], fn
 	{
 		option::Some(f) =>
 		{
-			f(&context.namespaces, &args)
+			f(context.namespaces, args)
 		}
 		option::None =>
 		{

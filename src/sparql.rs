@@ -14,34 +14,34 @@ use rparse::parsers::{ParseStatus, ParseFailed, anycp, CharParsers,
 use rparse::misc::{EOT, is_alpha, is_digit, is_alphanum, is_print, is_whitespace};
 use rparse::types::{Parser, State, Status, Succeeded, Failed};
 
-fn bool_literal(value: @~str) -> Pattern
+fn bool_literal(value: &str) -> Pattern
 {
-	Constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#boolean", @~""))
+	Constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#boolean", ""))
 }
 
-fn int_literal(value: @~str) -> Object
+fn int_literal(value: &str) -> Object
 {
-	literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#integer", @~"")
+	literal_to_object(value, "http://www.w3.org/2001/XMLSchema#integer", "")
 }
 
-fn float_literal(value: @~str) -> Object
+fn float_literal(value: &str) -> Object
 {
-	literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#double", @~"")
+	literal_to_object(value, "http://www.w3.org/2001/XMLSchema#double", "")
 }
 
-fn string_literal(value: @~str, lang: @~str) -> Pattern
+fn string_literal(value: &str, lang: &str) -> Pattern
 {
-	Constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#string", lang))
+	Constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#string", lang))
 }
 
-fn typed_literal(value: @~str, kind: @~str) -> Pattern
+fn typed_literal(value: &str, kind: &str) -> Pattern
 {
-	Constant(literal_to_object(value, kind, @~""))
+	Constant(literal_to_object(value, kind, ""))
 }
 
-fn iri_literal(value: @~str) -> Pattern
+fn iri_literal(value: &str) -> Pattern
 {
-	Constant(literal_to_object(value, @~"http://www.w3.org/2001/XMLSchema#anyURI", @~""))
+	Constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#anyURI", ""))
 }
 
 fn pattern_to_expr(pattern: &Pattern) -> expression::Expr
@@ -69,7 +69,7 @@ fn expand_expr(namespaces: ~[Namespace], expr: &expression::Expr) -> expression:
 		}
 		expression::ConstantExpr(TypedValue(copy value, ref kind)) =>
 		{
-			expression::ConstantExpr(literal_to_object(@value, @expand_uri(namespaces, *kind), @~""))
+			expression::ConstantExpr(literal_to_object(value, expand_uri(namespaces, *kind), ""))
 		}
 		expression::CallExpr(copy fname, ref expressions) =>
 		{
@@ -92,7 +92,7 @@ fn expand_pattern(namespaces: ~[Namespace], pattern: &Pattern) -> Pattern
 		}
 		Constant(TypedValue(copy value, ref kind)) =>
 		{
-			Constant(literal_to_object(@value, @expand_uri(namespaces, *kind), @~""))
+			Constant(literal_to_object(value, expand_uri(namespaces, *kind), ""))
 		}
 		_ =>
 		{
@@ -746,23 +746,23 @@ fn make_parser() -> Parser<Selector>
 	let STRING_LITERAL1 = seq3_ret1("'".lit(), scan({|x, y| short_char('\'', x, y)}), "'".lit().ws());
 	
 	// [136] INTEGER ::= [0-9]+
-	let INTEGER = match1(is_digit).thene(|v| {ret(int_literal(v))}).ws();
+	let INTEGER = match1(is_digit).thene(|v| {ret(int_literal(*v))}).ws();
 	
 	// [142] INTEGER_NEGATIVE ::= '-' INTEGER
-	let INTEGER_NEGATIVE = seq2_ret_str("-".lit(), match1(is_digit)).thene(|v| {ret(int_literal(v))}).ws();
+	let INTEGER_NEGATIVE = seq2_ret_str("-".lit(), match1(is_digit)).thene(|v| {ret(int_literal(*v))}).ws();
 	
 	// [139] INTEGER_POSITIVE ::= '+' INTEGER
-	let INTEGER_POSITIVE = seq2_ret1("+".lit(), match1(is_digit)).thene(|v| {ret(int_literal(v))}).ws();
+	let INTEGER_POSITIVE = seq2_ret1("+".lit(), match1(is_digit)).thene(|v| {ret(int_literal(*v))}).ws();
 	
 	// [137] DECIMAL ::= [0-9]* '.' [0-9]+
 	let decimal_root = seq3_ret_str(match0(is_digit), ".".lit(), match1(is_digit)).ws();
-	let DECIMAL = decimal_root.thene(|v| {ret(float_literal(v))});
+	let DECIMAL = decimal_root.thene(|v| {ret(float_literal(*v))});
 	
 	// [143] DECIMAL_NEGATIVE ::= '-' DECIMAL
-	let DECIMAL_NEGATIVE = seq2_ret_str("-".lit(), decimal_root).thene(|v| {ret(float_literal(v))});
+	let DECIMAL_NEGATIVE = seq2_ret_str("-".lit(), decimal_root).thene(|v| {ret(float_literal(*v))});
 		
 	// [140] DECIMAL_POSITIVE ::= '+' DECIMAL
-	let DECIMAL_POSITIVE = seq2_ret1("+".lit(), decimal_root).thene(|v| {ret(float_literal(v))});
+	let DECIMAL_POSITIVE = seq2_ret1("+".lit(), decimal_root).thene(|v| {ret(float_literal(*v))});
 	
 	// [145] EXPONENT ::= [eE] [+-]? [0-9]+
 	let EXPONENT = seq3_ret_str("e".liti(), optional_str((("+".lit()).or("-".lit()))), match1(is_digit));
@@ -775,13 +775,13 @@ fn make_parser() -> Parser<Selector>
 	let double3 = seq2_ret_str(match1(is_digit), EXPONENT);
 	
 	let double_root = or_v(@~[double1, double2, double3]).ws();
-	let DOUBLE = double_root.thene(|v| {ret(float_literal(v))});
+	let DOUBLE = double_root.thene(|v| {ret(float_literal(*v))});
 	
 	// [144] DOUBLE_NEGATIVE ::= '-' DOUBLE
-	let DOUBLE_NEGATIVE = seq2_ret_str("-".lit(), double_root).thene(|v| {ret(float_literal(v))});
+	let DOUBLE_NEGATIVE = seq2_ret_str("-".lit(), double_root).thene(|v| {ret(float_literal(*v))});
 	
 	// [141] DOUBLE_POSITIVE ::= '+' DOUBLE
-	let DOUBLE_POSITIVE = seq2_ret1("+".lit(), double_root).thene(|v| {ret(float_literal(v))});
+	let DOUBLE_POSITIVE = seq2_ret1("+".lit(), double_root).thene(|v| {ret(float_literal(*v))});
 	
 	// [135] LANGTAG ::= '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
 	let LANGTAG = langtag();
@@ -799,7 +799,7 @@ fn make_parser() -> Parser<Selector>
 	let String = or_v(@~[STRING_LITERAL_LONG1, STRING_LITERAL_LONG2, STRING_LITERAL1, STRING_LITERAL2]).note(~"string");
 	
 	// [124] BooleanLiteral	::= 'true' | 'false'
-	let BooleanLiteral = ("true".lit()).or("false".lit()).thene({|v| ret(bool_literal(v))}).ws().note(~"boolean");
+	let BooleanLiteral = ("true".lit()).or("false".lit()).thene({|+v: @~str| ret(bool_literal(*v))}).ws().note(~"boolean");
 	
 	// [121] NumericLiteralUnsigned ::= INTEGER | DECIMAL | DOUBLE
 	let NumericLiteralUnsigned = or_v(@~[DOUBLE, DECIMAL, INTEGER]).note(~"number");
@@ -814,20 +814,20 @@ fn make_parser() -> Parser<Selector>
 	let NumericLiteral = or_v(@~[NumericLiteralPositive, NumericLiteralNegative, NumericLiteralUnsigned]);
 	
 	// [119] RDFLiteral ::= String (LANGTAG | ('^^' IRIref))?
-	let RDFLiteral1 = String.thene({|v| ret(string_literal(v, @~""))}); 
+	let RDFLiteral1 = String.thene({|+v: @~str| ret(string_literal(*v, ""))}); 
 	
 	let RDFLiteral2 = do seq2(String, LANGTAG)
-		|v, l| {result::Ok(string_literal(v, l))};
+		|v, l| {result::Ok(string_literal(*v, *l))};
 	
 	let RDFLiteral3 = do seq3(String, "^^".lit(), IRIref)
-		|v, _m, t| {result::Ok(typed_literal(v, t))};
+		|v, _m, t| {result::Ok(typed_literal(*v, *t))};
 	
 	let RDFLiteral = or_v(@~[RDFLiteral3, RDFLiteral2, RDFLiteral1]);
 	
 	// [99] GraphTerm ::= IRIref | RDFLiteral | NumericLiteral | BooleanLiteral | BlankNode | NIL
 	let GraphTerm = or_v(@~[
 		RDFLiteral,
-		IRIref.thene({|v| ret(iri_literal(v))}),	// TODO: support BlankNode and NIL
+		IRIref.thene({|+v: @~str| ret(iri_literal(*v))}),	// TODO: support BlankNode and NIL
 		do NumericLiteral.thene |v| {ret(Constant(v))},
 		BooleanLiteral
 	]);
@@ -938,7 +938,7 @@ fn make_parser() -> Parser<Selector>
 	let GraphNode = VarOrTerm;
 	
 	// [88] PathPrimary ::= IRIref | 'a' | '!' PathNegatedPropertySet | '(' Path ')'
-	let PathPrimary = IRIref.thene({|v| ret(iri_literal(v))});
+	let PathPrimary = IRIref.thene({|+v: @~str| ret(iri_literal(*v))});
 	
 	// [85] PathElt ::= PathPrimary PathMod?
 	let PathElt = PathPrimary;

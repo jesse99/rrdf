@@ -8,16 +8,16 @@ use test_helpers::*;
 #[test]
 fn to_strs()
 {
-	let obj = literal_to_object(@~"some long url", @~"http://www.w3.org/2001/XMLSchema#anyURI", @~"");
+	let obj = literal_to_object("some long url", "http://www.w3.org/2001/XMLSchema#anyURI", "");
 	assert check_strs(obj.to_str(), ~"<some long url>");
 	
-	let obj = literal_to_object(@~"12", @~"http://www.w3.org/2001/XMLSchema#integer", @~"");
+	let obj = literal_to_object("12", "http://www.w3.org/2001/XMLSchema#integer", "");
 	assert check_strs(obj.to_str(), ~"12");
 	
-	let obj = literal_to_object(@~"12", @~"http://www.w3.org/2001/XMLSchema#string", @~"en");
+	let obj = literal_to_object("12", "http://www.w3.org/2001/XMLSchema#string", "en");
 	assert check_strs(obj.to_str(), ~"\"12\"@en");
 	
-	let obj = literal_to_object(@~"12", @~"http://www.w3.org/2001/XMLSchema#string", @~"");
+	let obj = literal_to_object("12", "http://www.w3.org/2001/XMLSchema#string", "");
 	assert check_strs(obj.to_str(), ~"\"12\"");
 }
 

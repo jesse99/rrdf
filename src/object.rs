@@ -467,41 +467,41 @@ impl  Object : ToStr
 /// Converts an arbitrary lexical value to an object.
 /// 
 /// Note that it is usually simplest to simply use the object enum directly.
-fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
+fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
 {
-	match (value, kind, lang)
+	match (value.to_unique(), kind.to_unique(), lang.to_unique())	// TODO: https://github.com/mozilla/rust/issues/3574
 	{
-		(v, @~"blank", @~"") =>
+		(copy v, ~"blank", ~"") =>
 		{
-			BlankValue(copy *v)
+			BlankValue(v)
 		}
-		(v, @~"http://www.w3.org/2001/XMLSchema#anyURI", @~"") =>
+		(copy v, ~"http://www.w3.org/2001/XMLSchema#anyURI", ~"") =>
 		{
-			if str::starts_with(*v, "_:")
+			if str::starts_with(v, "_:")
 			{
-				BlankValue(copy *v)
+				BlankValue(v)
 			}
 			else
 			{
-				IriValue(copy *v)
+				IriValue(v)
 			}
 		}
-		(v, @~"http://www.w3.org/2001/XMLSchema#boolean", @~"") =>
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#boolean", ~"") =>
 		{
-			if v == @~"true" || v == @~"1"
+			if *v == ~"true" || *v == ~"1"
 			{
 				BoolValue(true)
 			}
-			else if v == @~"false" || v == @~"0"
+			else if *v == ~"false" || *v == ~"0"
 			{
 				BoolValue(false)
 			}
 			else
 			{
-				InvalidValue(copy *v, copy *kind)
+				InvalidValue(copy *v, kind.to_unique())
 			}
 		}
-		(v, @~"http://www.w3.org/2001/XMLSchema#dateTime", @~"") =>
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#dateTime", ~"") =>
 		{
 			// Time zone expressed as an offset from GMT, e.g. -05:00 for EST.
 			match do std::time::strptime(*v, ~"%FT%T%z").chain_err
@@ -528,20 +528,20 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 				}
 			}
 		}
-		(v, @~"http://www.w3.org/2001/XMLSchema#decimal", @~"") |	// minimally conformant processors must support at least 18 digits and i64 gives us 19
-		(v, @~"http://www.w3.org/2001/XMLSchema#integer", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#nonPositiveInteger", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#negativeInteger", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#long", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#int", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#short", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#byte", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#nonNegativeInteger", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#unsignedLong", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#unsignedInt", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#unsignedShort", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#unsignedByte", @~"") |
-		(v, @~"http://www.w3.org/2001/XMLSchema#positiveInteger", @~"") =>
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#decimal", ~"") |	// minimally conformant processors must support at least 18 digits and i64 gives us 19
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#integer", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#nonPositiveInteger", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#negativeInteger", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#long", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#int", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#short", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#byte", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#nonNegativeInteger", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#unsignedLong", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#unsignedInt", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#unsignedShort", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#unsignedByte", ~"") |
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#positiveInteger", ~"") =>
 		{
 			do str::as_c_str(*v)
 			|vp|
@@ -557,13 +557,13 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 					}
 					else
 					{
-						InvalidValue(copy *v, copy *kind)
+						InvalidValue(v.to_unique(), kind.to_unique())
 					}
 				}
 			}
 		}
-		(v, @~"http://www.w3.org/2001/XMLSchema#float", @~"") | 
-		(v, @~"http://www.w3.org/2001/XMLSchema#double", @~"") =>
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#float", ~"") | 
+		(ref v, ~"http://www.w3.org/2001/XMLSchema#double", ~"") =>
 		{
 			do str::as_c_str(*v)
 			|vp|
@@ -579,29 +579,29 @@ fn literal_to_object(value: @~str, kind: @~str, lang: @~str) -> Object
 					}
 					else
 					{
-						InvalidValue(copy *v, copy *kind)
+						InvalidValue(v.to_unique(), kind.to_unique())
 					}
 				}
 			}
 		}
-		(v, @~"http://www.w3.org/2001/XMLSchema#string", l) |
-		(v, @~"http://www.w3.org/2001/XMLSchema#normalizedString", l) |
-		(v, @~"http://www.w3.org/2001/XMLSchema#token", l) |
-		(v, @~"http://www.w3.org/2001/XMLSchema#language", l) |
-		(v, @~"http://www.w3.org/2001/XMLSchema#Name", l) |
-		(v, @~"http://www.w3.org/2001/XMLSchema#NCName", l) |
-		(v, @~"http://www.w3.org/2001/XMLSchema#ID", l) =>
+		(copy v, ~"http://www.w3.org/2001/XMLSchema#string", copy l) |
+		(copy v, ~"http://www.w3.org/2001/XMLSchema#normalizedString", copy l) |
+		(copy v, ~"http://www.w3.org/2001/XMLSchema#token", copy l) |
+		(copy v, ~"http://www.w3.org/2001/XMLSchema#language", copy l) |
+		(copy v, ~"http://www.w3.org/2001/XMLSchema#Name", copy l) |
+		(copy v, ~"http://www.w3.org/2001/XMLSchema#NCName", copy l) |
+		(copy v, ~"http://www.w3.org/2001/XMLSchema#ID", copy l) =>
 		{
-			StringValue(copy *v, copy *l)
+			StringValue(v, l)
 		}
-		(v, k, @~"") =>
+		(copy v, copy k, ~"") =>
 		{
-			TypedValue(copy *v, copy *k)
+			TypedValue(v, k)
 		}
 		_ =>
 		{
-			error!("object_to_operand unsupported type: %s.", *kind);
-			ErrorValue(fmt!("object_to_operand unsupported type: %s.", *kind))
+			error!("object_to_operand unsupported type: %s.", kind);
+			ErrorValue(fmt!("object_to_operand unsupported type: %s.", kind))
 		}
 	}
 }
