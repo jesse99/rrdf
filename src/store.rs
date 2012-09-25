@@ -418,7 +418,7 @@ impl  Triple : ToStr
 }
 
 // ---- Private Functions -----------------------------------------------------
-fn default_namespaces() -> ~[Namespace]
+priv fn default_namespaces() -> ~[Namespace]
 {
 	~[
 		{prefix: ~"_", path: ~"_:"},
@@ -429,7 +429,7 @@ fn default_namespaces() -> ~[Namespace]
 	]
 }
 
-fn expand_uri(namespaces: ~[Namespace], name: ~str) -> ~str
+priv fn expand_uri(namespaces: ~[Namespace], name: ~str) -> ~str
 {
 	// TODO: need to % escape bogus characters (after converting to utf-8)
 	for vec::each(namespaces)
@@ -443,7 +443,7 @@ fn expand_uri(namespaces: ~[Namespace], name: ~str) -> ~str
 	return copy name;
 }
 
-fn expand_uri_or_blank(namespaces: ~[Namespace], name: ~str) -> ~str
+priv fn expand_uri_or_blank(namespaces: ~[Namespace], name: ~str) -> ~str
 {
 	if str::starts_with(name, "_:")
 	{
@@ -455,7 +455,7 @@ fn expand_uri_or_blank(namespaces: ~[Namespace], name: ~str) -> ~str
 	}
 }
 
-fn expand_object(namespaces: ~[Namespace], obj: &Object) -> Object
+priv fn expand_object(namespaces: ~[Namespace], obj: &Object) -> Object
 {
 	match *obj
 	{
@@ -478,12 +478,12 @@ fn expand_object(namespaces: ~[Namespace], obj: &Object) -> Object
 	}
 }
 
-fn expand_entry(namespaces: ~[Namespace], entry: &(~str, Object)) -> Entry
+priv fn expand_entry(namespaces: ~[Namespace], entry: &(~str, Object)) -> Entry
 {
 	{predicate: expand_uri(namespaces, entry.first()), object: expand_object(namespaces, &entry.second())}
 }
 
-fn make_triple_blank(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+priv fn make_triple_blank(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -492,7 +492,7 @@ fn make_triple_blank(store: &Store, subject: ~str, predicate: ~str, value: ~str)
 	}
 }
 
-fn make_triple_str(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+priv fn make_triple_str(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -501,7 +501,7 @@ fn make_triple_str(store: &Store, subject: ~str, predicate: ~str, value: ~str) -
 	}
 }
 
-fn make_triple_uri(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+priv fn make_triple_uri(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -531,7 +531,7 @@ impl uint : BaseIter<uint>
 	}
 }
 
-fn after(text: ~str, ch: char) -> ~str
+priv fn after(text: ~str, ch: char) -> ~str
 {
 	match str::rfind_char(text, ch)
 	{
@@ -546,7 +546,7 @@ fn after(text: ~str, ch: char) -> ~str
 	}
 }
 
-fn pname_fn(namespaces: ~[Namespace], args: ~[Object]) -> Object
+priv fn pname_fn(namespaces: ~[Namespace], args: ~[Object]) -> Object
 {
 	if vec::len(args) == 1u
 	{

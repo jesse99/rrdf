@@ -14,37 +14,37 @@ use rparse::parsers::{ParseStatus, ParseFailed, anycp, CharParsers,
 use rparse::misc::{EOT, is_alpha, is_digit, is_alphanum, is_print, is_whitespace};
 use rparse::types::{Parser, State, Status, Succeeded, Failed};
 
-fn bool_literal(value: &str) -> Pattern
+priv fn bool_literal(value: &str) -> Pattern
 {
 	Constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#boolean", ""))
 }
 
-fn int_literal(value: &str) -> Object
+priv fn int_literal(value: &str) -> Object
 {
 	literal_to_object(value, "http://www.w3.org/2001/XMLSchema#integer", "")
 }
 
-fn float_literal(value: &str) -> Object
+priv fn float_literal(value: &str) -> Object
 {
 	literal_to_object(value, "http://www.w3.org/2001/XMLSchema#double", "")
 }
 
-fn string_literal(value: &str, lang: &str) -> Pattern
+priv fn string_literal(value: &str, lang: &str) -> Pattern
 {
 	Constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#string", lang))
 }
 
-fn typed_literal(value: &str, kind: &str) -> Pattern
+priv fn typed_literal(value: &str, kind: &str) -> Pattern
 {
 	Constant(literal_to_object(value, kind, ""))
 }
 
-fn iri_literal(value: &str) -> Pattern
+priv fn iri_literal(value: &str) -> Pattern
 {
 	Constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#anyURI", ""))
 }
 
-fn pattern_to_expr(pattern: &Pattern) -> expression::Expr
+priv fn pattern_to_expr(pattern: &Pattern) -> expression::Expr
 {
 	match *pattern
 	{
@@ -59,7 +59,7 @@ fn pattern_to_expr(pattern: &Pattern) -> expression::Expr
 	}
 }
 
-fn expand_expr(namespaces: ~[Namespace], expr: &expression::Expr) -> expression::Expr
+priv fn expand_expr(namespaces: ~[Namespace], expr: &expression::Expr) -> expression::Expr
 {
 	match *expr
 	{
@@ -82,7 +82,7 @@ fn expand_expr(namespaces: ~[Namespace], expr: &expression::Expr) -> expression:
 	}
 }
 
-fn expand_pattern(namespaces: ~[Namespace], pattern: &Pattern) -> Pattern
+priv fn expand_pattern(namespaces: ~[Namespace], pattern: &Pattern) -> Pattern
 {
 	match *pattern
 	{
@@ -101,12 +101,12 @@ fn expand_pattern(namespaces: ~[Namespace], pattern: &Pattern) -> Pattern
 	}
 }
 
-fn expand_triple(namespaces: ~[Namespace], tp: &TriplePattern) -> TriplePattern
+priv fn expand_triple(namespaces: ~[Namespace], tp: &TriplePattern) -> TriplePattern
 {
 	{subject: expand_pattern(namespaces, &tp.subject), predicate: expand_pattern(namespaces, &tp.predicate), object: expand_pattern(namespaces, &tp.object)}
 }
 
-fn expand(namespaces: ~[Namespace], algebra: &Algebra) -> Algebra
+priv fn expand(namespaces: ~[Namespace], algebra: &Algebra) -> Algebra
 {
 	match *algebra
 	{
@@ -133,7 +133,7 @@ fn expand(namespaces: ~[Namespace], algebra: &Algebra) -> Algebra
 	}
 }
 
-fn find_dupes(names: ~[~str]) -> ~[~str]
+priv fn find_dupes(names: ~[~str]) -> ~[~str]
 {
 	let names = std::sort::merge_sort(|x, y| {*x <= *y}, names);	// TODO: probably dont want to de-reference the pointers
 	
@@ -151,22 +151,22 @@ fn find_dupes(names: ~[~str]) -> ~[~str]
 	return dupes;
 }
 
-pure fn is_hex(ch: char) -> bool
+priv pure fn is_hex(ch: char) -> bool
 {
 	return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
 }
 
-pure fn is_langtag_prefix(ch: char) -> bool
+priv pure fn is_langtag_prefix(ch: char) -> bool
 {
 	return char::is_alphabetic(ch);
 }
 
-pure fn is_langtag_suffix(ch: char) -> bool
+priv pure fn is_langtag_suffix(ch: char) -> bool
 {
 	return is_langtag_prefix(ch) || char::is_digit(ch);
 }
 
-fn langtag() -> Parser<@~str>
+priv fn langtag() -> Parser<@~str>
 {
 	let at = "@".lit();												// '@'
 	let prefix = match1(is_langtag_prefix);						// [a-zA-Z]+
@@ -179,13 +179,13 @@ fn langtag() -> Parser<@~str>
 }
 
 // [150] ECHAR ::= '\' [tbnrf"']
-fn is_escape_char(ch: char) -> bool
+priv fn is_escape_char(ch: char) -> bool
 {
 	option::is_some(str::find_char("tbnrf\"'", ch))	// input ends with EOT so we don't need a range check here
 }
 
 // [^<>"{}|^`\]-[#x00-#x20]
-fn iri_char(ch: char) -> bool
+priv fn iri_char(ch: char) -> bool
 {
 	if option::is_none(str::find_char("^<>\"{}|^`\\", ch))
 	{
@@ -198,7 +198,7 @@ fn iri_char(ch: char) -> bool
 }
 
 // [^x\\\n\r]) | ECHAR	where x is ' or "
-fn short_char(x: char, chars: @[char], index: uint) -> uint
+priv fn short_char(x: char, chars: @[char], index: uint) -> uint
 {
 	let mut i = index;
 	loop
@@ -224,7 +224,7 @@ fn short_char(x: char, chars: @[char], index: uint) -> uint
 }
 
 // ( "x" | "xx" )? ( [^x\] | ECHAR )	where x is ' or "
-fn long_char(x: char, chars: @[char], index: uint) -> uint
+priv fn long_char(x: char, chars: @[char], index: uint) -> uint
 {
 	let mut i = index;
 	loop
@@ -255,7 +255,7 @@ fn long_char(x: char, chars: @[char], index: uint) -> uint
 }
 
 // [154] PN_CHARS_BASE	::= [A-Z] | [a-z] | [#x00C0-#x00D6] | [#x00D8-#x00F6] | [#x00F8-#x02FF] | [#x0370-#x037D] | [#x037F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
-fn pn_chars_base(chars: @[char], i: uint) -> uint
+priv fn pn_chars_base(chars: @[char], i: uint) -> uint
 {
 	if chars[i] >= 'A' && chars[i] <= 'Z'
 	{
@@ -320,7 +320,7 @@ fn pn_chars_base(chars: @[char], i: uint) -> uint
 }
 
 // [155] PN_CHARS_U ::= PN_CHARS_BASE | '_'
-fn pn_chars_u(chars: @[char], i: uint) -> uint
+priv fn pn_chars_u(chars: @[char], i: uint) -> uint
 {
 	let count = pn_chars_base(chars, i);
 	if count > 0u
@@ -338,7 +338,7 @@ fn pn_chars_u(chars: @[char], i: uint) -> uint
 }
 
 // [157] PN_CHARS	::= PN_CHARS_U | '-' | [0-9] | #x00B7 | [#x0300-#x036F] | [#x203F-#x2040]
-fn pn_chars(chars: @[char], i: uint) -> uint
+priv fn pn_chars(chars: @[char], i: uint) -> uint
 {
 	let count = pn_chars_u(chars, i);
 	if count > 0u
@@ -371,7 +371,7 @@ fn pn_chars(chars: @[char], i: uint) -> uint
 	}
 }
 
-fn pn_chars_or_dot(chars: @[char], index: uint) -> uint
+priv fn pn_chars_or_dot(chars: @[char], index: uint) -> uint
 {
 	let mut i = index;
 	loop
@@ -398,7 +398,7 @@ fn pn_chars_or_dot(chars: @[char], index: uint) -> uint
 }
 
 // [160] PLX ::= PERCENT | PN_LOCAL_ESC
-fn plx(chars: @[char], i: uint) -> uint
+priv fn plx(chars: @[char], i: uint) -> uint
 {
 	// [161] PERCENT ::= '%' HEX HEX
 	if chars[i] == '%' && is_hex(chars[i+1u]) && is_hex(chars[i+2u])
@@ -417,7 +417,7 @@ fn plx(chars: @[char], i: uint) -> uint
 }
 
 // PN_CHARS | '.' | PLX
-fn pn_chars_or_dot_or_plx(chars: @[char], index: uint) -> uint
+priv fn pn_chars_or_dot_or_plx(chars: @[char], index: uint) -> uint
 {
 	let mut i = index;
 	loop
@@ -451,7 +451,7 @@ fn pn_chars_or_dot_or_plx(chars: @[char], index: uint) -> uint
 	}
 }
 
-fn ws<T: Copy Owned>(parser: Parser<T>) -> Parser<T>
+priv fn ws<T: Copy Owned>(parser: Parser<T>) -> Parser<T>
 {
 	|input: State|
 	{
@@ -512,7 +512,7 @@ impl<T: Copy Owned> Parser<T> : MyParserTrait<T>
 	}
 }
 
-fn binary_expr(term: Parser<expression::Expr>, ops: ~[{oname: ~str, fname: ~str}]) -> Parser<expression::Expr>
+priv fn binary_expr(term: Parser<expression::Expr>, ops: ~[{oname: ~str, fname: ~str}]) -> Parser<expression::Expr>
 {
 	// Parser that returns which arm branched plus the value of the arm.
 	let suffix = or_v(
@@ -548,14 +548,7 @@ fn binary_expr(term: Parser<expression::Expr>, ops: ~[{oname: ~str, fname: ~str}
 	}).err("")
 }
 
-// TODO: Hopefully rust will provide something better for converting and mixing ~str and & str.
-// See https://github.com/mozilla/rust/issues/2992
-fn unslice(s: &str) -> ~str
-{
-	s.slice(0, s.len())
-}
-
-fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) -> Parser<expression::Expr>
+priv fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) -> Parser<expression::Expr>
 {
 	let var = seq3_ret1("(".lit().ws(), Var, ")".lit().ws());
 	let nullary = seq2_ret1("(".lit().ws(), ")".lit().ws());
@@ -708,7 +701,7 @@ fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) -> Pa
 }
 
 // http://www.w3.org/TR/sparql11-query/#grammar
-fn make_parser() -> Parser<Selector>
+priv fn make_parser() -> Parser<Selector>
 {
 	// [159] PN_LOCAL ::= (PN_CHARS_U | [0-9] | PLX)  ((PN_CHARS | '.' | PLX)* (PN_CHARS | PLX))? 		note that w3c had an error here (a stray > character at the end of the production)
 	let pn_local_prefix = or_v(@~[
@@ -1109,7 +1102,7 @@ type SolutionModifiers = {order_by: Option<@~[expression::Expr]>, limit: Option<
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
+priv fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
 {
 	let ((distinct, patterns), algebra, modifiers) = query;
 	

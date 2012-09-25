@@ -47,7 +47,7 @@ type Binding = {name: ~str, value: Object};
 
 type Match = either::Either<Binding, bool>;	// match succeeded if bindings or true
 
-fn pattern_to_str(store: &Store, pattern: &Pattern) -> ~str
+priv fn pattern_to_str(store: &Store, pattern: &Pattern) -> ~str
 {
 	match *pattern
 	{
@@ -62,12 +62,12 @@ fn pattern_to_str(store: &Store, pattern: &Pattern) -> ~str
 	}
 }
 
-fn triple_pattern_to_str(store: &Store, pattern: &TriplePattern) -> ~str
+priv fn triple_pattern_to_str(store: &Store, pattern: &TriplePattern) -> ~str
 {
 	fmt!("{subject: %s, predicate: %s, object: %s}", pattern_to_str(store, &pattern.subject), pattern_to_str(store, &pattern.predicate), pattern_to_str(store, &pattern.object))
 }
 	
-fn algebra_to_str(store: &Store, algebra: &Algebra) -> ~str
+priv fn algebra_to_str(store: &Store, algebra: &Algebra) -> ~str
 {
 	match *algebra
 	{
@@ -94,7 +94,7 @@ fn algebra_to_str(store: &Store, algebra: &Algebra) -> ~str
 	}
 }
 
-fn solution_row_to_str(store: &Store, row: SolutionRow) -> ~str
+priv fn solution_row_to_str(store: &Store, row: SolutionRow) -> ~str
 {
 	let mut entries = ~[];
 	for row.each
@@ -107,7 +107,7 @@ fn solution_row_to_str(store: &Store, row: SolutionRow) -> ~str
 	str::connect(entries, ~", ")
 }
 
-fn solution_to_str(store: &Store, solution: &Solution) -> ~str
+priv fn solution_to_str(store: &Store, solution: &Solution) -> ~str
 {
 	let mut result = ~"";
 	
@@ -227,7 +227,7 @@ pub fn join_solutions(store: &Store, names: ~[~str], group1: &Solution, group2: 
 	return Solution {namespaces: copy store.namespaces, rows: result};
 }
 
-fn filter_row(names: ~[~str], row: SolutionRow) -> SolutionRow
+priv fn filter_row(names: ~[~str], row: SolutionRow) -> SolutionRow
 {
 	if names == ~[~"*"]
 	{
@@ -239,7 +239,7 @@ fn filter_row(names: ~[~str], row: SolutionRow) -> SolutionRow
 	}
 }
 
-fn equal_objects(actual: &Object, expected: &Object) -> bool
+priv fn equal_objects(actual: &Object, expected: &Object) -> bool
 {
 	match op_equals(actual, expected)	// should get BoolValue or ErrorValue
 	{
@@ -254,7 +254,7 @@ fn equal_objects(actual: &Object, expected: &Object) -> bool
 	}
 }
 
-fn match_subject(actual: ~str, pattern: &Pattern) -> Match
+priv fn match_subject(actual: ~str, pattern: &Pattern) -> Match
 {
 	match *pattern
 	{
@@ -290,7 +290,7 @@ fn match_subject(actual: ~str, pattern: &Pattern) -> Match
 	}
 }
 
-fn match_predicate(actual: ~str, pattern: &Pattern) -> Match
+priv fn match_predicate(actual: ~str, pattern: &Pattern) -> Match
 {
 	match *pattern
 	{
@@ -312,7 +312,7 @@ fn match_predicate(actual: ~str, pattern: &Pattern) -> Match
 	}
 }
 
-fn match_object(actual: &Object, pattern: &Pattern) -> Match
+priv fn match_object(actual: &Object, pattern: &Pattern) -> Match
 {
 	match *pattern
 	{
@@ -329,7 +329,7 @@ fn match_object(actual: &Object, pattern: &Pattern) -> Match
 	}
 }
 
-fn eval_match(&bindings: ~[(~str, Object)], m: Match) -> result::Result<bool, ~str>
+priv fn eval_match(&bindings: ~[(~str, Object)], m: Match) -> result::Result<bool, ~str>
 {
 	match m
 	{
@@ -357,7 +357,7 @@ fn eval_match(&bindings: ~[(~str, Object)], m: Match) -> result::Result<bool, ~s
 	}
 }
 
-fn iterate_matches(store: &Store, spattern: &Pattern, callback: fn (Option<&Binding>, @DVec<Entry>) -> bool)
+priv fn iterate_matches(store: &Store, spattern: &Pattern, callback: fn (Option<&Binding>, @DVec<Entry>) -> bool)
 {
 	fn invoke(subject: ~str, pattern: &Pattern, entries: @DVec<Entry>, callback: fn (option::Option<&Binding>, @DVec<Entry>) -> bool) -> bool
 	{
@@ -410,7 +410,7 @@ fn iterate_matches(store: &Store, spattern: &Pattern, callback: fn (Option<&Bind
 }
 
 // Returns the named bindings.
-fn eval_basic(store: &Store, names: ~[~str], matcher: &TriplePattern) -> result::Result<Solution, ~str>
+priv fn eval_basic(store: &Store, names: ~[~str], matcher: &TriplePattern) -> result::Result<Solution, ~str>
 {
 	let mut rows = Solution {namespaces: copy store.namespaces, rows: ~[]};
 	
@@ -473,7 +473,7 @@ fn eval_basic(store: &Store, names: ~[~str], matcher: &TriplePattern) -> result:
 	result::Ok(rows)
 }
 
-fn filter_solution(context: &QueryContext, names: ~[~str], solution: &Solution, expr: &Expr) -> result::Result<Solution, ~str>
+priv fn filter_solution(context: &QueryContext, names: ~[~str], solution: &Solution, expr: &Expr) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution.rows));
@@ -502,7 +502,7 @@ fn filter_solution(context: &QueryContext, names: ~[~str], solution: &Solution, 
 	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
 }
 
-fn bind_solution(context: &QueryContext, names: ~[~str], solution: &Solution, expr: &Expr, name: ~str) -> result::Result<Solution, ~str>
+priv fn bind_solution(context: &QueryContext, names: ~[~str], solution: &Solution, expr: &Expr, name: ~str) -> result::Result<Solution, ~str>
 {
 	let mut result = ~[];
 	vec::reserve(result, vec::len(solution.rows));
@@ -535,7 +535,7 @@ fn bind_solution(context: &QueryContext, names: ~[~str], solution: &Solution, ex
 	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
 }
 
-fn eval_group(store: &Store, context: &QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<Solution, ~str>
+priv fn eval_group(store: &Store, context: &QueryContext, in_names: ~[~str], terms: ~[@Algebra]) -> result::Result<Solution, ~str>
 {
 	let mut result = Solution {namespaces: copy store.namespaces, rows: ~[]};
 	
@@ -633,7 +633,7 @@ fn eval_group(store: &Store, context: &QueryContext, in_names: ~[~str], terms: ~
 	return result::Ok(result);
 }
 
-fn eval_optional(store: &Store, names: ~[~str], context: &QueryContext, term: &Algebra) -> result::Result<Solution, ~str>
+priv fn eval_optional(store: &Store, names: ~[~str], context: &QueryContext, term: &Algebra) -> result::Result<Solution, ~str>
 {
 	match eval_algebra(store, names, &QueryContext {algebra: copy *term, ..*context})
 	{
@@ -648,7 +648,7 @@ fn eval_optional(store: &Store, names: ~[~str], context: &QueryContext, term: &A
 	}
 }
 
-fn eval_algebra(store: &Store, names: ~[~str], context: &QueryContext) -> result::Result<Solution, ~str>
+priv fn eval_algebra(store: &Store, names: ~[~str], context: &QueryContext) -> result::Result<Solution, ~str>
 {
 	match context.algebra
 	{
@@ -678,7 +678,7 @@ fn eval_algebra(store: &Store, names: ~[~str], context: &QueryContext) -> result
 	}
 }
 
-fn eval_order_expr(context: &QueryContext, row: SolutionRow, expr: &Expr) -> (bool, Object)
+priv fn eval_order_expr(context: &QueryContext, row: SolutionRow, expr: &Expr) -> (bool, Object)
 {
 	match *expr
 	{
@@ -697,7 +697,7 @@ fn eval_order_expr(context: &QueryContext, row: SolutionRow, expr: &Expr) -> (bo
 	}
 }
 
-fn compare_order_values(lhs: (bool, Object), rhs: (bool, Object)) -> result::Result<int, ~str>
+priv fn compare_order_values(lhs: (bool, Object), rhs: (bool, Object)) -> result::Result<int, ~str>
 {
 	assert lhs.first() == rhs.first();
 	
@@ -714,7 +714,7 @@ fn compare_order_values(lhs: (bool, Object), rhs: (bool, Object)) -> result::Res
 	}
 }
 
-fn order_by(context: &QueryContext, solution: &Solution, ordering: ~[Expr]) -> result::Result<Solution, ~str>
+priv fn order_by(context: &QueryContext, solution: &Solution, ordering: ~[Expr]) -> result::Result<Solution, ~str>
 {
 	// TODO
 	// Probably more efficient to do the evaluation in a pre-pass. Looks like rust requires 2N comparisons in the worst case.
@@ -767,7 +767,7 @@ fn order_by(context: &QueryContext, solution: &Solution, ordering: ~[Expr]) -> r
 	}
 }
 
-fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
+priv fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
 {
 	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
 	let rows = std::sort::merge_sort(|x, y| {*x < *y}, solution.rows);	// TODO: probably dont want to de-reference the pointers
