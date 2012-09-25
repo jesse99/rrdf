@@ -9,8 +9,8 @@ use store::*;
 fn got_cast1() -> Store
 {
 	let store = Store(~[
-		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
-		{prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
+		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
+		solution::Namespace {prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
 		], @std::map::HashMap());
 	store.add(~"got:Eddard_Stark", ~[
 		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
@@ -22,8 +22,8 @@ fn got_cast1() -> Store
 fn got_cast3() -> Store
 {
 	let store = Store(~[
-		{prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
-		{prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
+		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
+		solution::Namespace {prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
 		], @std::map::HashMap());
 	
 	store.add(~"got:Eddard_Stark", ~[
@@ -55,7 +55,7 @@ fn got_cast3() -> Store
 
 fn animals() -> Store
 {
-	let store = Store(~[{prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @std::map::HashMap());
+	let store = Store(~[solution::Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @std::map::HashMap());
 	
 	store.add(~"wiki:aardvark", ~[
 		(~"wiki:phylum", StringValue(~"chordata", ~"")),

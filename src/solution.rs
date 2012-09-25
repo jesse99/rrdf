@@ -5,7 +5,7 @@ use object::*;
 /// Name of a namespace plus the IRI it expands to.
 ///
 /// This is a sendable type.
-type Namespace = {prefix: ~str, path: ~str};
+struct Namespace {prefix: ~str, path: ~str}
 
 /// Result of matching a triple with a SPARQL query.
 ///
@@ -117,6 +117,32 @@ impl  &Solution : ToStr
 		}
 		
 		result
+	}
+}
+
+impl Namespace : cmp::Eq
+{
+	pure fn eq(&&other: Namespace) -> bool
+	{
+		self.prefix == other.prefix && self.path == other.path
+	}
+	
+	pure fn ne(&&other: Namespace) -> bool
+	{
+		!self.eq(other)
+	}
+}
+
+impl Solution : cmp::Eq
+{
+	pure fn eq(&&other: Solution) -> bool
+	{
+		self.namespaces == other.namespaces && self.rows == other.rows
+	}
+	
+	pure fn ne(&&other: Solution) -> bool
+	{
+		!self.eq(other)
 	}
 }
 

@@ -11,7 +11,7 @@ fn monsters() -> Store
 {
 	// Namespaces allow subjects and predicates to be added to the 
 	// store using a prefixed name instead of a full URL.
-	let namespaces = ~[{prefix: ~"game", path: ~"http://game/ns#"}];
+	let namespaces = ~[solution::Namespace {prefix: ~"game", path: ~"http://game/ns#"}];
 	
 	// Vector of function name and function pointer tuples. These
 	// represent user defined functions that may be called from

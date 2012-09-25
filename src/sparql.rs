@@ -1082,7 +1082,7 @@ priv fn make_parser() -> Parser<Selector>
 		
 	// [6] PrefixDecl ::= 'PREFIX' PNAME_NS IRI_REF
 	let PrefixDecl = do seq3("PREFIX".liti().ws(), PNAME_NS.ws(), IRI_REF)
-		|_p, ns, r| {result::Ok({prefix: str::slice(*ns, 0u, str::len(*ns)-1u), path: copy *r})};
+		|_p, ns, r| {result::Ok(solution::Namespace {prefix: str::slice(*ns, 0u, str::len(*ns)-1u), path: copy *r})};
 	
 	// [4] Prologue ::= (BaseDecl | PrefixDecl)*
 	let Prologue = PrefixDecl.r0();

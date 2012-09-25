@@ -30,7 +30,7 @@ enum Object				// TODO: once we support serialization we'll need to add somethin
 
 impl Object
 {
-	fn to_friendly_str(namespaces: &[{prefix: ~str, path: ~str}]) -> ~str
+	fn to_friendly_str(namespaces: &[store::Namespace]) -> ~str
 	{
 		match self
 		{
