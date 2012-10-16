@@ -15,19 +15,19 @@
 extern mod std;
 extern mod rparse (name = "rparse", vers = "0.6");
 
-mod expression;
-mod functional_forms;
-mod functions_on_dates;
-mod functions_on_numerics;
-mod functions_on_strings;
-mod functions_on_terms;
-mod object;
-mod operators;
-mod query;
-mod rrdf;
-mod solution;
-mod sparql;
-mod store;
+pub mod expression;
+pub mod functional_forms;
+pub mod functions_on_dates;
+pub mod functions_on_numerics;
+pub mod functions_on_strings;
+pub mod functions_on_terms;
+pub mod object;
+pub mod operators;
+pub mod query;
+pub mod rrdf;
+pub mod solution;
+pub mod sparql;
+pub mod store;
 
 #[cfg(test)]
 mod tests

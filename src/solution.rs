@@ -5,26 +5,26 @@ use object::*;
 /// Name of a namespace plus the IRI it expands to.
 ///
 /// This is a sendable type.
-struct Namespace {prefix: ~str, path: ~str}
+pub struct Namespace {prefix: ~str, path: ~str}
 
 /// Result of matching a triple with a SPARQL query.
 ///
 /// Order of entries in each row will match the order in the SELECT clause.
-type SolutionRow = ~[(~str, Object)];
+pub type SolutionRow = ~[(~str, Object)];
 
 /// Result of a SPARQL query.
 /// 
 /// Note that this is a sendable type.
-struct Solution
+pub struct Solution
 {
 	pub namespaces: ~[Namespace],
 	pub rows: ~[SolutionRow],
 }
 
-trait SolutionMethods
+pub trait SolutionMethods
 {
-	pure fn get(row: uint, name: ~str) -> Object;
-	pure fn search(row: uint, name: ~str) -> Option<Object>;
+	pure fn get(row: uint, name: &str) -> Object;
+	pure fn search(row: uint, name: &str) -> Option<Object>;
 	
 	/// In general an ORDER BY clause should be used to sort solutions.
 	/// However it can be convenient to manually sort them for things
@@ -32,21 +32,21 @@ trait SolutionMethods
 	pure fn sort() -> Solution;
 }
 
-trait SolutionRowMethods
+pub trait SolutionRowMethods
 {
-	pure fn get(name: ~str) -> Object;
-	pure fn contains(name: ~str) -> bool;
-	pure fn search(name: ~str) -> Option<Object>;
+	pure fn get(name: &str) -> Object;
+	pure fn contains(name: &str) -> bool;
+	pure fn search(name: &str) -> Option<Object>;
 }
 
-impl  &Solution : SolutionMethods
+pub impl  &Solution : SolutionMethods
 {
-	pure fn get(row: uint, name: ~str) -> Object
+	pure fn get(row: uint, name: &str) -> Object
 	{
 		self.rows[row].get(name)
 	}
 	
-	pure fn search(row: uint, name: ~str) -> Option<Object>
+	pure fn search(row: uint, name: &str) -> Option<Object>
 	{
 		self.rows[row].search(name)
 	}
@@ -103,9 +103,9 @@ impl  &Solution : SolutionMethods
 
 // TODO: This should be in the impl above, but is not because of
 // https://github.com/mozilla/rust/issues/3410
-impl  &Solution : ToStr
+pub impl  &Solution : ToStr
 {
-	fn to_str() -> ~str
+	pure fn to_str() -> ~str
 	{
 		let mut result = ~"";		// TODO: need to replace this with some sort of StringBuilder
 		
@@ -120,37 +120,37 @@ impl  &Solution : ToStr
 	}
 }
 
-impl Namespace : cmp::Eq
+pub impl Namespace : cmp::Eq
 {
-	pure fn eq(&&other: Namespace) -> bool
+	pure fn eq(other: &Namespace) -> bool
 	{
 		self.prefix == other.prefix && self.path == other.path
 	}
 	
-	pure fn ne(&&other: Namespace) -> bool
+	pure fn ne(other: &Namespace) -> bool
 	{
 		!self.eq(other)
 	}
 }
 
-impl Solution : cmp::Eq
+pub impl Solution : cmp::Eq
 {
-	pure fn eq(&&other: Solution) -> bool
+	pure fn eq(other: &Solution) -> bool
 	{
 		self.namespaces == other.namespaces && self.rows == other.rows
 	}
 	
-	pure fn ne(&&other: Solution) -> bool
+	pure fn ne(other: &Solution) -> bool
 	{
 		!self.eq(other)
 	}
 }
 
-impl  SolutionRow : SolutionRowMethods 
+pub impl  &[(~str, Object)] : SolutionRowMethods 
 {
-	pure fn get(name: ~str) -> Object
+	pure fn get(name: &str) -> Object
 	{
-		match vec::find(self, |e| {e.first() == name})
+		match vec::find(self, |e| {str::eq_slice(e.first(), name)})
 		{
 			option::Some(ref result) =>
 			{
@@ -163,15 +163,15 @@ impl  SolutionRow : SolutionRowMethods
 		}
 	}
 	
-	pure fn contains(name: ~str) -> bool
+	pure fn contains(name: &str) -> bool
 	{
-		vec::find(self, |e| {e.first() == name}).is_some()
+		vec::find(self, |e| {str::eq_slice(e.first(), name)}).is_some()
 	}
 	
 	// Named search so we don't wind up conflicting with the find vec extension.
-	pure fn search(name: ~str) -> Option<Object>
+	pure fn search(name: &str) -> Option<Object>
 	{
-		match vec::find(self, |e| {e.first() == name})
+		match vec::find(self, |e| {str::eq_slice(e.first(), name)})
 		{
 			option::Some(ref result) =>
 			{

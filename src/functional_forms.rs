@@ -2,7 +2,7 @@
 use store::*;
 use object::*;
 
-fn bound_fn(operand: &Object) -> Object
+pub fn bound_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -17,7 +17,7 @@ fn bound_fn(operand: &Object) -> Object
 	}
 }
 
-fn eval_if(context: &query::QueryContext, bindings: ~[(~str, Object)], args: &~[@expression::Expr]) -> Object
+pub fn eval_if(context: &query::QueryContext, bindings: &[(~str, Object)], args: &~[@expression::Expr]) -> Object
 {
 	if vec::len(*args) == 3u
 	{
@@ -51,7 +51,7 @@ fn eval_if(context: &query::QueryContext, bindings: ~[(~str, Object)], args: &~[
 	}
 }
 
-fn eval_coalesce(context: &query::QueryContext, bindings: ~[(~str, Object)], args: &~[@expression::Expr]) -> Object
+pub fn eval_coalesce(context: &query::QueryContext, bindings: &[(~str, Object)], args: &~[@expression::Expr]) -> Object
 {
 	for vec::each(*args)
 	|arg|
@@ -73,7 +73,7 @@ fn eval_coalesce(context: &query::QueryContext, bindings: ~[(~str, Object)], arg
 	return ErrorValue(~"COALESCE: all arguments failed to evaluate");
 }
 
-fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
+pub fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
 {
 	match *lhs
 	{

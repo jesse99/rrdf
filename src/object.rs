@@ -8,7 +8,7 @@ use std::time::{Tm};
 // 2) Boolean functions normally want effective boolean values which are false for invalid values.
 // 3) Functions like op_and do not always propagate errors.
 /// Value component of a triple.
-enum Object				// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
+pub enum Object			// TODO: once we support serialization we'll need to add something like u8 type codes to int, float, and string values
 {								// TODO: predicate could maybe be enum with type code and uri
 	// literals
 	BoolValue(bool),
@@ -28,9 +28,9 @@ enum Object				// TODO: once we support serialization we'll need to add somethin
 	ErrorValue(~str)			// err mesg
 }
 
-impl Object
+pub impl Object
 {
-	fn to_friendly_str(namespaces: &[store::Namespace]) -> ~str
+	pure fn to_friendly_str(namespaces: &[solution::Namespace]) -> ~str
 	{
 		match self
 		{
@@ -373,46 +373,46 @@ impl Object
 }
 
 // TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
-impl Object : cmp::Ord
+pub impl Object : cmp::Ord
 {
-	pure fn lt(&&other: Object) -> bool
+	pure fn lt(other: &Object) -> bool
 	{
 		unsafe {self.to_str() < other.to_str()}
 	}
 	
-	pure fn le(&&other: Object) -> bool
+	pure fn le(other: &Object) -> bool
 	{
 		unsafe {self.to_str() <= other.to_str()}
 	}
 	
-	pure fn ge(&&other: Object) -> bool
+	pure fn ge(other: &Object) -> bool
 	{
 		unsafe {self.to_str() > other.to_str()}
 	}
 	
-	pure fn gt(&&other: Object) -> bool
+	pure fn gt(other: &Object) -> bool
 	{
 		unsafe {self.to_str() >= other.to_str()}
 	}
 }
 
 // TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
-impl Object : cmp::Eq
+pub impl Object : cmp::Eq
 {
-	pure fn eq(&&other: Object) -> bool
+	pure fn eq(other: &Object) -> bool
 	{
 		unsafe {self.to_str() == other.to_str()}
 	}
 	
-	pure fn ne(&&other: Object) -> bool
+	pure fn ne(other: &Object) -> bool
 	{
 		unsafe {self.to_str() != other.to_str()}
 	}
 }
 
-impl  Object : ToStr 
+pub impl  Object : ToStr 
 {
-	fn to_str() -> ~str
+	pure fn to_str() -> ~str
 	{
 		match self
 		{
@@ -430,7 +430,7 @@ impl  Object : ToStr
 			}
 			DateTimeValue(ref value) =>
 			{
-				value.rfc3339()
+				unsafe {value.rfc3339()}
 			}
 			StringValue(ref value, ref lang) =>
 			{
@@ -467,7 +467,7 @@ impl  Object : ToStr
 /// Converts an arbitrary lexical value to an object.
 /// 
 /// Note that it is usually simplest to simply use the object enum directly.
-fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
+pub fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
 {
 	match (value.to_unique(), kind.to_unique(), lang.to_unique())	// TODO: https://github.com/mozilla/rust/issues/3574
 	{
@@ -547,8 +547,8 @@ fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
 			|vp|
 			{
 				let end = 0 as libc::c_char;
-				let endp = ptr::addr_of(end);
-				let r = libc::strtol(vp, ptr::addr_of(endp), 10 as libc::c_int);
+				let endp = ptr::addr_of(&end);
+				let r = libc::strtol(vp, ptr::addr_of(&endp), 10 as libc::c_int);
 				unsafe
 				{
 					if *endp == 0 as libc::c_char
@@ -569,8 +569,8 @@ fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
 			|vp|
 			{
 				let end = 0 as libc::c_char;
-				let endp = ptr::addr_of(end);
-				let r = libc::strtod(vp, ptr::addr_of(endp));
+				let endp = ptr::addr_of(&end);
+				let r = libc::strtod(vp, ptr::addr_of(&endp));
 				unsafe
 				{
 					if *endp == 0 as libc::c_char
@@ -607,7 +607,7 @@ fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
 }
 
 // Effective boolean value, see 17.2.2
-pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
+pub pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
 {
 	match *operand
 	{
@@ -646,7 +646,7 @@ pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
 	}
 }
 
-fn type_error(fname: ~str, operand: &Object, expected: ~str) -> ~str
+pub fn type_error(fname: ~str, operand: &Object, expected: ~str) -> ~str
 {
 	match *operand
 	{

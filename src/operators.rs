@@ -2,7 +2,7 @@
 use object::*;
 
 // Operators used within SPARQL FILTER expressions. See 17.2 and related.
-	
+
 pub fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Result<bool, ~str>
 {
 	match *lhs
@@ -95,7 +95,7 @@ pub fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Resul
 				}
 				_ =>
 				{
-					result::Err(type_error(operator, rhs, *ltype))
+					result::Err(type_error(operator, rhs, copy *ltype))
 				}
 			}
 		}
@@ -251,7 +251,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 				}
 				_ =>
 				{
-					result::Err(type_error(operator, rhs, *ltype))
+					result::Err(type_error(operator, rhs, copy *ltype))
 				}
 			}
 		}
@@ -380,35 +380,35 @@ pub fn op_or(lhs: &Object, rhs: &Object) -> Object
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
 	
-	if result::is_ok(lvalue) && result::is_ok(rvalue)
+	if result::is_ok(&lvalue) && result::is_ok(&rvalue)
 	{
-		BoolValue(result::get(lvalue) || result::get(rvalue))
+		BoolValue(result::get(&lvalue) || result::get(&rvalue))
 	}
-	else if result::is_ok(lvalue)
+	else if result::is_ok(&lvalue)
 	{
-		if result::get(lvalue)
+		if result::get(&lvalue)
 		{
 			BoolValue(true)
 		}
 		else
 		{
-			ErrorValue(result::get_err(rvalue))
+			ErrorValue(result::get_err(&rvalue))
 		}
 	}
-	else if result::is_ok(rvalue)
+	else if result::is_ok(&rvalue)
 	{
-		if result::get(rvalue)
+		if result::get(&rvalue)
 		{
 			BoolValue(true)
 		}
 		else
 		{
-			ErrorValue(result::get_err(lvalue))
+			ErrorValue(result::get_err(&lvalue))
 		}
 	}
 	else
 	{
-		ErrorValue(fmt!("%s %s", result::get_err(lvalue), result::get_err(rvalue)))
+		ErrorValue(fmt!("%s %s", result::get_err(&lvalue), result::get_err(&rvalue)))
 	}
 }
 
@@ -417,35 +417,35 @@ pub fn op_and(lhs: &Object, rhs: &Object) -> Object
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
 	
-	if result::is_ok(lvalue) && result::is_ok(rvalue)
+	if result::is_ok(&lvalue) && result::is_ok(&rvalue)
 	{
-		BoolValue(result::get(lvalue) && result::get(rvalue))
+		BoolValue(result::get(&lvalue) && result::get(&rvalue))
 	}
-	else if result::is_ok(lvalue)
+	else if result::is_ok(&lvalue)
 	{
-		if !result::get(lvalue)
+		if !result::get(&lvalue)
 		{
 			BoolValue(false)
 		}
 		else
 		{
-			ErrorValue(result::get_err(rvalue))
+			ErrorValue(result::get_err(&rvalue))
 		}
 	}
-	else if result::is_ok(rvalue)
+	else if result::is_ok(&rvalue)
 	{
-		if !result::get(rvalue)
+		if !result::get(&rvalue)
 		{
 			BoolValue(false)
 		}
 		else
 		{
-			ErrorValue(result::get_err(lvalue))
+			ErrorValue(result::get_err(&lvalue))
 		}
 	}
 	else
 	{
-		ErrorValue(fmt!("%s %s", result::get_err(lvalue), result::get_err(rvalue)))
+		ErrorValue(fmt!("%s %s", result::get_err(&lvalue), result::get_err(&rvalue)))
 	}
 }
 

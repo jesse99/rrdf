@@ -27,21 +27,21 @@ pub type Triple = {subject: Subject, predicate: Predicate, object: Object};
 pub type Entry = {predicate: ~str, object: Object};
 
 // TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
-impl Entry : cmp::Eq
+pub impl Entry : cmp::Eq
 {
-	pure fn eq(&&other: Entry) -> bool
+	pure fn eq(other: &Entry) -> bool
 	{
 		self.predicate == other.predicate && self.object == other.object
 	}
 	
-	pure fn ne(&&other: Entry) -> bool
+	pure fn ne(other: &Entry) -> bool
 	{
 		!self.eq(other)
 	}
 }
 
 /// SPARQL extension function.
-pub type ExtensionFn = fn@ (namespaces: ~[Namespace], args: ~[Object]) -> Object;
+pub type ExtensionFn = fn@ (namespaces: &[Namespace], args: &[Object]) -> Object;
 
 /// Stores triples in a more or less efficient format.
 ///
@@ -61,7 +61,7 @@ pub struct Store
 /// xsd, rdf, rdfs, and owl namespaces are automatically added. An rrdf:pname extension is
 /// automatically added which converts an IriValue to a StringValue using namespaces (or
 /// simply stringifies it if none of the namespaces paths match).
-pub fn Store(namespaces: ~[Namespace], extensions: &HashMap<@~str, ExtensionFn>) -> Store
+pub fn Store(namespaces: &[Namespace], extensions: &HashMap<@~str, ExtensionFn>) -> Store
 {
 	let store = Store {
 		namespaces: default_namespaces() + namespaces,
@@ -74,7 +74,7 @@ pub fn Store(namespaces: ~[Namespace], extensions: &HashMap<@~str, ExtensionFn>)
 	store
 }
 
-pub fn get_blank_name(store: &Store, prefix: ~str) -> ~str
+pub fn get_blank_name(store: &Store, prefix: &str) -> ~str
 {
 	let suffix = store.next_blank;
 	store.next_blank += 1;
@@ -83,7 +83,7 @@ pub fn get_blank_name(store: &Store, prefix: ~str) -> ~str
 }
 
 /// Returns either the iri or the prefixed version of the iri.
-pub fn contract_uri(namespaces: &[solution::Namespace], iri: &str) -> ~str
+pub pure fn contract_uri(namespaces: &[solution::Namespace], iri: &str) -> ~str
 {
 	match vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
 	{
@@ -103,37 +103,37 @@ pub trait StoreTrait
 	/// Efficient addition of triples to the store.
 	/// 
 	/// Typically create_int, create_str, etc functions are used to create objects.
-	fn add(subject: ~str, entries: ~[(~str, Object)]);
+	fn add(subject: &str, entries: &[(~str, Object)]);
 	
 	/// Relatively inefficient addition of triples to the store.
 	/// 
 	/// Qualified names may use the namespaces associated with the store and the supplied namespaces.
-	fn add_triple(namespaces: ~[Namespace], triple: Triple);
+	fn add_triple(namespaces: &[Namespace], triple: Triple);
 	
 	/// Adds a subject statement referencing a new blank node.
 	/// 
 	/// Label is an arbitrary string useful for debugging. Returns the name of the blank node.
-	fn add_aggregate(subject: ~str, predicate: ~str, label: ~str, entries: ~[(~str, Object)]) -> ~str;
+	fn add_aggregate(subject: &str, predicate: &str, label: &str, entries: &[(~str, Object)]) -> ~str;
 	
 	/// Adds statements representing a choice between alternatives.
-	fn add_alt(subject: ~str, values: ~[Object]);
+	fn add_alt(subject: &str, values: &[Object]);
 	
 	/// Adds statements representing an unordered set of (possibly duplicate) values.
-	fn add_bag(subject: ~str, values: ~[Object]);
+	fn add_bag(subject: &str, values: &[Object]);
 	
 	/// Adds statements representing an arbitrary open container using 1-based integral keys.
-	fn add_container(subject: ~str, kind: ~str, values: ~[Object]);
+	fn add_container(subject: &str, kind: &str, values: &[Object]);
 	
 	/// Adds a fixed size list of (possibly duplicate) items.
-	fn add_list(subject: ~str, predicate: ~str, values: ~[Object]);
+	fn add_list(subject: &str, predicate: &str, values: &[Object]);
 	
 	/// Adds a statement about a statement.
 	/// 
 	/// Often used for meta-data, e.g. a timestamp stating when a statement was added to the store.
-	fn add_reify(subject: ~str, predicate: ~str, value: Object);
+	fn add_reify(subject: &str, predicate: &str, value: Object);
 	
 	/// Adds statements representing an ordered set of (possibly duplicate) values.
-	fn add_seq(subject: ~str, values: ~[Object]);
+	fn add_seq(subject: &str, values: &[Object]);
 	
 	/// Removes all triples from the store.
 	fn clear();
@@ -141,27 +141,27 @@ pub trait StoreTrait
 	/// Returns the first matching object, or option::none.
 	/// 
 	/// Qualified names may use the namespaces associated with the store.
-	fn find_object(subject: ~str, predicate: ~str) -> option::Option<Object>;
+	fn find_object(subject: &str, predicate: &str) -> option::Option<Object>;
 	
 	/// Returns all matching objects.
 	/// 
 	/// Qualified names may use the namespaces associated with the store.
-	fn find_objects(subject: ~str, predicate: ~str) -> ~[Object];
+	fn find_objects(subject: &str, predicate: &str) -> ~[Object];
 	
 	/// Replaces the object of an existing triple or adds a new triple.
 	/// 
 	/// Qualified names may use the namespaces associated with the store and the supplied namespaces.
-	fn replace_triple(namespaces: ~[Namespace], triple: Triple);
+	fn replace_triple(namespaces: &[Namespace], triple: Triple);
 }
 
-impl  &Store : StoreTrait 
+pub impl  &Store : StoreTrait 
 {
-	fn add(subject: ~str, entries: ~[(~str, Object)])
+	fn add(subject: &str, entries: &[(~str, Object)])
 	{
 		if vec::is_not_empty(entries)
 		{
 			let subject = expand_uri_or_blank(self.namespaces, subject);
-			let entries = vec::map(entries, |e| {expand_entry(self.namespaces, &e)});
+			let entries = vec::map(entries, |e| {expand_entry(self.namespaces, e)});
 			match self.subjects.find(@copy subject)
 			{
 				option::Some(list) =>
@@ -178,7 +178,7 @@ impl  &Store : StoreTrait
 		}
 	}
 	
-	fn add_triple(namespaces: ~[Namespace], triple: Triple)
+	fn add_triple(namespaces: &[Namespace], triple: Triple)
 	{
 		let namespaces = self.namespaces + namespaces;
 		
@@ -199,38 +199,38 @@ impl  &Store : StoreTrait
 		}
 	}
 	
-	fn add_aggregate(subject: ~str, predicate: ~str, label: ~str, entries: ~[(~str, Object)]) -> ~str
+	fn add_aggregate(subject: &str, predicate: &str, label: &str, entries: &[(~str, Object)]) -> ~str
 	{
 		let blank = get_blank_name(self, label);
-		self.add_triple(~[], {subject: copy subject, predicate: copy predicate, object: BlankValue(copy blank)});
+		self.add_triple(~[], {subject: subject.to_unique(), predicate: predicate.to_unique(), object: BlankValue(blank.to_unique())});
 		self.add(blank, entries);
 		return blank;
 	}
 	
-	fn add_alt(subject: ~str, values: ~[Object])
+	fn add_alt(subject: &str, values: &[Object])
 	{
 		self.add_container(subject, ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt", values);
 	}
 	
-	fn add_bag(subject: ~str, values: ~[Object])
+	fn add_bag(subject: &str, values: &[Object])
 	{
 		self.add_container(subject, ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag", values);
 	}
 	
-	fn add_container(subject: ~str, kind: ~str, values: ~[Object])
+	fn add_container(subject: &str, kind: &str, values: &[Object])
 	{
 		let blank = get_blank_name(self, after(subject, ':') + "-items");
-		self.add_triple(~[], {subject: copy subject, predicate: copy kind, object: BlankValue(copy blank)});
+		self.add_triple(~[], {subject: subject.to_unique(), predicate: kind.to_unique(), object: BlankValue(blank.to_unique())});
 		
-		let predicates = do iter::map_to_vec(vec::len(values)) |i: uint| {fmt!("http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u)};
-		self.add(blank, vec::zip(predicates, copy values));
+		let predicates = do iter::map_to_vec(&vec::len(values)) |i: uint| {fmt!("http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u)};
+		self.add(blank, vec::zip(predicates, vec::from_slice(values)));
 	}
 	
-	fn add_list(subject: ~str, predicate: ~str, values: ~[Object])
+	fn add_list(subject: &str, predicate: &str, values: &[Object])
 	{
 		let prefix = after(predicate, ':');
 		let mut blank = get_blank_name(self, prefix);
-		self.add_triple(~[], {subject: copy subject, predicate: copy predicate, object: BlankValue(copy blank)});
+		self.add_triple(~[], {subject: subject.to_unique(), predicate: predicate.to_unique(), object: BlankValue(blank.to_unique())});
 		for vec::each(values)
 		|value|
 		{
@@ -242,16 +242,16 @@ impl  &Store : StoreTrait
 		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#rest", object: IriValue(~"http://www.w3.org/1999/02/22-rdf-syntax-ns#nil")});
 	}
 	
-	fn add_reify(subject: ~str, predicate: ~str, value: Object)
+	fn add_reify(subject: &str, predicate: &str, value: Object)
 	{
 		let mut blank = get_blank_name(self, after(predicate, ':'));
 		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", object: IriValue(~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement")});
-		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#subject", object: IriValue(copy subject)});
-		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate", object: IriValue(copy predicate)});
+		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#subject", object: IriValue(subject.to_unique())});
+		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate", object: IriValue(predicate.to_unique())});
 		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#object", object: value});
 	}
 	
-	fn add_seq(subject: ~str, values: ~[Object])
+	fn add_seq(subject: &str, values: &[Object])
 	{
 		self.add_container(subject, ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq", values);
 	}
@@ -264,7 +264,7 @@ impl  &Store : StoreTrait
 		for self.subjects.each_key
 		|key|
 		{
-			vec::push(keys, key);
+			vec::push(&mut keys, key);
 		};
 		
 		for vec::each(keys)
@@ -274,7 +274,7 @@ impl  &Store : StoreTrait
 		};
 	}
 	
-	fn find_object(subject: ~str, predicate: ~str) -> option::Option<Object>
+	fn find_object(subject: &str, predicate: &str) -> option::Option<Object>
 	{
 		let subject = expand_uri_or_blank(self.namespaces, subject);
 		let predicate = expand_uri(self.namespaces, predicate);
@@ -302,7 +302,7 @@ impl  &Store : StoreTrait
 		}
 	}
 	
-	fn find_objects(subject: ~str, predicate: ~str) -> ~[Object]
+	fn find_objects(subject: &str, predicate: &str) -> ~[Object]
 	{
 		let subject = expand_uri_or_blank(self.namespaces, subject);
 		let predicate = expand_uri(self.namespaces, predicate);
@@ -331,7 +331,7 @@ impl  &Store : StoreTrait
 		}
 	}
 	
-	fn replace_triple(namespaces: ~[Namespace], triple: Triple)
+	fn replace_triple(namespaces: &[Namespace], triple: Triple)
 	{
 		let namespaces = self.namespaces + namespaces;
 		
@@ -357,9 +357,9 @@ impl  &Store : StoreTrait
 	}
 }
 
-impl &Store : ToStr
+pub impl &Store : ToStr
 {
-	fn to_str() -> ~str
+	pure fn to_str() -> ~str
 	{
 		let mut result = ~"";
 		
@@ -377,7 +377,7 @@ impl &Store : ToStr
 	}
 }
 
-impl Store : BaseIter<Triple>
+pub impl Store : BaseIter<Triple>
 {
 	/// Calls the blk for each triple in the store (in an undefined order).
 	pure fn each(blk: fn(v: &Triple) -> bool)
@@ -409,9 +409,9 @@ impl Store : BaseIter<Triple>
 	}
 }
 
-impl  Triple : ToStr 
+pub impl  Triple : ToStr
 {
-	fn to_str() -> ~str
+	pure fn to_str() -> ~str
 	{
 		fmt!("{%s, %s, %s}", self.subject, self.predicate, self.object.to_str())
 	}
@@ -429,7 +429,7 @@ priv fn default_namespaces() -> ~[Namespace]
 	]
 }
 
-priv fn expand_uri(namespaces: ~[Namespace], name: ~str) -> ~str
+priv fn expand_uri(namespaces: &[Namespace], name: &str) -> ~str
 {
 	// TODO: need to % escape bogus characters (after converting to utf-8)
 	for vec::each(namespaces)
@@ -440,14 +440,14 @@ priv fn expand_uri(namespaces: ~[Namespace], name: ~str) -> ~str
 			return namespace.path + str::slice(name, str::len(namespace.prefix) + 1u, str::len(name));
 		}
 	};
-	return copy name;
+	return name.to_unique();
 }
 
-priv fn expand_uri_or_blank(namespaces: ~[Namespace], name: ~str) -> ~str
+priv fn expand_uri_or_blank(namespaces: &[Namespace], name: &str) -> ~str
 {
 	if str::starts_with(name, "_:")
 	{
-		copy name
+		name.to_unique()
 	}
 	else
 	{
@@ -455,7 +455,7 @@ priv fn expand_uri_or_blank(namespaces: ~[Namespace], name: ~str) -> ~str
 	}
 }
 
-priv fn expand_object(namespaces: ~[Namespace], obj: &Object) -> Object
+priv fn expand_object(namespaces: &[Namespace], obj: &Object) -> Object
 {
 	match *obj
 	{
@@ -478,12 +478,12 @@ priv fn expand_object(namespaces: ~[Namespace], obj: &Object) -> Object
 	}
 }
 
-priv fn expand_entry(namespaces: ~[Namespace], entry: &(~str, Object)) -> Entry
+priv fn expand_entry(namespaces: &[Namespace], entry: &(~str, Object)) -> Entry
 {
 	{predicate: expand_uri(namespaces, entry.first()), object: expand_object(namespaces, &entry.second())}
 }
 
-priv fn make_triple_blank(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+priv fn make_triple_blank(store: &Store, subject: &str, predicate: &str, value: &str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -492,16 +492,16 @@ priv fn make_triple_blank(store: &Store, subject: ~str, predicate: ~str, value: 
 	}
 }
 
-priv fn make_triple_str(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+priv fn make_triple_str(store: &Store, subject: &str, predicate: &str, value: &str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
 		predicate: expand_uri(store.namespaces, predicate), 
-		object: StringValue(copy value, ~"")
+		object: StringValue(value.to_unique(), ~"")
 	}
 }
 
-priv fn make_triple_uri(store: &Store, subject: ~str, predicate: ~str, value: ~str) -> Triple
+priv fn make_triple_uri(store: &Store, subject: &str, predicate: &str, value: &str) -> Triple
 {
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
@@ -531,7 +531,7 @@ impl uint : BaseIter<uint>
 	}
 }
 
-priv fn after(text: ~str, ch: char) -> ~str
+priv fn after(text: &str, ch: char) -> ~str
 {
 	match str::rfind_char(text, ch)
 	{
@@ -541,12 +541,12 @@ priv fn after(text: ~str, ch: char) -> ~str
 		}
 		option::None =>
 		{
-			copy text
+			text.to_unique()
 		}
 	}
 }
 
-priv fn pname_fn(namespaces: ~[Namespace], args: ~[Object]) -> Object
+priv fn pname_fn(namespaces: &[Namespace], args: &[Object]) -> Object
 {
 	if vec::len(args) == 1u
 	{

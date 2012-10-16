@@ -25,6 +25,9 @@ update-libraries:
 install:
 	install -p `find bin -name "librrdf*" -type f -maxdepth 1` /usr/local/lib/rust
 
+clean:
+	rm -rf bin
+
 # ------------------
 # Binary targets 
 # We always build the lib because:

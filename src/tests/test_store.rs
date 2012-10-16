@@ -30,7 +30,7 @@ fn iteration()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, copy *triple);
+		vec::push(&mut actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -62,7 +62,7 @@ fn references()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, copy *triple);
+		vec::push(&mut actual, copy *triple);
 	};
 	
 	// The store will have full URIs (make_triple_* does the expansion as well).
@@ -85,7 +85,7 @@ fn blank_nodes()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, copy *triple);
+		vec::push(&mut actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -121,7 +121,7 @@ fn container()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, copy *triple);
+		vec::push(&mut actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -143,7 +143,7 @@ fn list0()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, copy *triple);
+		vec::push(&mut actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -164,7 +164,7 @@ fn list1()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, copy *triple);
+		vec::push(&mut actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -189,7 +189,7 @@ fn reify()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, copy *triple);
+		vec::push(&mut actual, copy *triple);
 	};
 	
 	let expected = ~[
@@ -214,7 +214,7 @@ fn replace()
 	for store.each
 	|triple|
 	{
-		vec::push(actual, copy *triple);
+		vec::push(&mut actual, copy *triple);
 	};
 	
 	let expected = ~[

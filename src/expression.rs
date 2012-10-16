@@ -30,12 +30,12 @@ pub fn expr_to_str(store: &Store, expr: &Expr) -> ~str
 		}
 		CallExpr(ref n, ref args) | ExtensionExpr(ref n, ref args) =>
 		{
-			n + str::connect(do args.map |a| {expr_to_str(store, a)}, ~", ")
+			n + str::connect(do args.map |a| {expr_to_str(store, *a)}, ~", ")
 		}
 	}
 }
 
-pub fn eval_expr(context: &query::QueryContext, bindings: ~[(~str, Object)], expr: &Expr) -> Object
+pub fn eval_expr(context: &query::QueryContext, bindings: &[(~str, Object)], expr: &Expr) -> Object
 {
 	let result = match *expr
 	{
@@ -84,9 +84,9 @@ priv type UnaryFn = fn (a1: &Object) -> Object;
 priv type BinaryFn = fn (a1: &Object, a2: &Object) -> Object;
 priv type TernaryFn = fn (a1: &Object, a2: &Object, a3: &Object) -> Object;
 
-priv fn eval_extension(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: &~[@Expr]) -> Object
+priv fn eval_extension(context: &query::QueryContext, bindings: &[(~str, Object)], fname: ~str, args: &~[@Expr]) -> Object
 {
-	let args = do vec::map(*args) |a| {eval_expr(context, bindings, a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = do vec::map(*args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match context.extensions.find(@(copy fname))
 	{
 		option::Some(f) =>
@@ -100,9 +100,9 @@ priv fn eval_extension(context: &query::QueryContext, bindings: ~[(~str, Object)
 	}
 }
 
-priv fn eval_call(context: &query::QueryContext, bindings: ~[(~str, Object)], fname: ~str, args: &~[@Expr]) -> Object
+priv fn eval_call(context: &query::QueryContext, bindings: &[(~str, Object)], fname: ~str, args: &~[@Expr]) -> Object
 {
-	let args = do vec::map(*args) |a| {eval_expr(context, bindings, a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = do vec::map(*args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match fname
 	{
 		// operators

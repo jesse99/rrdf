@@ -59,7 +59,7 @@ priv fn pattern_to_expr(pattern: &Pattern) -> expression::Expr
 	}
 }
 
-priv fn expand_expr(namespaces: ~[Namespace], expr: &expression::Expr) -> expression::Expr
+priv fn expand_expr(namespaces: &[Namespace], expr: &expression::Expr) -> expression::Expr
 {
 	match *expr
 	{
@@ -73,7 +73,7 @@ priv fn expand_expr(namespaces: ~[Namespace], expr: &expression::Expr) -> expres
 		}
 		expression::CallExpr(copy fname, ref expressions) =>
 		{
-			expression::CallExpr(fname, vec::map(*expressions, |e| {@expand_expr(namespaces, e)}))
+			expression::CallExpr(fname, vec::map(*expressions, |e| {@expand_expr(namespaces, *e)}))
 		}
 		_ =>
 		{
@@ -82,7 +82,7 @@ priv fn expand_expr(namespaces: ~[Namespace], expr: &expression::Expr) -> expres
 	}
 }
 
-priv fn expand_pattern(namespaces: ~[Namespace], pattern: &Pattern) -> Pattern
+priv fn expand_pattern(namespaces: &[Namespace], pattern: &Pattern) -> Pattern
 {
 	match *pattern
 	{
@@ -101,12 +101,12 @@ priv fn expand_pattern(namespaces: ~[Namespace], pattern: &Pattern) -> Pattern
 	}
 }
 
-priv fn expand_triple(namespaces: ~[Namespace], tp: &TriplePattern) -> TriplePattern
+priv fn expand_triple(namespaces: &[Namespace], tp: &TriplePattern) -> TriplePattern
 {
 	{subject: expand_pattern(namespaces, &tp.subject), predicate: expand_pattern(namespaces, &tp.predicate), object: expand_pattern(namespaces, &tp.object)}
 }
 
-priv fn expand(namespaces: ~[Namespace], algebra: &Algebra) -> Algebra
+priv fn expand(namespaces: &[Namespace], algebra: &Algebra) -> Algebra
 {
 	match *algebra
 	{
@@ -116,7 +116,7 @@ priv fn expand(namespaces: ~[Namespace], algebra: &Algebra) -> Algebra
 		}
 		Group(ref terms) =>
 		{
-			Group(vec::map(*terms, |term| {@expand(namespaces, term)}))
+			Group(vec::map(*terms, |term| {@expand(namespaces, *term)}))
 		}
 		Optional(term) =>
 		{
@@ -133,7 +133,7 @@ priv fn expand(namespaces: ~[Namespace], algebra: &Algebra) -> Algebra
 	}
 }
 
-priv fn find_dupes(names: ~[~str]) -> ~[~str]
+priv fn find_dupes(names: &[~str]) -> ~[~str]
 {
 	let names = std::sort::merge_sort(|x, y| {*x <= *y}, names);	// TODO: probably dont want to de-reference the pointers
 	
@@ -142,9 +142,9 @@ priv fn find_dupes(names: ~[~str]) -> ~[~str]
 	for vec::eachi(names)
 	|i, name|
 	{
-		if i+1u < vec::len(names) && name == names[i+1u] && !vec::contains(dupes, name)
+		if i+1u < vec::len(names) && *name == names[i+1u] && !vec::contains(dupes, name)
 		{
-			vec::push(dupes, copy name);
+			vec::push(&mut dupes, copy *name);
 		}
 	};
 	
@@ -181,13 +181,13 @@ priv fn langtag() -> Parser<@~str>
 // [150] ECHAR ::= '\' [tbnrf"']
 priv fn is_escape_char(ch: char) -> bool
 {
-	option::is_some(str::find_char("tbnrf\"'", ch))	// input ends with EOT so we don't need a range check here
+	option::is_some(&str::find_char("tbnrf\"'", ch))	// input ends with EOT so we don't need a range check here
 }
 
 // [^<>"{}|^`\]-[#x00-#x20]
 priv fn iri_char(ch: char) -> bool
 {
-	if option::is_none(str::find_char("^<>\"{}|^`\\", ch))
+	if option::is_none(&str::find_char("^<>\"{}|^`\\", ch))
 	{
 		(ch as uint) > 0x20u
 	}
@@ -406,7 +406,7 @@ priv fn plx(chars: @[char], i: uint) -> uint
 		3u
 	}
 	// [163] PN_LOCAL_ESC ::=  '\' ( '_' | '~' | '.' | '-' | '!' | '$' | '&' | "'" | '(' | ')' | '*' | '+' | ',' | ';' | '=' | ':' | '/' | '?' | '#' | '@' | '%' )
-	else if chars[i] == '\\' && option::is_some(str::find_char("_~.-!$&'\"()*+,;=:/?#@%", chars[i+1u]))
+	else if chars[i] == '\\' && option::is_some(&str::find_char("_~.-!$&'\"()*+,;=:/?#@%", chars[i+1u]))
 	{
 		2u
 	}
@@ -540,7 +540,7 @@ priv fn binary_expr(term: Parser<expression::Expr>, ops: ~[{oname: ~str, fname: 
 				do vec::foldl(b, *r)
 				|lhs, rhs|
 				{
-					let (i, Right) = copy rhs;
+					let (i, Right) = copy *rhs;
 					expression::CallExpr(copy ops[i].fname, ~[@copy lhs, @copy Right])
 				}
 			)
@@ -555,11 +555,11 @@ priv fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) 
 	let unary = seq3_ret1("(".lit().ws(), Expression, ")".lit().ws());
 	let binary = seq5("(".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), |_a0, a1, _a2, a3, _a4| {result::Ok(~[a1, a3])});
 	let ternary = seq7("(".lit().ws(), Expression, ",".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), |_a0, a1, _a2, a3, _a4, a5, _a6| {result::Ok(~[a1, a3, a5])});
-	let variadic = seq3_ret1("(".lit().ws(), Expression.list(",".lit().ws()), ")".lit().ws());
+	let variadic: Parser<@~[expression::Expr]> = seq3_ret1("(".lit().ws(), Expression.list(",".lit().ws()), ")".lit().ws());
 	
 	macro_rules! unary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), unary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@copy a]))}) })
 	macro_rules! binary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), binary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@copy a[0], @copy a[1]]))}) })
-
+	
 	// [111] BuiltInCall ::= 
 	or_v(@~[
 		// 'STR' '(' Expression ')' 
@@ -596,8 +596,8 @@ priv fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) 
 		// |	'ROUND' '(' Expression ')' 
 		unary_fn!("round"),
 		
-		// |	'CONCAT' ExpressionList 
-		do seq2("CONCAT".liti().ws(), variadic)	|_f, a| {result::Ok(expression::CallExpr(~"concat_fn", vec::map(*a, {|e| @copy e})))},
+		// |	'CONCAT' ExpressionList
+		do seq2("CONCAT".liti().ws(), variadic)	|_f, a| {result::Ok(expression::CallExpr(~"concat_fn", vec::map(*a, |e: &expression::Expr| {@copy *e})))},
 		
 		// |	SubstringExpression 
 		do seq2("substr".liti().ws(), binary)	|_f, a| {result::Ok(expression::CallExpr(~"substr2_fn", ~[@copy a[0], @copy a[1]]))},
@@ -665,7 +665,7 @@ priv fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) 
 		// |	'SHA512' '(' Expression ')' 
 		
 		// |	'COALESCE' ExpressionList 
-		do seq2("COALESCE".liti().ws(), variadic)	|_f, a| {result::Ok(expression::CallExpr(~"coalesce_fn", vec::map(*a, {|e| @copy e})))},
+		do seq2("COALESCE".liti().ws(), variadic)	|_f, a| {result::Ok(expression::CallExpr(~"coalesce_fn", vec::map(*a, {|e: &expression::Expr| @copy *e})))},
 		
 		// |	'IF' '(' Expression ',' Expression ',' Expression ')' 
 		do seq2("IF".liti().ws(), ternary)	|_f, a| {result::Ok(expression::CallExpr(~"if_fn", ~[@copy a[0], @copy a[1], @copy a[2]]))},
@@ -839,7 +839,7 @@ priv fn make_parser() -> Parser<Selector>
 	
 	// [118] IRIrefOrFunction ::= IRIref ArgList?
 	let IRIrefOrFunction1 = do seq2(IRIref, ArgList)
-		|i, a| {result::Ok(expression::ExtensionExpr(copy *i, vec::map(*a, |x| {@copy x})))};
+		|i, a| {result::Ok(expression::ExtensionExpr(copy *i, vec::map(*a, |x: &expression::Expr| {@copy *x})))};
 	let IRIrefOrFunction2 = do IRIref.thene |v| {ret(expression::ConstantExpr(IriValue(copy *v)))};
 	let IRIrefOrFunction = (IRIrefOrFunction1.or(IRIrefOrFunction2));
 	
@@ -999,7 +999,7 @@ priv fn make_parser() -> Parser<Selector>
 			}
 			else
 			{
-				result::Ok(Group(vec::map(*patterns, {|p| @Basic(copy p)})))
+				result::Ok(Group(vec::map(*patterns, |p: &TriplePattern| {@Basic(copy *p)})))
 			}
 		}).note(~"TriplesBlock");
 	
@@ -1007,7 +1007,7 @@ priv fn make_parser() -> Parser<Selector>
 	let ggps_suffix = do seq3(GraphPatternNotTriples, ".".lit().ws().optional(), TriplesBlock.optional())
 		|gpnt, _d, tb|
 		{
-			if option::is_some(tb)
+			if option::is_some(&tb)
 			{
 				result::Ok(Group(~[@gpnt, @(tb.get())]))
 			}
@@ -1020,7 +1020,7 @@ priv fn make_parser() -> Parser<Selector>
 		|tb, gp|
 		{
 			let patterns =
-				if option::is_some(tb)
+				if option::is_some(&tb)
 				{
 					~[tb.get()] + *gp
 				}
@@ -1035,7 +1035,7 @@ priv fn make_parser() -> Parser<Selector>
 			}
 			else
 			{
-				result::Ok(Group(vec::map(patterns, {|p| @copy p})))
+				result::Ok(Group(vec::map(patterns, |p: &Algebra| {@copy *p})))
 			}
 		};
 		
@@ -1074,7 +1074,7 @@ priv fn make_parser() -> Parser<Selector>
 	let select_mid = ("DISTINCT".liti()).or("REDUCED".liti()).ws().optional();
 		
 	let SelectClause = seq3("SELECT".liti().ws(), select_mid, select_suffix,
-		|_a, b, c| {result::Ok((option::is_some(b), copy *c))}).note(~"SelectClause");
+		|_a, b, c| {result::Ok((option::is_some(&b), copy *c))}).note(~"SelectClause");
 		
 	// [7] SelectQuery ::= SelectClause DatasetClause* WhereClause SolutionModifier
 	let SelectQuery = do seq3(SelectClause, WhereClause, SolutionModifier)
@@ -1102,12 +1102,12 @@ type SolutionModifiers = {order_by: Option<@~[expression::Expr]>, limit: Option<
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-priv fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
+priv fn build_parser(namespaces: &[Namespace], query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
 {
 	let ((distinct, patterns), algebra, modifiers) = query;
 	
-	let variables = do vec::filter(patterns) |p| {match p {Variable(ref _l)  => true, _  => false}};
-	let names = do vec::map(variables) |p| {match p {Variable(copy n)  => n, _  => fail}};
+	let variables = do vec::filter(patterns) |p| {match *p {Variable(ref _l)  => true, _  => false}};
+	let names = do vec::map(variables) |p| {match *p {Variable(copy n)  => n, _  => fail}};
 	
 	let order_by = match modifiers.order_by {option::Some(x)  => x, option::None  => @~[]};
 	
@@ -1135,7 +1135,7 @@ priv fn build_parser(namespaces: ~[Namespace], query: ((bool, ~[Pattern]), Algeb
 /// Returns either a function capable of matching triples or a parse error.
 /// 
 /// Expr can be a subset of http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#built-in-datatypes \"SPARQL\".
-pub fn compile(expr: ~str) -> result::Result<Selector, ~str>
+pub fn compile(expr: &str) -> result::Result<Selector, ~str>
 {
 	let parser = make_parser();
 	do result::chain_err(parser.parse(@~"sparql", expr))

@@ -28,7 +28,7 @@ pub fn check_operands(actual: &Object, expected: &Object) -> bool
 	return true;
 }
 
-pub fn check_bgp(groups: ~[Solution], expected: &Solution) -> bool
+pub fn check_bgp(groups: &[Solution], expected: &Solution) -> bool
 {
 	fn convert_bindings(group: &Solution) -> ~[~str]
 	{
@@ -36,19 +36,19 @@ pub fn check_bgp(groups: ~[Solution], expected: &Solution) -> bool
 		|row|
 		{
 			let mut entries = ~[];
-			for row.each |e| {vec::push(entries, fmt!("%s=%?", e.first(), e.second()))};
+			for row.each |e| {vec::push(&mut entries, fmt!("%s=%?", e.first(), e.second()))};
 			let entries = std::sort::merge_sort(|x, y| *x <= *y, entries);
 			str::connect(entries, ~", ")
 		}
 	}
 	
-	fn dump_bindings(actual: ~[~str])
+	fn dump_bindings(actual: &[~str])
 	{
 		io::stderr().write_line("Actual bindings:");
 		for vec::eachi(actual)
 		|i, bindings|
 		{
-			io::stderr().write_line(fmt!("   %?: %s", i, bindings));
+			io::stderr().write_line(fmt!("   %?: %s", i, *bindings));
 		};
 	}
 	
@@ -79,9 +79,9 @@ pub fn check_bgp(groups: ~[Solution], expected: &Solution) -> bool
 	{
 		let erow = copy expected[i];
 		
-		if arow != erow
+		if *arow != erow
 		{
-			io::stderr().write_line(fmt!("Row #%? is %s, but expected %s", i, arow, erow));
+			io::stderr().write_line(fmt!("Row #%? is %s, but expected %s", i, *arow, erow));
 			dump_bindings(actual);
 			return false;
 		}
@@ -90,9 +90,9 @@ pub fn check_bgp(groups: ~[Solution], expected: &Solution) -> bool
 	return true;
 }
 
-pub fn check_triples(actual: ~[Triple], expected: ~[Triple]) -> bool
+pub fn check_triples(actual: &[Triple], expected: &[Triple]) -> bool
 {
-	fn dump_triples(actual: ~[Triple])
+	fn dump_triples(actual: &[Triple])
 	{
 		io::stderr().write_line("Actual triples:");
 		for vec::eachi(actual)
@@ -175,10 +175,10 @@ pub fn check_solution(store: &Store, expr: ~str, expected: &Solution) -> bool
 					|i, row1|
 					{
 						let row2 = copy expected.rows[i];
-						if vec::len(row1) != vec::len(row2)
+						if vec::len(*row1) != vec::len(row2)
 						{
 							print_failure(#fmt["Row %? had size %? but expected %?.",
-								i, vec::len(row1), vec::len(row2)], &actual, &expected);
+								i, vec::len(*row1), vec::len(row2)], &actual, &expected);
 							return false;
 						}
 						
@@ -275,7 +275,7 @@ fn print_result(value: &Solution)
 	|i, row|
 	{
 		let mut entries = ~[];
-		for row.each |e| {vec::push(entries, fmt!("%s = %s", e.first(), e.second().to_str()))};
+		for row.each |e| {vec::push(&mut entries, fmt!("%s = %s", e.first(), e.second().to_str()))};
 		io::stderr().write_line(fmt!("   %?: %s", i, str::connect(entries, ~", ")));
 	};
 }

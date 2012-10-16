@@ -1,7 +1,7 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 use object::*;
 
-pub fn str_str_helper(fname: ~str, arg1: &Object, arg2: &Object, callback: fn@ (~str, ~str, ~str, ~str) -> Object) -> Object
+pub fn str_str_helper(fname: ~str, arg1: &Object, arg2: &Object, callback: fn@ (&str, &str, &str, &str) -> Object) -> Object
 {
 	match *arg1
 	{
@@ -208,7 +208,7 @@ pub fn strbefore_fn(arg1: &Object, arg2: &Object) -> Object
 		{
 			option::Some(i) =>
 			{
-				StringValue(str::slice(value1, 0u, i), copy lang1)
+				StringValue(str::slice(value1, 0u, i), lang1.to_unique())
 			}
 			option::None =>
 			{
@@ -227,7 +227,7 @@ pub fn strafter_fn(arg1: &Object, arg2: &Object) -> Object
 		{
 			option::Some(i) =>
 			{
-				StringValue(str::slice(value1, i + str::len(value2), str::len(value1)), copy lang1)
+				StringValue(str::slice(value1, i + str::len(value2), str::len(value1)), lang1.to_unique())
 			}
 			option::None =>
 			{
@@ -268,14 +268,14 @@ pub fn encode_for_uri_fn(operand: &Object) -> Object
 		StringValue(ref value, copy lang) =>
 		{
 			let mut result = ~"";
-			str::reserve(result, str::len(*value));
+			str::reserve(&mut result, str::len(*value));
 			
 			for str::each_char(*value)
 			|ch|
 			{
 				if is_unreserved(ch)
 				{
-					str::push_char(result, ch);
+					str::push_char(&mut result, ch);
 				}
 				else
 				{
@@ -300,19 +300,19 @@ pub fn concat_fn(operand: ~[Object]) -> Object
 	for vec::eachi(operand)
 	|i, part|
 	{
-		match part
+		match *part
 		{
 			StringValue(ref value, copy lang) =>
 			{
 				result += *value;
-				if !vec::contains(languages, lang)
+				if !vec::contains(languages, &lang)
 				{
-					vec::push(languages, lang);
+					vec::push(&mut languages, lang);
 				}
 			}
 			_ =>
 			{
-				return ErrorValue(fmt!("CONCAT: expected string for argument %? but found %?.", i, part));
+				return ErrorValue(fmt!("CONCAT: expected string for argument %? but found %?.", i, *part));
 			}
 		}
 	}

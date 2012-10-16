@@ -2,7 +2,7 @@
 use store::*;
 use object::*;
 
-fn now_fn(context: &query::QueryContext, args: ~[Object]) -> Object
+pub fn now_fn(context: &query::QueryContext, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 0u
 	{
@@ -14,7 +14,7 @@ fn now_fn(context: &query::QueryContext, args: ~[Object]) -> Object
 	}
 }
 
-fn year_fn(operand: &Object) -> Object
+pub fn year_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -29,7 +29,7 @@ fn year_fn(operand: &Object) -> Object
 	}
 }
 
-fn month_fn(operand: &Object) -> Object
+pub fn month_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -44,7 +44,7 @@ fn month_fn(operand: &Object) -> Object
 	}
 }
 
-fn day_fn(operand: &Object) -> Object
+pub fn day_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -59,7 +59,7 @@ fn day_fn(operand: &Object) -> Object
 	}
 }
 
-fn hours_fn(operand: &Object) -> Object
+pub fn hours_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -74,7 +74,7 @@ fn hours_fn(operand: &Object) -> Object
 	}
 }
 
-fn minutes_fn(operand: &Object) -> Object
+pub fn minutes_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -89,7 +89,7 @@ fn minutes_fn(operand: &Object) -> Object
 	}
 }
 
-fn seconds_fn(operand: &Object) -> Object
+pub fn seconds_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -106,7 +106,7 @@ fn seconds_fn(operand: &Object) -> Object
 
 // TODO: add timezone (this is supposed to return a xs:dayTimeDuration, see <http://www.w3.org/TR/xpath-datamodel/#types>)
 
-fn tz_fn(operand: &Object) -> Object
+pub fn tz_fn(operand: &Object) -> Object
 {
 	match *operand
 	{

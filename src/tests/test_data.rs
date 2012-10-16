@@ -6,7 +6,7 @@
 use object::*;
 use store::*;
 
-fn got_cast1() -> Store
+pub fn got_cast1() -> Store
 {
 	let store = Store(~[
 		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
@@ -19,7 +19,7 @@ fn got_cast1() -> Store
 	return store;
 }
 
-fn got_cast3() -> Store
+pub fn got_cast3() -> Store
 {
 	let store = Store(~[
 		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
@@ -53,7 +53,7 @@ fn got_cast3() -> Store
 	return store;
 }
 
-fn animals() -> Store
+pub fn animals() -> Store
 {
 	let store = Store(~[solution::Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @std::map::HashMap());
 	

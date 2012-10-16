@@ -2,7 +2,7 @@
 use store::*;
 use object::*;
 
-fn abs_fn(operand: &Object) -> Object
+pub fn abs_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -21,7 +21,7 @@ fn abs_fn(operand: &Object) -> Object
 	}
 }
 
-fn round_fn(operand: &Object) -> Object
+pub fn round_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -40,7 +40,7 @@ fn round_fn(operand: &Object) -> Object
 	}
 }
 
-fn ceil_fn(operand: &Object) -> Object
+pub fn ceil_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -59,7 +59,7 @@ fn ceil_fn(operand: &Object) -> Object
 	}
 }
 
-fn floor_fn(operand: &Object) -> Object
+pub fn floor_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -78,7 +78,7 @@ fn floor_fn(operand: &Object) -> Object
 	}
 }
 
-fn rand_fn(context: &query::QueryContext, args: ~[Object]) -> Object
+pub fn rand_fn(context: &query::QueryContext, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 0u
 	{
