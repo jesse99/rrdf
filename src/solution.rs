@@ -1,6 +1,4 @@
 //! The result of a SPARQL query.
-use Option = option::Option;
-use object::*;
 
 /// Name of a namespace plus the IRI it expands to.
 ///

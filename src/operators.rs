@@ -1,5 +1,4 @@
 //! SPARQL operators. Clients will not ordinarily use this.
-use object::*;
 
 // Operators used within SPARQL FILTER expressions. See 17.2 and related.
 

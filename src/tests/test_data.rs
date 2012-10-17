@@ -3,15 +3,13 @@
 // Profile for electronix business cards.
 // 2) https://github.com/edumbill/doap/wiki
 // Profile used to describe open source software projects.
-use object::*;
-use store::*;
 
 pub fn got_cast1() -> Store
 {
 	let store = Store(~[
 		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		solution::Namespace {prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
-		], @std::map::HashMap());
+		], @HashMap());
 	store.add(~"got:Eddard_Stark", ~[
 		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
 		(~"v:nickname", StringValue(~"Ned", ~""))
@@ -24,7 +22,7 @@ pub fn got_cast3() -> Store
 	let store = Store(~[
 		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		solution::Namespace {prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
-		], @std::map::HashMap());
+		], @HashMap());
 	
 	store.add(~"got:Eddard_Stark", ~[
 		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
@@ -55,7 +53,7 @@ pub fn got_cast3() -> Store
 
 pub fn animals() -> Store
 {
-	let store = Store(~[solution::Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @std::map::HashMap());
+	let store = Store(~[solution::Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @HashMap());
 	
 	store.add(~"wiki:aardvark", ~[
 		(~"wiki:phylum", StringValue(~"chordata", ~"")),

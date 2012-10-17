@@ -3,10 +3,7 @@ use functions_on_dates::*;
 use functions_on_numerics::*;
 use functions_on_strings::*;
 use functions_on_terms::*;
-use object::*;
 use operators::*;
-use solution::*;
-use store::*;
 
 pub enum Expr
 {

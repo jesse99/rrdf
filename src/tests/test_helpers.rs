@@ -1,9 +1,6 @@
 use io::WriterUtil;
-use object::*;
 use query::*;
-use solution::*;
 use sparql::*;
-use store::*;
 
 pub fn check_strs(actual: ~str, expected: ~str) -> bool
 {
@@ -56,7 +53,7 @@ pub fn check_bgp(groups: &[Solution], expected: &Solution) -> bool
 	for vec::each(vec::slice(groups, 1, groups.len())) 
 	|group|
 	{
-		let store = Store(~[], &std::map::HashMap());
+		let store = Store(~[], &HashMap());
 		actual = join_solutions(&store, ~[~"*"], &actual, group, false);
 	}
 	

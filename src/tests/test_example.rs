@@ -1,9 +1,6 @@
 /// This is the example code we drop into the readme.
 use io::WriterUtil;
-use object::*;
 use sparql::*;
-use solution::*;
-use store::*;
 use test_helpers::*;
 
 // Creates a triple store and adds monsters to it.
@@ -16,7 +13,7 @@ fn monsters() -> Store
 	// Vector of function name and function pointer tuples. These
 	// represent user defined functions that may be called from
 	// within SPARQL queries.
-	let extensions = std::map::HashMap();
+	let extensions = HashMap();
 	
 	// Create an empty triple store.
 	let store = Store(namespaces, &extensions);

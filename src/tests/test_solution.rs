@@ -1,7 +1,5 @@
 use query::*;
-use solution::*;
 use sparql::*;
-use store::*;
 use test_data::*;
 use test_helpers::*;
 

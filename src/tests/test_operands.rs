@@ -1,4 +1,3 @@
-use object::*;
 use test_helpers::*;
 
 #[test]

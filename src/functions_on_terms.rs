@@ -1,5 +1,4 @@
 //! SPARQL functions. Clients will not ordinarily use this.
-use object::*;
 
 pub fn isiri_fn(operand: &Object) -> Object
 {

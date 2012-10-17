@@ -1,6 +1,4 @@
 //! SPARQL functions. Clients will not ordinarily use this.
-use store::*;
-use object::*;
 
 pub fn now_fn(context: &query::QueryContext, args: ~[Object]) -> Object
 {

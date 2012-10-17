@@ -1,7 +1,3 @@
-use std::map::*;
-use object::*;
-use solution::*;
-use store::*;
 use test_helpers::*;
 
 fn got(s: ~str) -> ~str
@@ -75,7 +71,7 @@ fn fancy_types() -> Store
 	let store = Store(~[
 		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		solution::Namespace {prefix: ~"x", path: ~"http://blah#"}
-		], &std::map::HashMap());
+		], &HashMap());
 	
 	store.add(~"x:Hans", ~[(~"x:greeting", StringValue(~"guten tag", ~"de"))]);
 	store.add(~"x:Jones", ~[(~"x:greeting", StringValue(~"guten tag", ~"en-US"))]);

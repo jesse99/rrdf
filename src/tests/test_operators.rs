@@ -1,4 +1,3 @@
-use object::*;
 use operators::*;
 use test_helpers::*;
 

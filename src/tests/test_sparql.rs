@@ -1,7 +1,3 @@
-use std::map::*;
-use object::*;
-use solution::*;
-use store::*;
 use test_helpers::*;
 
 fn got(s: ~str) -> ~str
@@ -154,7 +150,7 @@ fn unmatched_path()
 		?subject wiki:class \"arachnid\"
 	}";
 	
-	let store = Store(~[solution::Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], &std::map::HashMap());
+	let store = Store(~[solution::Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], &HashMap());
 	store.add(~"wiki:giraffe", ~[
 		(~"wiki:phylum", StringValue(~"chordata", ~"")),
 		(~"wiki:class", StringValue(~"mammalia", ~"")),

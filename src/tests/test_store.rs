@@ -1,7 +1,4 @@
 use io::WriterUtil;
-use std::map::*;
-use object::*;
-use solution::*;
 use test_data::*;
 use test_helpers::*;
 
@@ -47,7 +44,7 @@ fn references()
 		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
 		solution::Namespace {prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"},
 		solution::Namespace {prefix: ~"foo", path: ~"http://www.whatever.org/"}
-		], &std::map::HashMap());
+		], &HashMap());
 		
 	store.add(~"got:Eddard_Stark", ~[
 		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
@@ -114,7 +111,7 @@ fn blank_nodes()
 #[test]
 fn container() 
 {
-	let store = Store(~[solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::HashMap());
+	let store = Store(~[solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &HashMap());
 	store.add_alt(~"got:places", ~[IriValue(~"got:The_Wall"), IriValue(~"got:Winterfell")]);
 	
 	let mut actual = ~[];
@@ -136,7 +133,7 @@ fn container()
 #[test]
 fn list0() 
 {
-	let store = Store(~[solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::HashMap());
+	let store = Store(~[solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &HashMap());
 	store.add_list(~"got:westeros", ~"got:cities", ~[]);
 	
 	let mut actual = ~[];
@@ -157,7 +154,7 @@ fn list0()
 #[test]
 fn list1() 
 {
-	let store = Store(~[solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &std::map::HashMap());
+	let store = Store(~[solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"}], &HashMap());
 	store.add_list(~"got:westeros", ~"got:cities", ~[StringValue(~"Lanisport", ~"")]);
 	
 	let mut actual = ~[];

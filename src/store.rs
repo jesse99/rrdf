@@ -1,8 +1,4 @@
 //! The type which stores triples.
-use core::dvec::*;
-use std::map::*;
-use object::*;
-use solution::*;
 
 // --------------------------------------------------------------------------------------
 /// An internationalized URI with an optional fragment identifier (http://www.w3.org/2001/XMLSchema#date)

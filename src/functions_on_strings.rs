@@ -1,5 +1,4 @@
 //! SPARQL functions. Clients will not ordinarily use this.
-use object::*;
 
 pub fn str_str_helper(fname: ~str, arg1: &Object, arg2: &Object, callback: fn@ (&str, &str, &str, &str) -> Object) -> Object
 {

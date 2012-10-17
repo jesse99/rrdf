@@ -1,13 +1,8 @@
 //! Used when evaluating a SPARQL query. Clients will not ordinarily use this.
 // The sparql parser operates by building a sequence of matcher functions and
 // then creating a selector function using the select function.
-use std::map::*;
-use dvec::*;
 use expression::*;
-use object::*;
 use operators::*;
-use solution::*;
-use store::*;
 
 pub enum Pattern
 {
