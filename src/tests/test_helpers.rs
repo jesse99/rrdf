@@ -1,6 +1,4 @@
 use io::WriterUtil;
-use query::*;
-use sparql::*;
 
 pub fn check_strs(actual: ~str, expected: ~str) -> bool
 {

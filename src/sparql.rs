@@ -1,7 +1,6 @@
 //! Compiles a SRARQL query into a function that can be applied to a store value.
 use std::time;
 //use rparse::*;		// https://github.com/mozilla/rust/issues/3781
-use query::*;
 
 use rparse::{identifier, decimal_number, octal_number, hex_number, float_number, char_literal, string_literal, comment, line_comment};
 use rparse::{ParseStatus, ParseFailed, anycp, CharParsers, 

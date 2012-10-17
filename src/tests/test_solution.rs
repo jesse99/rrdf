@@ -1,5 +1,3 @@
-use query::*;
-use sparql::*;
 use test_data::*;
 use test_helpers::*;
 

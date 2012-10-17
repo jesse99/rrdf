@@ -6,5 +6,5 @@ use Option = option::Option;
 pub use store::*;
 pub use solution::*;
 pub use object::*;
-//pub use sparql::*;
-//pub use query::*;
+pub use sparql::*;
+pub use query::*;
