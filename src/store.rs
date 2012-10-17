@@ -79,7 +79,7 @@ pub fn get_blank_name(store: &Store, prefix: &str) -> ~str
 }
 
 /// Returns either the iri or the prefixed version of the iri.
-pub pure fn contract_uri(namespaces: &[solution::Namespace], iri: &str) -> ~str
+pub pure fn contract_uri(namespaces: &[Namespace], iri: &str) -> ~str
 {
 	match vec::find(namespaces, |n| {str::starts_with(iri, n.path)})
 	{
@@ -417,11 +417,11 @@ pub impl  Triple : ToStr
 priv fn default_namespaces() -> ~[Namespace]
 {
 	~[
-		solution::Namespace {prefix: ~"_", path: ~"_:"},
-		solution::Namespace {prefix: ~"xsd", path: ~"http://www.w3.org/2001/XMLSchema#"},
-		solution::Namespace {prefix: ~"rdf", path: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
-		solution::Namespace {prefix: ~"rdfs", path: ~"http://www.w3.org/2000/01/rdf-schema#"},
-		solution::Namespace {prefix: ~"owl", path: ~"http://www.w3.org/2002/07/owl#"}
+		Namespace {prefix: ~"_", path: ~"_:"},
+		Namespace {prefix: ~"xsd", path: ~"http://www.w3.org/2001/XMLSchema#"},
+		Namespace {prefix: ~"rdf", path: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
+		Namespace {prefix: ~"rdfs", path: ~"http://www.w3.org/2000/01/rdf-schema#"},
+		Namespace {prefix: ~"owl", path: ~"http://www.w3.org/2002/07/owl#"}
 	]
 }
 

@@ -1,6 +1,6 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 
-pub fn now_fn(context: &query::QueryContext, args: ~[Object]) -> Object
+pub fn now_fn(context: &QueryContext, args: ~[Object]) -> Object
 {
 	if vec::len(args) == 0u
 	{

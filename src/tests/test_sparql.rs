@@ -150,7 +150,7 @@ fn unmatched_path()
 		?subject wiki:class \"arachnid\"
 	}";
 	
-	let store = Store(~[solution::Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], &HashMap());
+	let store = Store(~[Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], &HashMap());
 	store.add(~"wiki:giraffe", ~[
 		(~"wiki:phylum", StringValue(~"chordata", ~"")),
 		(~"wiki:class", StringValue(~"mammalia", ~"")),

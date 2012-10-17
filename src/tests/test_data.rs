@@ -7,8 +7,8 @@
 pub fn got_cast1() -> Store
 {
 	let store = Store(~[
-		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
-		solution::Namespace {prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
+		Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
+		Namespace {prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
 		], @HashMap());
 	store.add(~"got:Eddard_Stark", ~[
 		(~"v:fn", StringValue(~"Eddard Stark", ~"")),
@@ -20,8 +20,8 @@ pub fn got_cast1() -> Store
 pub fn got_cast3() -> Store
 {
 	let store = Store(~[
-		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
-		solution::Namespace {prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
+		Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
+		Namespace {prefix: ~"v", path: ~"http://www.w3.org/2006/vcard/ns#"}
 		], @HashMap());
 	
 	store.add(~"got:Eddard_Stark", ~[
@@ -53,7 +53,7 @@ pub fn got_cast3() -> Store
 
 pub fn animals() -> Store
 {
-	let store = Store(~[solution::Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @HashMap());
+	let store = Store(~[Namespace {prefix: ~"wiki", path: ~"http://en.wikipedia.org/wiki/"}], @HashMap());
 	
 	store.add(~"wiki:aardvark", ~[
 		(~"wiki:phylum", StringValue(~"chordata", ~"")),

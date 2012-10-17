@@ -30,17 +30,17 @@ pub enum Object			// TODO: once we support serialization we'll need to add somet
 
 pub impl Object
 {
-	pure fn to_friendly_str(namespaces: &[solution::Namespace]) -> ~str
+	pure fn to_friendly_str(namespaces: &[Namespace]) -> ~str
 	{
 		match self
 		{
 			TypedValue(ref value, ref kind) =>
 			{
-				fmt!("\"%s^^\"%s", *value, store::contract_uri(namespaces, *kind))
+				fmt!("\"%s^^\"%s", *value, contract_uri(namespaces, *kind))
 			}
 			IriValue(ref iri) =>
 			{
-				let result = store::contract_uri(namespaces, *iri);
+				let result = contract_uri(namespaces, *iri);
 				if result != *iri
 				{
 					result

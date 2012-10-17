@@ -69,8 +69,8 @@ fn long_string2_match()
 fn fancy_types() -> Store
 {
 	let store = Store(~[
-		solution::Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
-		solution::Namespace {prefix: ~"x", path: ~"http://blah#"}
+		Namespace {prefix: ~"got", path: ~"http://awoiaf.westeros.org/index.php/"},
+		Namespace {prefix: ~"x", path: ~"http://blah#"}
 		], &HashMap());
 	
 	store.add(~"x:Hans", ~[(~"x:greeting", StringValue(~"guten tag", ~"de"))]);
