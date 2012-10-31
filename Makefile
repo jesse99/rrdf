@@ -18,12 +18,12 @@ check1: bin/test-rrdf
 # You can either use this target (assuming that the libraries are in /usr/local/lib/rust)
 # or install them via cargo.
 update-libraries:
-	cp /usr/local/lib/rust/librparse-*-0.6.dylib bin
+	cp /usr/local/lib/rust/librparse-*-0.6.* bin
 
 # Better to use /usr/local/lib but linking it in with -L /usr/local/lib fails because
 # there is a libccore there and in the nested rustc directory.
 install:
-	install -p `find bin -name "librrdf*" -type f -maxdepth 1` /usr/local/lib/rust
+	install -p `find bin -maxdepth 1 -name "librrdf*" -type f` /usr/local/lib/rust
 
 clean:
 	rm -rf bin
