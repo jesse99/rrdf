@@ -43,3 +43,10 @@ mod tests
 	mod test_sparql_literals;
 	mod test_store;
 }
+
+#[cfg(speed)]
+#[cfg(test)]
+mod bench
+{
+	mod test_speed;
+}

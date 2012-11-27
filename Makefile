@@ -15,6 +15,9 @@ check: bin/test-rrdf
 check1: bin/test-rrdf
 	export RUST_LOG=rrdf::query=2,rrdf::expression=1,rparse=1 && ./bin/test-rrdf str_after
 
+speed: bin/test-speed
+	export RUST_LOG=rrdf::query=1 && ./bin/test-speed speed
+
 # You can either use this target (assuming that the libraries are in /usr/local/lib/rust)
 # or install them via cargo.
 update-libraries:
@@ -42,3 +45,6 @@ lib:
 
 bin/test-rrdf: src/rrdf.rc src/*.rs src/tests/*.rs
 	$(RUSTC) -g -L bin --test -o $@ $<
+
+bin/test-speed: src/rrdf.rc src/*.rs src/tests/*.rs src/bench/*.rs
+	$(RUSTC) -g -L bin --cfg speed -O --test -o $@ $<
