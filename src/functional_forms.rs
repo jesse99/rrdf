@@ -4,7 +4,7 @@ pub fn bound_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
-		UnboundValue(*) =>
+		UnboundValue =>
 		{
 			BoolValue(false)
 		}

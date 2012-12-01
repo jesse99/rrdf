@@ -40,19 +40,20 @@ pub fn eval_expr(context: &QueryContext, bindings: &[(~str, Object)], expr: &Exp
 		{
 			value
 		}
-		VariableExpr(copy name) =>
+		VariableExpr(copy _name) =>
 		{
-			match bindings.search(name)
-			{
-				option::Some(ref value) =>
-				{
-					copy *value
-				}
-				option::None =>
-				{
-					UnboundValue(name)
-				}
-			}
+			fail ~"not implemented";
+//			match bindings.search(name)
+//			{
+//				option::Some(ref value) =>
+//				{
+//					copy *value
+//				}
+//				option::None =>
+//				{
+//					UnboundValue(name)
+//				}
+//			}
 		}
 		ExtensionExpr(copy fname, ref args) =>
 		{

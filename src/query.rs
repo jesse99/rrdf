@@ -10,7 +10,7 @@ pub enum Pattern
 	Constant(Object)
 }
 
-pub type TriplePattern = {subject: Pattern, predicate: Pattern, object: Pattern};
+pub struct TriplePattern {subject: Pattern, predicate: Pattern, object: Pattern}
 
 pub enum Algebra
 {
@@ -33,6 +33,9 @@ pub struct QueryContext
 	pub timestamp: Tm,		// for NOW
 }
 
+// TODO: All of these functions except eval should be private. But then we'd have to move the unit tests
+// here which kind of blows. See https://github.com/mozilla/rust/issues/3505
+
 /// The function returned by compile and invoked to execute a SPARQL query. 
 /// 
 /// Returns a solution or a 'runtime' error.
@@ -42,7 +45,66 @@ pub type Binding = {name: ~str, value: Object};
 
 pub type Match = either::Either<Binding, bool>;	// match succeeded if bindings or true
 
-priv fn pattern_to_str(store: &Store, pattern: &Pattern) -> ~str
+// Returns the names (from the SELECT clause) followed by bound variable
+// names not in names.
+pub fn get_bindings(names: &[~str], algebra: Algebra) -> ~[~str]
+{
+	fn add_pattern_binding(bindings: &mut ~[~str], pattern: Pattern)
+	{
+		match pattern
+		{
+			Variable(ref v) =>
+			{
+				if !bindings.contains(v)
+				{
+					bindings.push(copy *v);
+				}
+			}
+			Constant(_) =>
+			{
+			}
+		}
+	}
+	
+	fn add_algebra_bindings(bindings: &mut ~[~str], algebra: &Algebra)
+	{
+		match *algebra
+		{
+			Basic(ref v) =>
+			{
+				add_pattern_binding(bindings, copy v.subject);
+				add_pattern_binding(bindings, copy v.predicate);
+				add_pattern_binding(bindings, copy v.object);
+			}
+			Group(ref v) =>
+			{
+				for v.each |a| {add_algebra_bindings(bindings, *a)};
+			}
+			Optional(v) =>
+			{
+				add_algebra_bindings(bindings, v);
+			}
+			Bind(_, ref v) =>
+			{
+				if !bindings.contains(v) 
+				{
+					bindings.push(copy *v);
+				}
+			}
+			Filter(_) =>
+			{
+			}
+		}
+	}
+	
+	let mut bindings = ~[];
+	bindings.push_all(names);
+	add_algebra_bindings(&mut bindings, &algebra);
+	
+	return bindings;
+}
+
+pub fn pattern_to_str(store: &Store, pattern: &Pattern) -> ~str
 {
 	match *pattern
 	{
@@ -57,12 +119,12 @@ priv fn pattern_to_str(store: &Store, pattern: &Pattern) -> ~str
 	}
 }
 
-priv fn triple_pattern_to_str(store: &Store, pattern: &TriplePattern) -> ~str
+pub fn triple_pattern_to_str(store: &Store, pattern: &TriplePattern) -> ~str
 {
 	fmt!("{subject: %s, predicate: %s, object: %s}", pattern_to_str(store, &pattern.subject), pattern_to_str(store, &pattern.predicate), pattern_to_str(store, &pattern.object))
 }
-	
-priv fn algebra_to_str(store: &Store, algebra: &Algebra) -> ~str
+
+pub fn algebra_to_str(store: &Store, algebra: &Algebra) -> ~str
 {
 	match *algebra
 	{
@@ -89,27 +151,27 @@ priv fn algebra_to_str(store: &Store, algebra: &Algebra) -> ~str
 	}
 }
 
-priv fn solution_row_to_str(store: &Store, row: &SolutionRow) -> ~str
+pub fn solution_row_to_str(store: &Store, solution: &Solution, row: &SolutionRow) -> ~str
 {
 	let mut entries = ~[];
-	for row.each
-	|entry|
+	for row.eachi |i, entry|
 	{
-		let name = entry.first();
-		let value = entry.second().to_friendly_str(store.namespaces);
-		vec::push(&mut entries, fmt!("%s: %s", name, value));
+		let name = copy solution.bindings[i];
+		let value = entry.to_friendly_str(store.namespaces);
+		let prefix = if i == solution.num_selected {"["} else {""};
+		let suffix = if i == solution.bindings.len() - 1 && solution.bindings.len() > solution.num_selected {"]"} else {""};
+		vec::push(&mut entries, fmt!("%s%s: %s%s", prefix, name, value, suffix));
 	};
 	str::connect(entries, ~", ")
 }
 
-priv fn solution_to_str(store: &Store, solution: &Solution) -> ~str
+pub fn solution_to_str(store: &Store, solution: &Solution) -> ~str
 {
 	let mut result = ~"";
 	
-	for vec::eachi(solution.rows)
-	|i, row|
+	for vec::eachi(solution.rows) |i, row|
 	{
-		result += fmt!("%?: %s   ", i, solution_row_to_str(store, row));
+		result += fmt!("%?: %s   ", i, solution_row_to_str(store, solution, row));
 	};
 	
 	if result.is_empty()
@@ -118,120 +180,6 @@ priv fn solution_to_str(store: &Store, solution: &Solution) -> ~str
 	}
 	
 	return result;
-}
-
-// Conceptually treats SolutionRow as a set where each set value consists of both
-// the name and the value. Takes the cross product of entries from each pair
-// of groups and adds compatible results to the result.
-//
-// Where a cross product is compatible if, for every identical name, the values
-// are also identical.
-pub fn join_solutions(store: &Store, names: ~[~str], group1: &Solution, group2: &Solution, optional_join: bool) -> Solution
-{
-	fn compatible_binding(name1: ~str, value1: &Object, rhs: &SolutionRow) -> bool
-	{
-		match rhs.search(name1)
-		{
-			option::Some(ref value2) =>
-			{
-				equal_objects(value1, value2)
-			}
-			option::None() =>
-			{
-				true
-			}
-		}
-	}
-	
-	fn compatible_row(row: &SolutionRow, rhs: &SolutionRow) -> bool
-	{
-		for row.each()
-		|entry|
-		{
-			if !compatible_binding(entry.first(), &entry.second(), rhs)
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	fn union_rows(lhs: &SolutionRow, rhs: &SolutionRow) -> SolutionRow
-	{
-		let mut result = copy(*lhs);
-		
-		for rhs.each()
-		|entry2|
-		{
-			match lhs.search(entry2.first())
-			{
-				option::Some(_) =>
-				{
-					// Binding should be compatible with lhs so nothing to do here.
-				}
-				option::None() =>
-				{
-					// This is a binding in rhs but not lhs, so we need to add it to the result.
-					vec::push(&mut result, copy *entry2);
-				}
-			}
-		}
-		
-		return result;
-	}
-	
-	let mut result = ~[];
-	info!("joining:");
-	info!("   group1 = %s", solution_to_str(store, group1));
-	info!("   group2 = %s", solution_to_str(store, group2));
-	if vec::is_not_empty(group1.rows) && (vec::is_not_empty(group2.rows) || optional_join)
-	{
-		for vec::each(group1.rows)
-		|lhs|
-		{
-			let count = vec::len(result);
-			for vec::each(group2.rows)
-			|rhs|
-			{
-				if compatible_row(lhs, rhs)
-				{
-					let unioned = union_rows(lhs, rhs);
-					info!("   added: %s", solution_row_to_str(store, &unioned));
-					vec::push(&mut result, filter_row(names, &unioned));
-				}
-				else
-				{
-					debug!("   not compatible: %s and %s", solution_row_to_str(store, lhs), solution_row_to_str(store, rhs));
-				}
-			}
-			if vec::len(result) == count && optional_join
-			{
-				// With OPTIONAL we need to add the lhs row even if we failed to find
-				// any compatible rhs rows.
-				info!("   optional: %s", solution_row_to_str(store, lhs));
-				vec::push(&mut result, filter_row(names, lhs));
-			}
-		}
-	}
-	
-	if result.is_empty()
-	{
-		info!("   empty result");
-	}
-	
-	return Solution {namespaces: copy store.namespaces, rows: result};
-}
-
-priv fn filter_row(names: &[~str], row: &SolutionRow) -> SolutionRow
-{
-	if names == ~[~"*"]
-	{
-		copy *row		// TODO: this is an annoying copy
-	}
-	else
-	{
-		do vec::filter(*row) |e| {vec::contains(names, &e.first())}
-	}
 }
 
 priv fn equal_objects(actual: &Object, expected: &Object) -> bool
@@ -249,575 +197,99 @@ priv fn equal_objects(actual: &Object, expected: &Object) -> bool
 	}
 }
 
-priv fn match_subject(actual: &str, pattern: &Pattern) -> Match
+// This returns the union of each row in group1 with compatible rows from group2. Where rows are
+// compatible if the values that they bind are equal. For normal triple pattern groups optional_join
+// will be false which means the returned rows are only the ones that were able to be unioned. For 
+// OPTIONAL pattern groups optional_join will be true when in which case rows from group1 are 
+// returned even when they were not unioned.
+//
+// Here's an example:
+// Group1							Group2
+// Name		Occupation		Name			Hobbies
+// John Smith	Dentist				Jane Doe		Yak Shaving		note that Jane Doe is never returned (because it is incompatible with every group1 row)
+// Bill Connor	Carpenter			John Smith		Gardening
+// Jill Jackson	Sys Admin			Bill Connor	Model trains
+//
+// With optional_join off result will be:
+// Name		Occupation		Hobbies
+// John Smith	Dentist				Gardening
+// Bill Connor	Carpenter			Model trains
+//
+// With optional_join on result will be:
+// Name		Occupation		Hobbies
+// John Smith	Dentist				Gardening
+// Bill Connor	Carpenter			Model trains
+// Jill Jackson	Sys Admin			<not bound>
+pub fn join_solutions(store: &Store, group1: &Solution, group2: &Solution, optional_join: bool) -> Solution
 {
-	match *pattern
+	fn compatible_row(bindings: &[~str], lhs: &SolutionRow, rhs: &SolutionRow) -> bool
 	{
-		Variable(copy name) =>
+		for uint::range(0, bindings.len()) |i|
 		{
-			let value =
-				if actual.starts_with("_:")
+			if !lhs[i].is_unbound() && !rhs[i].is_unbound()
+			{
+				if !equal_objects(lhs[i], rhs[i])
 				{
-					BlankValue(actual.to_unique())
-				}
-				else
-				{
-					IriValue(actual.to_unique())
-				};
-			either::Left({name: name, value: value})
-		}
-		Constant(IriValue(ref value)) =>
-		{
-			let matched = actual == *value;
-			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
-			either::Right(matched)
-		}
-		Constant(BlankValue(ref value)) =>
-		{
-			let matched = actual == *value;
-			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
-			either::Right(matched)
-		}
-		_ =>
-		{
-			either::Right(false)
-		}
-	}
-}
-
-priv fn match_predicate(actual: &str, pattern: &Pattern) -> Match
-{
-	match *pattern
-	{
-		Variable(copy name) =>
-		{
-			let value = IriValue(actual.to_unique());
-			either::Left({name: name, value: value})
-		}
-		Constant(IriValue(ref value)) =>
-		{
-			let matched = actual == *value;
-			//debug!("Actual predicate %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
-			either::Right(matched)
-		}
-		_ =>
-		{
-			either::Right(false)
-		}
-	}
-}
-
-priv fn match_object(actual: &Object, pattern: &Pattern) -> Match
-{
-	match *pattern
-	{
-		Variable(copy name) =>
-		{
-			either::Left({name: name, value: copy *actual})
-		}
-		Constant(ref expected) =>
-		{
-			let matched = equal_objects(actual, expected);
-			//debug!("Actual object %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], expected.to_str()];
-			either::Right(matched)
-		}
-	}
-}
-
-priv fn eval_match(bindings: &mut ~[(~str, Object)], m: Match) -> result::Result<bool, ~str>
-{
-	match m
-	{
-		either::Left(ref binding) =>
-		{
-			if option::is_none(&bindings.search(binding.name))
-			{
-				//debug!("Bound %? to %s", binding.value, binding.name);
-				vec::push(bindings, (copy binding.name, copy binding.value));
-				result::Ok(true)
-			}
-			else
-			{
-				return result::Err(fmt!("Binding %s was set more than once.", binding.name));
-			}
-		}
-		either::Right(true) =>
-		{
-			result::Ok(true)
-		}
-		either::Right(false) =>
-		{
-			result::Ok(false)
-		}
-	}
-}
-
-priv fn iterate_matches(store: &Store, spattern: &Pattern, callback: fn (Option<&Binding>, @DVec<Entry>) -> bool)
-{
-	fn invoke(subject: &str, pattern: &Pattern, entries: @DVec<Entry>, callback: fn (option::Option<&Binding>, @DVec<Entry>) -> bool) -> bool
-	{
-		match match_subject(subject, pattern)
-		{
-			either::Left(ref binding) =>
-			{
-				callback(option::Some(binding), entries)
-			}
-			either::Right(true) =>
-			{
-				callback(option::None, entries)
-			}
-			either::Right(false) =>
-			{
-				false
-			}
-		}
-	}
-	
-	match *spattern
-	{
-		Constant(IriValue(ref subject)) | Constant(BlankValue(ref subject)) =>
-		{
-			// Optimization for a common case where we are attempting to match a specific subject.
-			let candidate = store.subjects.find(@copy *subject);
-			if option::is_some(&candidate)
-			{
-				info!("--- matched subject %?", subject);
-				let entries = option::get(&candidate);
-				if !invoke(*subject, spattern, entries, callback)
-				{
-					return;
+					return false;
 				}
 			}
 		}
-		_ =>
-		{
-			for store.subjects.each()
-			|subject, entries|
-			{
-				debug!("--- trying subject %?", subject);
-				if !invoke(*subject, spattern, entries, callback)
-				{
-					return;
-				}
-			};
-		}
-	}
-}
-
-// Returns the named bindings.
-priv fn eval_basic(store: &Store, names: &[~str], matcher: &TriplePattern) -> result::Result<Solution, ~str>
-{
-	let mut rows = Solution {namespaces: copy store.namespaces, rows: ~[]};
-	
-	// Iterate over the matching subjects,
-	for iterate_matches(store, &matcher.subject)
-	|sbinding, entries|
-	{
-		for (*entries).each()
-		|entry|
-		{
-			// initialize row,
-			let mut bindings = ~[];
-			if option::is_some(&sbinding)
-			{
-				//debug!("Bound %? to %s", option::get(sbinding).value, option::get(sbinding).name);
-				vec::push(&mut bindings, (copy option::get(&sbinding).name, copy option::get(&sbinding).value));
-			}
-			
-			// match an entry,
-			let result = do eval_match(&mut bindings, match_predicate(entry.predicate, &matcher.predicate)).chain
-			|matched|
-			{
-				if matched
-				{
-					eval_match(&mut bindings, match_object(&entry.object, &matcher.object))
-				}
-				else
-				{
-					result::Ok(false)
-				}
-			};
-			
-			// handle the results of matching the triple.
-			match result
-			{
-				result::Ok(true) =>
-				{
-					if sbinding.is_some()
-					{
-						info!("basic %s matched (%s, %s, %s)", triple_pattern_to_str(store, matcher), sbinding.get().value.to_friendly_str(store.namespaces), contract_uri(store.namespaces, entry.predicate), entry.object.to_friendly_str(store.namespaces));
-					}
-					else
-					{
-						info!("basic %s matched (*, %s, %s)", triple_pattern_to_str(store, matcher), contract_uri(store.namespaces, entry.predicate), entry.object.to_friendly_str(store.namespaces));
-					}
-					vec::push(&mut rows.rows, filter_row(names, &bindings));
-				}
-				result::Ok(false) =>
-				{
-					// match failed: try next entry
-				}
-				result::Err(copy mesg) =>
-				{
-					return result::Err(mesg)
-				}
-			}
-		}
-	};
-	
-	result::Ok(rows)
-}
-
-priv fn filter_solution(context: &QueryContext, names: ~[~str], solution: &Solution, expr: &Expr) -> result::Result<Solution, ~str>
-{
-	let mut result = ~[];
-	vec::reserve(&mut result, vec::len(solution.rows));
-	
-	for vec::each(solution.rows)
-	|row|
-	{
-		let value = eval_expr(context, *row, expr);
-		match get_ebv(&value)
-		{
-			result::Ok(true) =>
-			{
-				vec::push(&mut result, filter_row(names, row));
-			}
-			result::Ok(false) =>
-			{
-				debug!("FILTER rejected %?", row);
-			}
-			result::Err(copy err) =>
-			{
-				return result::Err(err);
-			}
-		}
+		return true;
 	}
 	
-	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
-}
-
-priv fn bind_solution(context: &QueryContext, names: &[~str], solution: &Solution, expr: &Expr, name: &str) -> result::Result<Solution, ~str>
-{
-	let mut result = ~[];
-	vec::reserve(&mut result, vec::len(solution.rows));
-	
-	for vec::each(solution.rows)
-	|row|
+	fn union_rows(bindings: &[~str], lhs: &SolutionRow, rhs: &SolutionRow) -> SolutionRow
 	{
-		let value = eval_expr(context, *row, expr);
-		match value
-		{
-			UnboundValue(ref name) =>
-			{
-				return result::Err(fmt!("?%s was not bound", *name));
-			}
-			InvalidValue(ref literal, ref kind) =>
-			{
-				return result::Err(fmt!("?%s is not a valid %s", *literal, *kind));
-			}
-			ErrorValue(copy mesg) =>
-			{
-				return result::Err(mesg);
-			}
-			_ =>
-			{
-				vec::push(&mut result, filter_row(names, &(row + ~[(name.to_unique(), value)])));
-			}
-		}
-	}
-	
-	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
-}
-
-priv fn eval_group(store: &Store, context: &QueryContext, in_names: &[~str], terms: &[@Algebra]) -> result::Result<Solution, ~str>
-{
-	let mut result = Solution {namespaces: copy store.namespaces, rows: ~[]};
-	
-	for vec::eachi(terms)
-	|i, term|
-	{
-		info!(" ");
-		// We can't filter out bindings not in names until we've finished joining bindings.
-		let names =
-			if i == vec::len(terms) - 1
-			{
-				vec::from_slice(in_names)
-			}
-			else
-			{
-				~[~"*"]
-			};
-		match term
-		{
-			&@Filter(ref expr) =>
-			{
-				match filter_solution(context, names, &result, expr)
-				{
-					result::Ok(ref solution) =>
-					{
-						info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, solution));
-						result = copy *solution;		// TODO: icky copy
-					}
-					result::Err(copy mesg) =>
-					{
-						return result::Err(mesg);
-					}
-				}
-			}
-			&@Bind(ref expr, ref name) =>
-			{
-				match bind_solution(context, names, &result, expr, *name)
-				{
-					result::Ok(copy solution) =>
-					{
-						info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, &solution));
-						result = solution;		// TODO: icky copy
-					}
-					result::Err(copy mesg) =>
-					{
-						return result::Err(mesg);
-					}
-				}
-			}
-			_ =>
-			{
-				match eval_algebra(store, ~[~"*"], &QueryContext {algebra: copy **term, ..*context})
-				{
-					result::Ok(ref solution) =>
-					{
-						match **term
-						{
-							Optional(_t) =>
-							{
-								if result.rows.is_not_empty()
-								{
-									result = join_solutions(store, names, &result, solution, true);
-									info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, &result));
-								}
-							}
-							_ =>
-							{
-								if solution.rows.is_empty()
-								{
-									info!("term%? %s matched nothing", i, algebra_to_str(store, *term));
-									return result::Ok(Solution {namespaces : copy store.namespaces, rows: ~[]});
-								}
-								else if result.rows.is_not_empty()
-								{
-									result = join_solutions(store, names, &result, solution, false);
-									info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, &result));
-								}
-								else if i == 0		// the very first pattern in the group has nothing to join with
-								{
-									result = copy *solution;	// TODO: icky copy
-									info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, &result));
-								}
-							}
-						}
-					}
-					result::Err(copy mesg) =>
-					{
-						return result::Err(mesg);
-					}
-				}
-			}
-		}
-	}
-	
-	return result::Ok(result);
-}
-
-priv fn eval_optional(store: &Store, names: &[~str], context: &QueryContext, term: &Algebra) -> result::Result<Solution, ~str>
-{
-	match eval_algebra(store, names, &QueryContext {algebra: copy *term, ..*context})
-	{
-		result::Ok(copy solution) =>
-		{
-			result::Ok(solution)		// TODO: icky copy
-		}
-		result::Err(ref _mesg) =>
-		{
-			result::Ok(Solution {namespaces: copy store.namespaces, rows: ~[]})
-		}
-	}
-}
-
-priv fn eval_algebra(store: &Store, names: &[~str], context: &QueryContext) -> result::Result<Solution, ~str>
-{
-	match context.algebra
-	{
-		Basic(ref pattern) =>
-		{
-			eval_basic(store, names, pattern)
-		}
-		Group(ref terms) =>
-		{
-			eval_group(store, context, names, *terms)
-		}
-		Optional(term) =>
-		{
-			eval_optional(store, names, context, term)
-		}
-		Bind(*) =>
-		{
-			result::Err(~"BIND should appear in a pattern group.")
-		}
-		Filter(*) =>
-		{
-			// Not sure what's supposed to happen here. According to GroupGraphPatternSub a
-			// group can contain just a FILTER (should be a no-op?) or a filter and then a triple
-			// pattern (filter position doesn't matter?).
-			result::Err(~"FILTER should appear last in a pattern group.")
-		}
-	}
-}
-
-priv fn eval_order_expr(context: &QueryContext, row: &[(~str, Object)], expr: &Expr) -> (bool, Object)
-{
-	match *expr
-	{
-		CallExpr(~"!desc", ref e) =>
-		{
-			(false, eval_expr(context, row, e[0])) 
-		}
-		CallExpr(~"!asc", ref e) =>
-		{
-			(true, eval_expr(context, row, e[0]))
-		}
-		_ =>
-		{
-			(true, eval_expr(context, row, expr))
-		}
-	}
-}
-
-priv fn compare_order_values(lhs: &(bool, Object), rhs: &(bool, Object)) -> result::Result<int, ~str>
-{
-	assert lhs.first() == rhs.first();
-	
-	match *lhs
-	{
-		(true, ref x) =>
-		{
-			compare_values(~"<", x, &rhs.second())		// ascending
-		}
-		(false, ref x) =>
-		{
-			compare_values(~"<", &rhs.second(), x)		// descending
-		}
-	}
-}
-
-priv fn order_by(context: &QueryContext, solution: &Solution, ordering: &[Expr]) -> result::Result<Solution, ~str>
-{
-	// TODO
-	// Probably more efficient to do the evaluation in a pre-pass. Looks like rust requires 2N comparisons in the worst case.
-	// http://www.codecodex.com/wiki/Merge_sort#Analysis
-	// Or maybe just do an in place sort.
-	pure fn compare_rows(err_mesg: @mut ~str, ordering: &[Expr], context: &QueryContext, row1: &SolutionRow, row2: &SolutionRow) -> bool
-	{
-		unsafe
-		{
-			let order1 = vec::map(ordering, |o| {eval_order_expr(context, *row1, o)});
-			let order2 = vec::map(ordering, |o| {eval_order_expr(context, *row2, o)});
-			let order = vec::map2(order1, order2, |x, y| {compare_order_values(x, y)});
-			let order = do vec::foldl(result::Ok(0), order) |x, y|
-			{
-				match x
-				{
-					result::Ok(0)	=>	copy *y,
-					_			 	=> x,
-				}
-			};
-			match order
-			{
-				result::Ok(x) =>
-				{
-					x < 0
-				}
-				result::Err(copy err) =>
-				{
-					if str::is_empty(*err_mesg)
-					{
-						*err_mesg = err;
-					}
-					false
-				}
-			}
-		}
-	}
-	
-	let err_mesg = @mut ~"";
-	
-	let rows = std::sort::merge_sort(|x, y| {compare_rows(err_mesg, ordering, context, x, y)}, solution.rows);	// TODO: probably dont want to de-reference the pointers
-	if str::is_empty(*err_mesg)
-	{
-		result::Ok(Solution {namespaces: copy solution.namespaces, rows: rows})
-	}
-	else
-	{
-		result::Err(copy *err_mesg)
-	}
-}
-
-priv fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
-{
-	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
-	let rows = std::sort::merge_sort(|x, y| {*x < *y}, solution.rows);	// TODO: probably dont want to de-reference the pointers
-	
-	let mut result = ~[];
-	vec::reserve(&mut result, vec::len(rows));
-	
-	let mut i = 0;
-	while i < vec::len(rows)
-	{
-		let row = copy rows[i];		// TODO: icky copy
-		vec::push(&mut result, copy row);
+		let mut result = copy(*lhs);
 		
-		i = i + 1;
-		while i < vec::len(rows) && row == rows[i]
+		for uint::range(0, bindings.len()) |i|
 		{
-			i += 1;
+			if lhs[i].is_unbound() && !rhs[i].is_unbound()
+			{
+				result[i] = rhs[i];
+			}
 		}
+		
+		return result;
 	}
 	
-	return result::Ok(Solution {namespaces: copy solution.namespaces, rows: result});
-}
+	assert group1.bindings.len() == group2.bindings.len();
 
-pub fn eval(names: ~[~str], context: &QueryContext) -> Selector
-{
-	let names = copy names;
-	let context = copy *context;
-	|store: &Store| 
+	let mut result = ~[];
+	info!("joining:");
+	info!("   group1 = %s", solution_to_str(store, group1));
+	info!("   group2 = %s", solution_to_str(store, group2));
+	if vec::is_not_empty(group1.rows) && (vec::is_not_empty(group2.rows) || optional_join)
 	{
-		info!("algebra: %s", algebra_to_str(store, &context.algebra));
-		let context = QueryContext {namespaces: store.namespaces, extensions: store.extensions, ..context};
-		do eval_algebra(store, names, &context).chain()
-		|solution|
+		for vec::each(group1.rows) |lhs|
 		{
-			// Optionally remove duplicates.
-			do result::chain(if context.distinct {make_distinct(&solution)} else {result::Ok(copy solution)})	// TODO: icky copy
-			|solution|
+			let count = vec::len(result);
+			for vec::each(group2.rows) |rhs|
 			{
-				// Optionally sort the solution.
-				do result::chain(if vec::is_not_empty(context.order_by) {order_by(&context, &solution, context.order_by)} else {result::Ok(copy solution)})	// TODO: icky copy
-				|solution|
+				if compatible_row(group1.bindings, lhs, rhs)
 				{
-					match context.limit
-					{
-						// Optionally limit the solution.
-						option::Some(limit) if limit < vec::len(solution.rows) =>
-						{
-							result::Ok(Solution {namespaces: solution.namespaces, rows: vec::slice(solution.rows, 0, limit)})
-						}
-						_ =>
-						{
-							result::Ok(copy solution)		// TODO: icky copy
-						}
-					}
+					let unioned = union_rows(group1.bindings, lhs, rhs);
+					info!("   added: %s", solution_row_to_str(store, group1, &unioned));
+					vec::push(&mut result, unioned);
 				}
+				else
+				{
+					debug!("   not compatible: %s and %s", solution_row_to_str(store, group1, lhs), solution_row_to_str(store, group1, rhs));
+				}
+			}
+			if vec::len(result) == count && optional_join
+			{
+				// With OPTIONAL we need to add the lhs row even if we failed to find
+				// any compatible rhs rows.
+				info!("   optional: %s", solution_row_to_str(store, group1, lhs));
+				vec::push(&mut result, copy *lhs);
 			}
 		}
 	}
+	
+	if result.is_empty()
+	{
+		info!("   empty result");
+	}
+	
+	return Solution {namespaces: copy store.namespaces, bindings: group1.bindings, num_selected: group1.num_selected, rows: result};
 }

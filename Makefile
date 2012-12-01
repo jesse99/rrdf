@@ -9,11 +9,11 @@ dummy1 := $(shell mkdir bin 2> /dev/null)
 all: lib
 
 check: bin/test-rrdf
-	export RUST_LOG=rrdf=1,rparse=1 && ./bin/test-rrdf
+	export RUST_LOG=rrdf=1,rparse=1,::rt::backtrace=4 && ./bin/test-rrdf
 
 # Logging seems all screwed up: if you want to see rparse logs use r=2
 check1: bin/test-rrdf
-	export RUST_LOG=rrdf::query=2,rrdf::expression=1,rparse=1 && ./bin/test-rrdf str_after
+	export RUST_LOG=rrdf::query=2,rrdf::expression=1,rparse=1,::rt::backtrace=4 && ./bin/test-rrdf str_after
 
 speed: bin/test-speed
 	export RUST_LOG=rrdf::query=1 && ./bin/test-speed speed

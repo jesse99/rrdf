@@ -151,7 +151,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 					let lvalue = lvalue as f64;
 					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				UnboundValue(_) | BlankValue(_) =>
+				UnboundValue | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -174,7 +174,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 				{
 					result::Ok(if lvalue < rvalue {-1} else if lvalue == rvalue {0} else {1})
 				}
-				UnboundValue(_) | BlankValue(_) =>
+				UnboundValue | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -198,7 +198,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 						else {1}
 					)
 				}
-				UnboundValue(_) | BlankValue(_) =>
+				UnboundValue | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -222,7 +222,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 						else {1}
 					)
 				}
-				UnboundValue(_) | BlankValue(_) =>
+				UnboundValue | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -244,7 +244,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 						else {1}
 					)
 				}
-				UnboundValue(_) | BlankValue(_) =>
+				UnboundValue | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -266,7 +266,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 						else {1}
 					)
 				}
-				UnboundValue(_) | BlankValue(_) =>
+				UnboundValue | BlankValue(_) =>
 				{
 					result::Ok(1)
 				}
@@ -276,11 +276,11 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 				}
 			}
 		}
-		UnboundValue(_) =>
+		UnboundValue =>
 		{
 			match *rhs
 			{
-				UnboundValue(_) =>
+				UnboundValue =>
 				{
 					result::Ok(0)
 				}
@@ -294,7 +294,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 		{
 			match *rhs
 			{
-				UnboundValue(_) =>
+				UnboundValue =>
 				{
 					result::Ok(1)
 				}

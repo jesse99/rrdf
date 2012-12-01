@@ -33,20 +33,21 @@ pub mod store;
 mod tests
 {
 	mod test_data;
-	mod test_example;
-	mod test_functions_on_strings;
+//	mod test_example;
+//	mod test_functions_on_strings;
 	mod test_helpers;
-	mod test_operands;
-	mod test_operators;
-	mod test_solution;
-	mod test_sparql;
-	mod test_sparql_literals;
-	mod test_store;
+//	mod test_operands;
+//	mod test_operators;
+	mod test_query;
+//	mod test_solution;
+//	mod test_sparql;
+//	mod test_sparql_literals;
+//	mod test_store;
 }
 
-#[cfg(speed)]
-#[cfg(test)]
-mod bench
-{
-	mod test_speed;
-}
+//#[cfg(speed)]
+//#[cfg(test)]
+//mod bench
+//{
+//	mod test_speed;
+//}

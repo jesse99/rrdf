@@ -99,7 +99,7 @@ priv fn expand_pattern(namespaces: &[Namespace], pattern: &Pattern) -> Pattern
 
 priv fn expand_triple(namespaces: &[Namespace], tp: &TriplePattern) -> TriplePattern
 {
-	{subject: expand_pattern(namespaces, &tp.subject), predicate: expand_pattern(namespaces, &tp.predicate), object: expand_pattern(namespaces, &tp.object)}
+	TriplePattern {subject: expand_pattern(namespaces, &tp.subject), predicate: expand_pattern(namespaces, &tp.predicate), object: expand_pattern(namespaces, &tp.object)}
 }
 
 priv fn expand(namespaces: &[Namespace], algebra: &Algebra) -> Algebra
@@ -828,7 +828,7 @@ priv fn make_parser() -> Parser<Selector>
 	let VAR1 = seq2_ret1("?".lit().ws(), VARNAME).note(~"VAR1");
 	
 	// [67] ArgList ::= NIL | '(' 'DISTINCT'? Expression ( ',' Expression )* ')'
-	let Expression_ptr = @mut ret(expression::ConstantExpr(UnboundValue(~"foo")));
+	let Expression_ptr = @mut ret(expression::ConstantExpr(UnboundValue));
 	let Expression_ref = forward_ref(Expression_ptr);
 	
 	let ArgList = seq3_ret1("(".lit().ws(), Expression_ref.list(",".lit().ws()), ")".lit().ws());
@@ -846,7 +846,7 @@ priv fn make_parser() -> Parser<Selector>
 	let BuiltInCall = built_in_call(Expression_ref, Var);
 	
 	// [109] PrimaryExpression ::= BrackettedExpression | BuiltInCall | IRIrefOrFunction | RDFLiteral | NumericLiteral | BooleanLiteral | Var | Aggregate
-	let BrackettedExpression_ptr = @mut ret(expression::ConstantExpr(UnboundValue(~"foo")));
+	let BrackettedExpression_ptr = @mut ret(expression::ConstantExpr(UnboundValue));
 	let BrackettedExpression_ref = forward_ref(BrackettedExpression_ptr);
 	
 	let PrimaryExpression = or_v(@~[
@@ -962,7 +962,7 @@ priv fn make_parser() -> Parser<Selector>
 		
 	// [77] TriplesSameSubjectPath ::= VarOrTerm PropertyListNotEmptyPath | TriplesNode PropertyListPath 
 	let TriplesSameSubjectPath = seq2(VarOrTerm, PropertyListNotEmptyPath,
-		|subject, e| {result::Ok({subject: subject, predicate: copy e[0], object: copy e[1]})}).note(~"TriplesSameSubjectPath");
+		|subject, e| {result::Ok(TriplePattern {subject: subject, predicate: copy e[0], object: copy e[1]})}).note(~"TriplesSameSubjectPath");
 		
 	// [65] Constraint ::= BrackettedExpression | BuiltInCall | FunctionCall
 	let Constraint = or_v(@~[BrackettedExpression, BuiltInCall]).note(~"Constraint");
@@ -1098,34 +1098,35 @@ type SolutionModifiers = {order_by: Option<@~[expression::Expr]>, limit: Option<
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-priv fn build_parser(namespaces: &[Namespace], query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
+priv fn build_parser(_namespaces: &[Namespace], _query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
 {
-	let ((distinct, patterns), algebra, modifiers) = query;
-	
-	let variables = do vec::filter(patterns) |p| {match *p {Variable(ref _l)  => true, _  => false}};
-	let names = do vec::map(variables) |p| {match *p {Variable(copy n)  => n, _  => fail}};
-	
-	let order_by = match modifiers.order_by {option::Some(x)  => x, option::None  => @~[]};
-	
-	let dupes = find_dupes(names);
-	if vec::is_empty(dupes)
-	{
-		// eval will set namespaces and extensions
-		if vec::is_not_empty(namespaces)
-		{
-			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: expand(namespaces, &algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
-			result::Ok(eval(names, &context))
-		}
-		else
-		{
-			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
-			result::Ok(eval(names, &context))
-		}
-	}
-	else
-	{
-		result::Err(@fmt!("Select clause has duplicates: %s", str::connect(dupes, ~" ")))
-	}
+//	let ((distinct, patterns), algebra, modifiers) = query;
+//	
+//	let variables = do vec::filter(patterns) |p| {match *p {Variable(ref _l)  => true, _  => false}};
+//	let names = do vec::map(variables) |p| {match *p {Variable(copy n)  => n, _  => fail}};
+//	
+//	let order_by = match modifiers.order_by {option::Some(x)  => x, option::None  => @~[]};
+//	
+//	let dupes = find_dupes(names);
+//	if vec::is_empty(dupes)
+//	{
+//		// eval will set namespaces and extensions
+//		if vec::is_not_empty(namespaces)
+//		{
+//			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: expand(namespaces, &algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+//			result::Ok(eval(names, &context))
+//		}
+//		else
+//		{
+//			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+//			result::Ok(eval(names, &context))
+//		}
+//	}
+//	else
+//	{
+//		result::Err(@fmt!("Select clause has duplicates: %s", str::connect(dupes, ~" ")))
+//	}
+	fail ~"not implemented"
 }
 
 /// Returns either a function capable of matching triples or a parse error.

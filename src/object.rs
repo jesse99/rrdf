@@ -23,7 +23,7 @@ pub enum Object			// TODO: once we support serialization we'll need to add somet
 	BlankValue(~str),
 	
 	// error conditions
-	UnboundValue(~str),		// binding name
+	UnboundValue,
 	InvalidValue(~str, ~str),	// literal + type iri
 	ErrorValue(~str)			// err mesg
 }
@@ -54,6 +54,15 @@ pub impl Object
 			{
 				self.to_str()
 			}
+		}
+	}
+	
+	pure fn is_unbound() -> bool
+	{
+		match self
+		{
+			UnboundValue => true,
+			_ => false,
 		}
 	}
 	
@@ -448,9 +457,9 @@ pub impl  Object : ToStr
 			{
 				value
 			}
-			UnboundValue(ref name) =>
+			UnboundValue =>
 			{
-				name + ~" is not bound"
+				~" unbound"
 			}
 			InvalidValue(ref literal, ref kind) =>
 			{
@@ -631,9 +640,9 @@ pub pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
 		{
 			result::Ok(!f64::is_NaN(value) && value != 0f64)
 		}
-		UnboundValue(ref name) =>
+		UnboundValue =>
 		{
-			result::Err(fmt!("?%s is not bound.", *name))
+			result::Err(~"unbound")
 		}
 		ErrorValue(copy err) =>
 		{
@@ -650,9 +659,9 @@ pub fn type_error(fname: ~str, operand: &Object, expected: ~str) -> ~str
 {
 	match *operand
 	{
-		UnboundValue(ref name) =>
+		UnboundValue =>
 		{
-			fmt!("%s: ?%s was not bound.", fname, *name)
+			fmt!("%s: unbound.", fname)
 		}
 		InvalidValue(ref literal, ref kind) =>
 		{
