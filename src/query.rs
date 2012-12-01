@@ -41,10 +41,6 @@ pub struct QueryContext
 /// Returns a solution or a 'runtime' error.
 pub type Selector = fn@ (s: &Store) -> result::Result<Solution, ~str>;
 
-pub type Binding = {name: ~str, value: Object};
-
-pub type Match = either::Either<Binding, bool>;	// match succeeded if bindings or true
-
 // Returns the names (from the SELECT clause) followed by bound variable
 // names not in names.
 pub fn get_bindings(names: &[~str], algebra: Algebra) -> ~[~str]
@@ -293,3 +289,151 @@ pub fn join_solutions(store: &Store, group1: &Solution, group2: &Solution, optio
 	
 	return Solution {namespaces: copy store.namespaces, bindings: group1.bindings, num_selected: group1.num_selected, rows: result};
 }
+
+// Attempts to match a pattern to an IRI or blank subject.
+priv fn match_subject(solution: &Solution, actual: &str, pattern: &Pattern, row: &mut SolutionRow) -> bool
+{
+	match *pattern
+	{
+		Variable(ref name) =>
+		{
+			let i = solution.bindings.position_elem(name);
+			row[i.get()] = if actual.starts_with("_:")
+				{
+					@BlankValue(actual.to_unique())
+				}
+				else
+				{
+					@IriValue(actual.to_unique())
+				};
+			true
+		}
+		Constant(IriValue(ref value)) =>
+		{
+			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
+			actual == *value
+		}
+		Constant(BlankValue(ref value)) =>
+		{
+			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
+			actual == *value
+		}
+		_ =>
+		{
+			false
+		}
+	}
+}
+
+// Attempts to match a pattern to an IRI predicate.
+priv fn match_predicate(solution: &Solution, actual: &str, pattern: &Pattern, row: &mut SolutionRow) -> bool
+{
+	match *pattern
+	{
+		Variable(ref name) =>
+		{
+			let i = solution.bindings.position_elem(name);
+			row[i.get()] = @IriValue(actual.to_unique());
+			true
+		}
+		Constant(IriValue(ref value)) =>
+		{
+			//debug!("Actual predicate %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
+			actual == *value
+		}
+		_ =>
+		{
+			false
+		}
+	}
+}
+
+// Attempts to match a pattern to an arbitrary object.
+priv fn match_object(solution: &Solution, actual: @Object, pattern: &Pattern, row: &mut SolutionRow) -> bool
+{
+	match *pattern
+	{
+		Variable(ref name) =>
+		{
+			let i = solution.bindings.position_elem(name);
+			row[i.get()] = actual;
+			true
+		}
+		Constant(ref expected) =>
+		{
+			//debug!("Actual object %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], expected.to_str()];
+			equal_objects(actual, expected)
+		}
+	}
+}
+
+// Iterates over all the statements where the subject matches spattern and calls callback for each one.
+priv fn iterate_matches(store: &Store, solution: &Solution, spattern: &Pattern, callback: fn (SolutionRow, &Entry) -> bool)
+{
+	fn invoke(solution: &Solution, subject: &str, pattern: &Pattern, entries: @DVec<Entry>, callback: fn (SolutionRow, &Entry) -> bool) -> bool
+	{
+		for entries.each() |entry|
+		{
+			let mut row = vec::from_elem(solution.bindings.len(), @UnboundValue);
+			if match_subject(solution, subject, pattern, &mut row)
+			{
+				if !callback(move row, entry)
+				{
+					return false;
+				}
+			}
+		}
+		true
+	}
+	
+	match *spattern
+	{
+		Constant(IriValue(ref subject)) | Constant(BlankValue(ref subject)) =>
+		{
+			// Optimization for a common case where we are attempting to match a specific subject.
+			let candidate = store.subjects.find(@copy *subject);
+			if option::is_some(&candidate)
+			{
+				info!("--- matched subject %?", subject);
+				let entries = option::get(&candidate);
+				if !invoke(solution, *subject, spattern, entries, callback)
+				{
+					return;
+				}
+			}
+		}
+		_ =>
+		{
+			for store.subjects.each() |subject, entries|
+			{
+				debug!("--- trying subject %?", subject);
+				if !invoke(solution, *subject, spattern, entries, callback)
+				{
+					return;
+				}
+			}
+		}
+	}
+}
+
+// Returns all the subjects that match the TriplePattern.
+pub fn eval_basic(store: &Store,  bindings: ~[~str], num_selected: uint, matcher: &TriplePattern) -> Solution
+{
+	let mut solution = Solution {namespaces: copy store.namespaces, bindings: move bindings, num_selected: num_selected, rows: ~[]};
+	
+	for iterate_matches(store, &solution, &matcher.subject) |r, entry|
+	{
+		let mut row = move r;		// need the move to shut the borrow checker up
+		if match_predicate(&solution, entry.predicate, &matcher.predicate, &mut row)
+		{
+			if match_object(&solution, entry.object, &matcher.object, &mut row)
+			{
+				info!("basic %s matched %s", triple_pattern_to_str(store, matcher), solution_row_to_str(store, &solution, &row));
+				solution.rows.push(row);
+			}
+		}
+	}
+	
+	solution
+}
+
