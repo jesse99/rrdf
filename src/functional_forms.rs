@@ -1,6 +1,6 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 
-pub fn bound_fn(operand: &Object) -> Object
+pub pure fn bound_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -15,49 +15,49 @@ pub fn bound_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn eval_if(context: &QueryContext, bindings: &[(~str, Object)], args: &~[@expression::Expr]) -> Object
+pub pure fn eval_if(context: &QueryContext, solution: &Solution, row: &SolutionRow, args: &~[@expression::Expr]) -> @Object
 {
-	if vec::len(*args) == 3u
+	if args.len() == 3u
 	{
-		let predicate = expression::eval_expr(context, bindings, args[0]);
-		match get_ebv(&predicate)
+		let predicate = expression::eval_expr(context, solution, row, args[0]);
+		match get_ebv(predicate)
 		{
 			result::Ok(true) =>
 			{
-				expression::eval_expr(context, bindings, args[1])
+				expression::eval_expr(context, solution, row, args[1])
 			}
 			result::Ok(false) =>
 			{
-				expression::eval_expr(context, bindings, args[2])
+				expression::eval_expr(context, solution, row, args[2])
 			}
 			result::Err(copy err) =>
 			{
-				ErrorValue(~"IF: " + err)
+				@ErrorValue(~"IF: " + err)
 			}
 		}
 	}
 	else
 	{
-		if vec::len(*args) == 1u
+		if args.len() == 1u
 		{
-			ErrorValue(~"IF accepts 3 arguments but was called with 1 argument.")
+			@ErrorValue(~"IF accepts 3 arguments but was called with 1 argument.")
 		}
 		else
 		{
-			ErrorValue(fmt!("IF accepts 3 arguments but was called with %? arguments.", vec::len(*args)))
+			@ErrorValue(fmt!("IF accepts 3 arguments but was called with %? arguments.", args.len()))
 		}
 	}
 }
 
-pub fn eval_coalesce(context: &QueryContext, bindings: &[(~str, Object)], args: &~[@expression::Expr]) -> Object
+pub pure fn eval_coalesce(context: &QueryContext, solution: &Solution, row: &SolutionRow, args: &~[@expression::Expr]) -> @Object
 {
 	for vec::each(*args)
 	|arg|
 	{
-		let candidate = expression::eval_expr(context, bindings, *arg);
-		match candidate
+		let candidate = expression::eval_expr(context, solution, row, *arg);
+		match *candidate
 		{
-			UnboundValue(*) | InvalidValue(*) | ErrorValue(*) =>
+			UnboundValue | InvalidValue(*) | ErrorValue(*) =>
 			{
 				// try the next argument
 			}
@@ -68,10 +68,10 @@ pub fn eval_coalesce(context: &QueryContext, bindings: &[(~str, Object)], args: 
 		}
 	}
 	
-	return ErrorValue(~"COALESCE: all arguments failed to evaluate");
+	return @ErrorValue(~"COALESCE: all arguments failed to evaluate");
 }
 
-pub fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
+pub pure fn sameterm_fn(lhs: &Object, rhs: &Object) -> Object
 {
 	match *lhs
 	{

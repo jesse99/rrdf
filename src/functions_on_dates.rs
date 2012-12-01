@@ -1,6 +1,6 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 
-pub fn now_fn(context: &QueryContext, args: ~[Object]) -> Object
+pub pure fn now_fn(context: &QueryContext, args: ~[@Object]) -> Object
 {
 	if vec::len(args) == 0u
 	{
@@ -12,7 +12,7 @@ pub fn now_fn(context: &QueryContext, args: ~[Object]) -> Object
 	}
 }
 
-pub fn year_fn(operand: &Object) -> Object
+pub pure fn year_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -27,7 +27,7 @@ pub fn year_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn month_fn(operand: &Object) -> Object
+pub pure fn month_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -42,7 +42,7 @@ pub fn month_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn day_fn(operand: &Object) -> Object
+pub pure fn day_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -57,7 +57,7 @@ pub fn day_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn hours_fn(operand: &Object) -> Object
+pub pure fn hours_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -72,7 +72,7 @@ pub fn hours_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn minutes_fn(operand: &Object) -> Object
+pub pure fn minutes_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -87,7 +87,7 @@ pub fn minutes_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn seconds_fn(operand: &Object) -> Object
+pub pure fn seconds_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -104,7 +104,7 @@ pub fn seconds_fn(operand: &Object) -> Object
 
 // TODO: add timezone (this is supposed to return a xs:dayTimeDuration, see <http://www.w3.org/TR/xpath-datamodel/#types>)
 
-pub fn tz_fn(operand: &Object) -> Object
+pub pure fn tz_fn(operand: &Object) -> Object
 {
 	match *operand
 	{

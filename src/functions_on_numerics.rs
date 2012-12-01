@@ -1,6 +1,6 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 
-pub fn abs_fn(operand: &Object) -> Object
+pub pure fn abs_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -19,7 +19,7 @@ pub fn abs_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn round_fn(operand: &Object) -> Object
+pub pure fn round_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -38,7 +38,7 @@ pub fn round_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn ceil_fn(operand: &Object) -> Object
+pub pure fn ceil_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -57,7 +57,7 @@ pub fn ceil_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn floor_fn(operand: &Object) -> Object
+pub pure fn floor_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -76,16 +76,19 @@ pub fn floor_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn rand_fn(context: &QueryContext, args: ~[Object]) -> Object
+pub pure fn rand_fn(context: &QueryContext, args: ~[@Object]) -> Object
 {
-	if vec::len(args) == 0u
+	if args.len() == 0
 	{
-		let n = context.rng.next() as f64;
-		let d = u32::max_value as f64;
-		FloatValue(n/d)
+		unsafe
+		{
+			let n = context.rng.next() as f64;
+			let d = u32::max_value as f64;
+			FloatValue(n/d)
+		}
 	}
 	else
 	{
-		ErrorValue(fmt!("RAND accepts 0 arguments but was called with %? arguments.", vec::len(args)))
+		ErrorValue(fmt!("RAND accepts 0 arguments but was called with %? arguments.", args.len()))
 	}
 }

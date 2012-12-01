@@ -2,7 +2,7 @@
 
 // Operators used within SPARQL FILTER expressions. See 17.2 and related.
 
-pub fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Result<bool, ~str>
+pub pure fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Result<bool, ~str>
 {
 	match *lhs
 	{
@@ -134,7 +134,7 @@ pub fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Resul
 }
 
 // See 15.1
-pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Result<int, ~str>
+pub pure fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Result<int, ~str>
 {
 	match *lhs
 	{
@@ -190,8 +190,8 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 			{
 				DateTimeValue(ref rvalue) =>
 				{
-					let lvalue = lvalue.to_timespec();
-					let rvalue = rvalue.to_timespec();
+					let lvalue = unsafe {lvalue.to_timespec()};
+					let rvalue = unsafe {rvalue.to_timespec()};
 					result::Ok(
 						if lvalue.sec < rvalue.sec || (lvalue.sec == rvalue.sec && lvalue.nsec < rvalue.nsec) {-1} 
 						else if lvalue.sec == rvalue.sec && lvalue.nsec == rvalue.nsec {0} 
@@ -320,7 +320,7 @@ pub fn compare_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Res
 }
 
 // ---- Unary Operators -------------------------------------------------------
-pub fn op_not(operand: &Object) -> Object
+pub pure fn op_not(operand: &Object) -> Object
 {
 	match get_ebv(operand)
 	{
@@ -335,7 +335,7 @@ pub fn op_not(operand: &Object) -> Object
 	}
 }
 
-pub fn op_unary_plus(operand: &Object) -> Object
+pub pure fn op_unary_plus(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -354,7 +354,7 @@ pub fn op_unary_plus(operand: &Object) -> Object
 	}
 }
 
-pub fn op_unary_minus(operand: &Object) -> Object
+pub pure fn op_unary_minus(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -374,7 +374,7 @@ pub fn op_unary_minus(operand: &Object) -> Object
 }
 
 // ---- Binary Operators -------------------------------------------------------
-pub fn op_or(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_or(lhs: &Object, rhs: &Object) -> Object
 {
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
@@ -411,7 +411,7 @@ pub fn op_or(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_and(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_and(lhs: &Object, rhs: &Object) -> Object
 {
 	let lvalue = get_ebv(lhs);
 	let rvalue = get_ebv(rhs);
@@ -448,7 +448,7 @@ pub fn op_and(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_equals(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_equals(lhs: &Object, rhs: &Object) -> Object
 {
 	match equal_values(~"=", lhs, rhs)
 	{
@@ -463,7 +463,7 @@ pub fn op_equals(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_not_equals(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_not_equals(lhs: &Object, rhs: &Object) -> Object
 {
 	match equal_values(~"!=", lhs, rhs)
 	{
@@ -478,7 +478,7 @@ pub fn op_not_equals(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_less_than(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_less_than(lhs: &Object, rhs: &Object) -> Object
 {
 	match compare_values(~"<", lhs, rhs)
 	{
@@ -493,7 +493,7 @@ pub fn op_less_than(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_less_than_or_equal(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_less_than_or_equal(lhs: &Object, rhs: &Object) -> Object
 {
 	match compare_values(~"<=", lhs, rhs)
 	{
@@ -508,7 +508,7 @@ pub fn op_less_than_or_equal(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_greater_than(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_greater_than(lhs: &Object, rhs: &Object) -> Object
 {
 	match compare_values(~">", lhs, rhs)
 	{
@@ -523,7 +523,7 @@ pub fn op_greater_than(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_greater_than_or_equal(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_greater_than_or_equal(lhs: &Object, rhs: &Object) -> Object
 {
 	match compare_values(~">=", lhs, rhs)
 	{
@@ -538,7 +538,7 @@ pub fn op_greater_than_or_equal(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_multiply(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_multiply(lhs: &Object, rhs: &Object) -> Object
 {
 	match *lhs
 	{
@@ -587,7 +587,7 @@ pub fn op_multiply(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_divide(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_divide(lhs: &Object, rhs: &Object) -> Object
 {
 	match *lhs
 	{
@@ -640,7 +640,7 @@ pub fn op_divide(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_add(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_add(lhs: &Object, rhs: &Object) -> Object
 {
 	match *lhs
 	{
@@ -689,7 +689,7 @@ pub fn op_add(lhs: &Object, rhs: &Object) -> Object
 	}
 }
 
-pub fn op_subtract(lhs: &Object, rhs: &Object) -> Object
+pub pure fn op_subtract(lhs: &Object, rhs: &Object) -> Object
 {
 	match *lhs
 	{

@@ -1,6 +1,6 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 
-pub fn str_str_helper(fname: ~str, arg1: &Object, arg2: &Object, callback: fn@ (&str, &str, &str, &str) -> Object) -> Object
+pub pure fn str_str_helper(fname: ~str, arg1: &Object, arg2: &Object, callback: pure fn@ (&str, &str, &str, &str) -> Object) -> Object
 {
 	match *arg1
 	{
@@ -32,7 +32,7 @@ pub fn str_str_helper(fname: ~str, arg1: &Object, arg2: &Object, callback: fn@ (
 	}
 }
 
-pub fn strlen_fn(operand: &Object) -> Object
+pub pure fn strlen_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -47,7 +47,7 @@ pub fn strlen_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn substr2_fn(value: &Object, loc: &Object) -> Object
+pub pure fn substr2_fn(value: &Object, loc: &Object) -> Object
 {
 	match *value
 	{
@@ -89,7 +89,7 @@ pub fn substr2_fn(value: &Object, loc: &Object) -> Object
 	}
 }
 
-pub fn substr3_fn(value: &Object, loc: &Object, len: &Object) -> Object
+pub pure fn substr3_fn(value: &Object, loc: &Object, len: &Object) -> Object
 {
 	match *value
 	{
@@ -141,7 +141,7 @@ pub fn substr3_fn(value: &Object, loc: &Object, len: &Object) -> Object
 	}
 }
 
-pub fn ucase_fn(operand: &Object) -> Object
+pub pure fn ucase_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -156,7 +156,7 @@ pub fn ucase_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn lcase_fn(operand: &Object) -> Object
+pub pure fn lcase_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -171,7 +171,7 @@ pub fn lcase_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn strstarts_fn(arg1: &Object, arg2: &Object) -> Object
+pub pure fn strstarts_fn(arg1: &Object, arg2: &Object) -> Object
 {
 	do str_str_helper(~"STRSTARTS", arg1, arg2)
 	|value1, value2, _lang1, _lang2|
@@ -180,7 +180,7 @@ pub fn strstarts_fn(arg1: &Object, arg2: &Object) -> Object
 	}
 }
 
-pub fn strends_fn(arg1: &Object, arg2: &Object) -> Object
+pub pure fn strends_fn(arg1: &Object, arg2: &Object) -> Object
 {
 	do str_str_helper(~"STRENDS", arg1, arg2)
 	|value1, value2, _lang1, _lang2|
@@ -189,7 +189,7 @@ pub fn strends_fn(arg1: &Object, arg2: &Object) -> Object
 	}
 }
 
-pub fn contains_fn(arg1: &Object, arg2: &Object) -> Object
+pub pure fn contains_fn(arg1: &Object, arg2: &Object) -> Object
 {
 	do str_str_helper(~"CONTAINS", arg1, arg2)
 	|value1, value2, _lang1, _lang2|
@@ -198,7 +198,7 @@ pub fn contains_fn(arg1: &Object, arg2: &Object) -> Object
 	}
 }
 
-pub fn strbefore_fn(arg1: &Object, arg2: &Object) -> Object
+pub pure fn strbefore_fn(arg1: &Object, arg2: &Object) -> Object
 {
 	do str_str_helper(~"STRBEFORE", arg1, arg2)
 	|value1, value2, lang1, _lang2|
@@ -217,7 +217,7 @@ pub fn strbefore_fn(arg1: &Object, arg2: &Object) -> Object
 	}
 }
 
-pub fn strafter_fn(arg1: &Object, arg2: &Object) -> Object
+pub pure fn strafter_fn(arg1: &Object, arg2: &Object) -> Object
 {
 	do str_str_helper(~"STRAFTER", arg1, arg2)
 	|value1, value2, lang1, _lang2|
@@ -236,7 +236,7 @@ pub fn strafter_fn(arg1: &Object, arg2: &Object) -> Object
 	}
 }
 
-fn is_unreserved(ch: char) -> bool
+pure fn is_unreserved(ch: char) -> bool
 {
 	if ch >= 'a' && ch <= 'z'
 	{
@@ -260,25 +260,27 @@ fn is_unreserved(ch: char) -> bool
 	}
 }
 
-pub fn encode_for_uri_fn(operand: &Object) -> Object
+pub pure fn encode_for_uri_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
 		StringValue(ref value, copy lang) =>
 		{
 			let mut result = ~"";
-			str::reserve(&mut result, str::len(*value));
-			
-			for str::each_char(*value)
-			|ch|
+			unsafe
 			{
-				if is_unreserved(ch)
+				str::reserve(&mut result, str::len(*value));
+				
+				for str::each_char(*value) |ch|
 				{
-					str::push_char(&mut result, ch);
-				}
-				else
-				{
-					result += fmt!("%%%0X", ch as uint);
+					if is_unreserved(ch)
+					{
+						str::push_char(&mut result, ch);
+					}
+					else
+					{
+						result += fmt!("%%%0X", ch as uint);
+					}
 				}
 			}
 			
@@ -291,22 +293,24 @@ pub fn encode_for_uri_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn concat_fn(operand: ~[Object]) -> Object
+pub pure fn concat_fn(operand: ~[@Object]) -> Object
 {
 	let mut result = ~"";
 	let mut languages = ~[];
 	
-	for vec::eachi(operand)
-	|i, part|
+	for vec::eachi(operand) |i, part|
 	{
-		match *part
+		match **part
 		{
 			StringValue(ref value, copy lang) =>
 			{
-				result += *value;
-				if !vec::contains(languages, &lang)
+				unsafe
 				{
-					vec::push(&mut languages, lang);
+					result += *value;
+					if !vec::contains(languages, &lang)
+					{
+						vec::push(&mut languages, lang);
+					}
 				}
 			}
 			_ =>
@@ -316,7 +320,7 @@ pub fn concat_fn(operand: ~[Object]) -> Object
 		}
 	}
 	
-	if vec::len(languages) == 1u
+	if languages.len() == 1
 	{
 		StringValue(result, copy languages[0])
 	}
@@ -326,7 +330,7 @@ pub fn concat_fn(operand: ~[Object]) -> Object
 	}
 }
 
-pub fn langmatches_fn(arg1: &Object, arg2: &Object) -> Object
+pub pure fn langmatches_fn(arg1: &Object, arg2: &Object) -> Object
 {
 	match *arg1
 	{

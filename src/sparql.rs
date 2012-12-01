@@ -12,7 +12,7 @@ use rparse::{Parser, State, Status, Succeeded, Failed};
 
 priv fn bool_literal(value: &str) -> Pattern
 {
-	Constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#boolean", ""))
+	Constant(@literal_to_object(value, "http://www.w3.org/2001/XMLSchema#boolean", ""))
 }
 
 priv fn int_literal(value: &str) -> Object
@@ -27,17 +27,17 @@ priv fn float_literal(value: &str) -> Object
 
 priv fn string_literal(value: &str, lang: &str) -> Pattern
 {
-	Constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#string", lang))
+	Constant(@literal_to_object(value, "http://www.w3.org/2001/XMLSchema#string", lang))
 }
 
 priv fn typed_literal(value: &str, kind: &str) -> Pattern
 {
-	Constant(literal_to_object(value, kind, ""))
+	Constant(@literal_to_object(value, kind, ""))
 }
 
 priv fn iri_literal(value: &str) -> Pattern
 {
-	Constant(literal_to_object(value, "http://www.w3.org/2001/XMLSchema#anyURI", ""))
+	Constant(@literal_to_object(value, "http://www.w3.org/2001/XMLSchema#anyURI", ""))
 }
 
 priv fn pattern_to_expr(pattern: &Pattern) -> expression::Expr
@@ -48,9 +48,9 @@ priv fn pattern_to_expr(pattern: &Pattern) -> expression::Expr
 		{
 			expression::VariableExpr(name)
 		}
-		Constant(copy value) =>
+		Constant(value) =>
 		{
-			expression::ConstantExpr(value)
+			expression::ConstantExpr(copy *value)
 		}
 	}
 }
@@ -82,13 +82,13 @@ priv fn expand_pattern(namespaces: &[Namespace], pattern: &Pattern) -> Pattern
 {
 	match *pattern
 	{
-		Constant(IriValue(ref value)) =>
+		Constant(@IriValue(ref value)) =>
 		{
-			Constant(IriValue(expand_uri(namespaces, *value)))
+			Constant(@IriValue(expand_uri(namespaces, *value)))
 		}
-		Constant(TypedValue(copy value, ref kind)) =>
+		Constant(@TypedValue(copy value, ref kind)) =>
 		{
-			Constant(literal_to_object(value, expand_uri(namespaces, *kind), ""))
+			Constant(@literal_to_object(value, expand_uri(namespaces, *kind), ""))
 		}
 		_ =>
 		{
@@ -817,7 +817,7 @@ priv fn make_parser() -> Parser<Selector>
 	let GraphTerm = or_v(@~[
 		RDFLiteral,
 		IRIref.thene({|+v: @~str| ret(iri_literal(*v))}),	// TODO: support BlankNode and NIL
-		do NumericLiteral.thene |v| {ret(Constant(v))},
+		do NumericLiteral.thene |v| {ret(Constant(@v))},
 		BooleanLiteral
 	]);
 	

@@ -655,7 +655,7 @@ pub pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
 	}
 }
 
-pub fn type_error(fname: ~str, operand: &Object, expected: ~str) -> ~str
+pub pure fn type_error(fname: ~str, operand: &Object, expected: ~str) -> ~str
 {
 	match *operand
 	{

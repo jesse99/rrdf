@@ -37,7 +37,7 @@ pub impl Entry : cmp::Eq
 }
 
 /// SPARQL extension function.
-pub type ExtensionFn = fn@ (namespaces: &[Namespace], args: &[Object]) -> Object;
+pub type ExtensionFn = pure fn@ (namespaces: &[Namespace], args: &[@Object]) -> @Object;
 
 /// Stores triples in a more or less efficient format.
 ///
@@ -539,28 +539,28 @@ priv fn after(text: &str, ch: char) -> ~str
 	}
 }
 
-priv fn pname_fn(namespaces: &[Namespace], args: &[Object]) -> Object
+priv pure fn pname_fn(namespaces: &[Namespace], args: &[@Object]) -> @Object
 {
-	if vec::len(args) == 1u
+	if args.len() == 1
 	{
-		match args[0]
+		match *(args[0])
 		{
 			IriValue(ref iri) =>
 			{
-				StringValue(contract_uri(namespaces, *iri), ~"")
+				@StringValue(contract_uri(namespaces, *iri), ~"")
 			}
 			BlankValue(copy name) =>
 			{
-				StringValue(name, ~"")
+				@StringValue(name, ~"")
 			}
 			_ =>
 			{
-				ErrorValue(fmt!("rrdf:pname expected an IriValue or BlankValue but was called with %?.", args[0]))
+				@ErrorValue(fmt!("rrdf:pname expected an IriValue or BlankValue but was called with %?.", args[0]))
 			}
 		}
 	}
 	else
 	{
-		ErrorValue(fmt!("rrdf:pname accepts 1 argument but was called with %? arguments.", vec::len(args)))
+		@ErrorValue(fmt!("rrdf:pname accepts 1 argument but was called with %? arguments.", args.len()))
 	}
 }

@@ -7,7 +7,7 @@ use operators::*;
 pub enum Pattern
 {
 	Variable(~str),
-	Constant(Object)
+	Constant(@Object)
 }
 
 pub struct TriplePattern {subject: Pattern, predicate: Pattern, object: Pattern}
@@ -308,12 +308,12 @@ priv fn match_subject(solution: &Solution, actual: &str, pattern: &Pattern, row:
 				};
 			true
 		}
-		Constant(IriValue(ref value)) =>
+		Constant(@IriValue(ref value)) =>
 		{
 			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
 			actual == *value
 		}
-		Constant(BlankValue(ref value)) =>
+		Constant(@BlankValue(ref value)) =>
 		{
 			//debug!("Actual subject %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
 			actual == *value
@@ -336,7 +336,7 @@ priv fn match_predicate(solution: &Solution, actual: &str, pattern: &Pattern, ro
 			row[i.get()] = @IriValue(actual.to_unique());
 			true
 		}
-		Constant(IriValue(ref value)) =>
+		Constant(@IriValue(ref value)) =>
 		{
 			//debug!("Actual predicate %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
 			actual == *value
@@ -362,7 +362,7 @@ priv fn match_object(solution: &Solution, actual: @Object, pattern: &Pattern, ro
 		Constant(ref expected) =>
 		{
 			//debug!("Actual object %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], expected.to_str()];
-			equal_objects(actual, expected)
+			equal_objects(actual, *expected)
 		}
 	}
 }
@@ -388,7 +388,7 @@ priv fn iterate_matches(store: &Store, solution: &Solution, spattern: &Pattern, 
 	
 	match *spattern
 	{
-		Constant(IriValue(ref subject)) | Constant(BlankValue(ref subject)) =>
+		Constant(@IriValue(ref subject)) | Constant(@BlankValue(ref subject)) =>
 		{
 			// Optimization for a common case where we are attempting to match a specific subject.
 			let candidate = store.subjects.find(@copy *subject);
@@ -437,3 +437,34 @@ pub fn eval_basic(store: &Store,  bindings: ~[~str], num_selected: uint, matcher
 	solution
 }
 
+// Evaluate expr for each row in the solution and bind the result to name.
+// May return an error message.
+priv fn bind_solution(context: &QueryContext, solution: &mut Solution, expr: &Expr, name: ~str) -> option::Option<~str>
+{
+	for uint::range(0, solution.rows.len()) |i|
+	{
+		let value = eval_expr(context, &*solution, &solution.rows[i], expr);
+		match *value
+		{
+			UnboundValue =>
+			{
+				return option::Some(~"unbound variable");		// shouldn't hit this case
+			}
+			InvalidValue(ref literal, ref kind) =>
+			{
+				return option::Some(fmt!("?%s is not a valid %s", *literal, *kind));
+			}
+			ErrorValue(copy mesg) =>
+			{
+				return option::Some(mesg);
+			}
+			_ =>
+			{
+				let j = solution.bindings.position_elem(&name);
+				solution.rows[i][j.get()] = value
+			}
+		}
+	}
+	
+	option::None
+}

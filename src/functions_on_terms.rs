@@ -1,6 +1,6 @@
 //! SPARQL functions. Clients will not ordinarily use this.
 
-pub fn isiri_fn(operand: &Object) -> Object
+pub pure fn isiri_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -15,7 +15,7 @@ pub fn isiri_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn isblank_fn(operand: &Object) -> Object
+pub pure fn isblank_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -30,7 +30,7 @@ pub fn isblank_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn isliteral_fn(operand: &Object) -> Object
+pub pure fn isliteral_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -45,7 +45,7 @@ pub fn isliteral_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn isnumeric_fn(operand: &Object) -> Object
+pub pure fn isnumeric_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -60,12 +60,12 @@ pub fn isnumeric_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn str_fn(operand: &Object) -> Object
+pub pure fn str_fn(operand: &Object) -> Object
 {
 	StringValue(operand.to_str(), ~"")
 }
 
-pub fn lang_fn(operand: &Object) -> Object
+pub pure fn lang_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -80,7 +80,7 @@ pub fn lang_fn(operand: &Object) -> Object
 	}
 }
 
-pub fn datatype_fn(operand: &Object) -> Object
+pub pure fn datatype_fn(operand: &Object) -> Object
 {
 	match *operand
 	{
@@ -122,7 +122,7 @@ pub fn datatype_fn(operand: &Object) -> Object
 // TODO: add iri_fn
 // TODO: add bnode_fn
 
-pub fn strdt_fn(lexical: &Object, kind: &Object) -> Object
+pub pure fn strdt_fn(lexical: &Object, kind: &Object) -> Object
 {
 	match *lexical
 	{
@@ -147,7 +147,7 @@ pub fn strdt_fn(lexical: &Object, kind: &Object) -> Object
 	}
 }
 
-pub fn strlang_fn(lexical: &Object, tag: &Object) -> Object
+pub pure fn strlang_fn(lexical: &Object, tag: &Object) -> Object
 {
 	match *lexical
 	{

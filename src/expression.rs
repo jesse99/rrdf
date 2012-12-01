@@ -32,44 +32,37 @@ pub fn expr_to_str(store: &Store, expr: &Expr) -> ~str
 	}
 }
 
-pub fn eval_expr(context: &QueryContext, bindings: &[(~str, Object)], expr: &Expr) -> Object
+pub pure fn eval_expr(context: &QueryContext, solution: &Solution, row: &SolutionRow, expr: &Expr) -> @Object
 {
 	let result = match *expr
 	{
 		ConstantExpr(copy value) =>
 		{
-			value
+			@value
 		}
-		VariableExpr(copy _name) =>
+		VariableExpr(ref name) =>
 		{
-			fail ~"not implemented";
-//			match bindings.search(name)
-//			{
-//				option::Some(ref value) =>
-//				{
-//					copy *value
-//				}
-//				option::None =>
-//				{
-//					UnboundValue(name)
-//				}
-//			}
+			match solution.bindings.position_elem(name)
+			{
+				option::Some(i) => row[i],
+				option::None     => @ErrorValue(fmt!("%s is not bound", *name)),
+			}
 		}
 		ExtensionExpr(copy fname, ref args) =>
 		{
-			eval_extension(context, bindings, fname, args)
+			eval_extension(context, solution, row, fname, args)
 		}
 		CallExpr(~"if_fn", ref args) =>			// special case this because it is supposed to short circuit
 		{
-			functional_forms::eval_if(context, bindings, args)
+			functional_forms::eval_if(context, solution, row, args)
 		}
 		CallExpr(~"coalesce_fn", ref args) =>	// special case this because it is variadic
 		{
-			functional_forms::eval_coalesce(context, bindings, args)
+			functional_forms::eval_coalesce(context, solution, row, args)
 		}
 		CallExpr(copy fname, ref args) =>
 		{
-			eval_call(context, bindings, fname, args)
+			@eval_call(context, solution, row, fname, args)
 		}
 	};
 	
@@ -78,13 +71,13 @@ pub fn eval_expr(context: &QueryContext, bindings: &[(~str, Object)], expr: &Exp
 }
 
 // ---- Internal Functions ----------------------------------------------------
-priv type UnaryFn = fn (a1: &Object) -> Object;
-priv type BinaryFn = fn (a1: &Object, a2: &Object) -> Object;
-priv type TernaryFn = fn (a1: &Object, a2: &Object, a3: &Object) -> Object;
+priv type UnaryFn = pure fn (a1: &Object) -> Object;
+priv type BinaryFn = pure fn (a1: &Object, a2: &Object) -> Object;
+priv type TernaryFn = pure fn (a1: &Object, a2: &Object, a3: &Object) -> Object;
 
-priv fn eval_extension(context: &QueryContext, bindings: &[(~str, Object)], fname: ~str, args: &~[@Expr]) -> Object
+priv pure fn eval_extension(context: &QueryContext, solution: &Solution, row: &SolutionRow, fname: ~str, args: &~[@Expr]) -> @Object
 {
-	let args = do vec::map(*args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = do vec::map(*args) |a| {eval_expr(context, solution, row, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match context.extensions.find(@(copy fname))
 	{
 		option::Some(f) =>
@@ -93,14 +86,14 @@ priv fn eval_extension(context: &QueryContext, bindings: &[(~str, Object)], fnam
 		}
 		option::None =>
 		{
-			ErrorValue(fmt!("%s wasn't registered with the store as an extension function", fname))
+			@ErrorValue(fmt!("%s wasn't registered with the store as an extension function", fname))
 		}
 	}
 }
 
-priv fn eval_call(context: &QueryContext, bindings: &[(~str, Object)], fname: ~str, args: &~[@Expr]) -> Object
+priv pure fn eval_call(context: &QueryContext, solution: &Solution, row: &SolutionRow, fname: ~str, args: &~[@Expr]) -> Object
 {
-	let args = do vec::map(*args) |a| {eval_expr(context, bindings, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
+	let args = do vec::map(*args) |a| {eval_expr(context, solution, row, *a)};		// note that we want to call the function even if we get errors here because some functions are OK with them
 	match fname
 	{
 		// operators
@@ -325,23 +318,23 @@ priv fn eval_call(context: &QueryContext, bindings: &[(~str, Object)], fname: ~s
 	}
 }
 
-priv fn eval_call1(fname: ~str, fp: @UnaryFn, args: ~[Object]) -> Object
+priv pure fn eval_call1(fname: ~str, fp: @UnaryFn, args: ~[@Object]) -> Object
 {
-	if vec::len(args) == 1u
+	if args.len() == 1u
 	{
-		(*fp)(&args[0])
+		(*fp)(args[0])
 	}
 	else
 	{
-		ErrorValue(fmt!("%s accepts 1 argument but was called with %? arguments.", fname, vec::len(args)))
+		ErrorValue(fmt!("%s accepts 1 argument but was called with %? arguments.", fname, args.len()))
 	}
 }
 
-priv fn eval_call2(fname: ~str, fp: @BinaryFn, args: ~[Object]) -> Object
+priv pure fn eval_call2(fname: ~str, fp: @BinaryFn, args: ~[@Object]) -> Object
 {
 	if vec::len(args) == 2u
 	{
-		(*fp)(&args[0], &args[1])
+		(*fp)(args[0], args[1])
 	}
 	else
 	{
@@ -356,11 +349,11 @@ priv fn eval_call2(fname: ~str, fp: @BinaryFn, args: ~[Object]) -> Object
 	}
 }
 
-priv fn eval_call3(fname: ~str, fp: @TernaryFn, args: ~[Object]) -> Object
+priv pure fn eval_call3(fname: ~str, fp: @TernaryFn, args: ~[@Object]) -> Object
 {
 	if vec::len(args) == 3u
 	{
-		(*fp)(&args[0], &args[1], &args[2])
+		(*fp)(args[0], args[1], args[2])
 	}
 	else
 	{
