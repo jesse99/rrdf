@@ -102,15 +102,15 @@ fn concat()
 	let actual = concat_fn(~[]);
 	assert check_operands(&actual, &StringValue(~"", ~""));
 	
-	let actual = concat_fn(~[StringValue(~"hello ", ~""), StringValue(~"world", ~""), StringValue(~"!", ~"")]);
+	let actual = concat_fn(~[@StringValue(~"hello ", ~""), @StringValue(~"world", ~""), @StringValue(~"!", ~"")]);
 	assert check_operands(&actual, &StringValue(~"hello world!", ~""));
 	
-	let actual = concat_fn(~[StringValue(~"hello ", ~"en"), StringValue(~"world", ~"en"), StringValue(~"!", ~"en")]);
+	let actual = concat_fn(~[@StringValue(~"hello ", ~"en"), @StringValue(~"world", ~"en"), @StringValue(~"!", ~"en")]);
 	assert check_operands(&actual, &StringValue(~"hello world!", ~"en"));
 	
-	let actual = concat_fn(~[StringValue(~"hello ", ~"en"), StringValue(~"world", ~"de"), StringValue(~"!", ~"en")]);
+	let actual = concat_fn(~[@StringValue(~"hello ", ~"en"), @StringValue(~"world", ~"de"), @StringValue(~"!", ~"en")]);
 	assert check_operands(&actual, &StringValue(~"hello world!", ~""));
 	
-	let actual = concat_fn(~[StringValue(~"hello", ~"en"), IntValue(1i64), StringValue(~"!", ~"en")]);
-	assert check_operands(&actual, &ErrorValue(~"CONCAT: expected string for argument 1 but found IntValue(1)."));
+	let actual = concat_fn(~[@StringValue(~"hello", ~"en"), @IntValue(1i64), @StringValue(~"!", ~"en")]);
+	assert check_operands(&actual, &ErrorValue(~"CONCAT: expected string for argument 1 but found @IntValue(1)."));
 }

@@ -43,7 +43,7 @@ pub type Selector = fn@ (s: &Store) -> result::Result<Solution, ~str>;
 
 // Returns the names (from the SELECT clause) followed by bound variable
 // names not in names.
-pub fn get_bindings(names: &[~str], algebra: Algebra) -> ~[~str]
+pub fn get_bindings(names: &[~str], algebra: &Algebra) -> ~[~str]
 {
 	fn add_pattern_binding(bindings: &mut ~[~str], pattern: Pattern)
 	{
@@ -95,7 +95,7 @@ pub fn get_bindings(names: &[~str], algebra: Algebra) -> ~[~str]
 	
 	let mut bindings = ~[];
 	bindings.push_all(names);
-	add_algebra_bindings(&mut bindings, &algebra);
+	add_algebra_bindings(&mut bindings, algebra);
 	
 	return bindings;
 }
@@ -694,7 +694,7 @@ priv fn order_by(context: &QueryContext, solution: &Solution, ordering: &[Expr])
 	}
 }
 
-priv fn make_distinct(solution: &Solution) -> Solution
+priv fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
 {
 	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
 	// TODO: once quick_sort is fixed to use inherited mutability we should be able to switch to that
@@ -716,5 +716,44 @@ priv fn make_distinct(solution: &Solution) -> Solution
 		}
 	}
 	
-	return Solution {rows: result, ..*solution};
+	return result::Ok(Solution {rows: result, ..*solution});
+}
+
+// Creates a closure which will evaulate the terms in context against a store passed into the closure.
+// names are from the SELECT clause
+pub fn eval(names: &[~str], context: &QueryContext) -> Selector
+{
+	let context = copy *context;
+	let bindings = get_bindings(names, &context.algebra);
+	let num_selected = names.len();
+	|store: &Store, move bindings|
+	{
+		info!("algebra: %s", algebra_to_str(store, &context.algebra));
+		let context = QueryContext {namespaces: store.namespaces, extensions: store.extensions, ..context};
+		do eval_algebra(store, &context, copy bindings, num_selected).chain() |solution|
+		{
+			// Optionally remove duplicates.
+			do result::chain(if context.distinct {make_distinct(&solution)} else {result::Ok(move solution)})
+			|solution|
+			{
+				// Optionally sort the solution.
+				do result::chain(if vec::is_not_empty(context.order_by) {order_by(&context, &solution, context.order_by)} else {result::Ok(move solution)})
+				|solution|
+				{
+					match context.limit
+					{
+						// Optionally limit the solution.
+						option::Some(limit) if limit < vec::len(solution.rows) =>
+						{
+							result::Ok(Solution {rows: vec::slice(solution.rows, 0, limit), ..solution})
+						}
+						_ =>
+						{
+							result::Ok(move solution)
+						}
+					}
+				}
+			}
+		}
+	}
 }

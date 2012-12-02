@@ -78,7 +78,7 @@ fn operator_equals()
 	assert check_operands(&op_equals(&BlankValue(~"foo"), &BlankValue(~"foo")), &BoolValue(true)); 
 	
 	assert check_operands(&op_equals(&IntValue(3i64), &BoolValue(true)), &ErrorValue(~"=: expected numeric value but found BoolValue(true)."));
-	assert check_operands(&op_equals(&BoolValue(true), &UnboundValue(~"foo")), &ErrorValue(~"=: ?foo was not bound."));
+	assert check_operands(&op_equals(&BoolValue(true), &UnboundValue), &ErrorValue(~"=: unbound."));
 	assert check_operands(&op_equals(&BoolValue(true), &InvalidValue(~"foo", ~"some:type")), &ErrorValue(~"=: 'foo' is not a valid some:type"));
 	assert check_operands(&op_equals(&BoolValue(true), &ErrorValue(~"foo")), &ErrorValue(~"=: foo"));
 }
@@ -102,7 +102,7 @@ fn operator_not_equals()
 	assert check_operands(&op_not_equals(&BlankValue(~"foo"), &BlankValue(~"foo")), &BoolValue(false));
 	
 	assert check_operands(&op_not_equals(&IntValue(3i64), &BoolValue(true)), &ErrorValue(~"!=: expected numeric value but found BoolValue(true)."));
-	assert check_operands(&op_not_equals(&BoolValue(true), &UnboundValue(~"foo")), &ErrorValue(~"!=: ?foo was not bound."));
+	assert check_operands(&op_not_equals(&BoolValue(true), &UnboundValue), &ErrorValue(~"!=: unbound."));
 	assert check_operands(&op_not_equals(&BoolValue(true), &InvalidValue(~"foo", ~"some:type")), &ErrorValue(~"!=: 'foo' is not a valid some:type"));
 	assert check_operands(&op_not_equals(&BoolValue(true), &ErrorValue(~"foo")), &ErrorValue(~"!=: foo"));
 }

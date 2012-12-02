@@ -22,21 +22,21 @@ pub fn check_str_array(actual: &[~str], expected: &[~str]) -> bool
 #[test]
 fn test_get_bindings()
 {
-	let bindings = get_bindings(~[], Group(~[]));
+	let bindings = get_bindings(~[], &Group(~[]));
 	assert check_str_array(bindings, ~[]);
 	
-	let bindings = get_bindings(~[~"c", ~"d"], Group(~[]));
+	let bindings = get_bindings(~[~"c", ~"d"], &Group(~[]));
 	assert check_str_array(bindings, ~[~"c", ~"d"]);
 	
 	let triple1 = TriplePattern {subject: Variable(~"a"), predicate: Constant(@BoolValue(true)), object: Variable(~"b")};
-	let bindings = get_bindings(~[], Basic(copy triple1));
+	let bindings = get_bindings(~[], &Basic(copy triple1));
 	assert check_str_array(bindings, ~[~"a", ~"b"]);
 	
-	let bindings = get_bindings(~[~"c", ~"d"], Basic(copy triple1));
+	let bindings = get_bindings(~[~"c", ~"d"], &Basic(copy triple1));
 	assert check_str_array(bindings, ~[~"c", ~"d", ~"a", ~"b"]);
 	
 	let triple2 = TriplePattern {subject: Variable(~"a"), predicate: Constant(@BoolValue(true)), object: Variable(~"x")};
-	let bindings = get_bindings(~[~"c", ~"d"], Group(~[@Basic(triple1), @Basic(triple2)]));
+	let bindings = get_bindings(~[~"c", ~"d"], &Group(~[@Basic(triple1), @Basic(triple2)]));
 	assert check_str_array(bindings, ~[~"c", ~"d", ~"a", ~"b", ~"x"]);
 }
 
@@ -380,5 +380,5 @@ fn test_distinct()
 			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],
 		]};
 	let actual = make_distinct(&solution);
-	assert check_solution(&actual, &expected);
+	assert check_solution(result::get_ref(&actual), &expected);
 }

@@ -23,65 +23,48 @@ pub fn check_operands(actual: &Object, expected: &Object) -> bool
 	return true;
 }
 
-//pub fn check_bgp(groups: &[Solution], expected: &Solution) -> bool
-//{
-//	fn convert_bindings(group: &Solution) -> ~[~str]
-//	{
-//		do vec::map(group.rows)
-//		|row|
-//		{
-//			let mut entries = ~[];
-//			for row.each |e| {vec::push(&mut entries, fmt!("%s=%?", e.first(), e.second()))};
-//			let entries = std::sort::merge_sort(|x, y| *x <= *y, entries);
-//			str::connect(entries, ~", ")
-//		}
-//	}
-//	
-//	fn dump_bindings(actual: &[~str])
-//	{
-//		io::stderr().write_line("Actual bindings:");
-//		for vec::eachi(actual)
-//		|i, bindings|
-//		{
-//			io::stderr().write_line(fmt!("   %?: %s", i, *bindings));
-//		};
-//	}
-//	
-//	let mut actual = copy groups[0];
-//	for vec::each(vec::slice(groups, 1, groups.len())) |group|
-//	{
-//		let store = Store(~[], &HashMap());
-//		actual = join_solutions(&store, &actual, group, false);
-//	}
-//	
-//	// Form this point forward we are dealing with [str] instead of [[binding]].
-//	let actual = convert_bindings(&actual);
-//	let expected = convert_bindings(expected);
-//	
-//	let actual = std::sort::merge_sort(|x, y| *x <= *y, actual);
-//	let expected = std::sort::merge_sort(|x, y| *x <= *y, expected);
-//	
-//	if vec::len(actual) != vec::len(expected)
-//	{
-//		io::stderr().write_line(fmt!("Actual length is %?, but expected %?", vec::len(actual), vec::len(expected)));
-//		dump_bindings(actual);
-//		return false;
-//	}
-//	
-//	for vec::eachi(actual) |i, arow|
-//	{
-//		let erow = copy expected[i];
-//		
-//		if *arow != erow
-//		{
-//			io::stderr().write_line(fmt!("Row #%? is %s, but expected %s", i, *arow, erow));
-//			dump_bindings(actual);
-//			return false;
-//		}
-//	}
-//	
-//	return true;
-//}
+pub fn check_bgp(store: &Store, groups: &[Solution], expected: &Solution) -> bool
+{
+	fn dump_actual(store: &Store, solution: &Solution, rows: &[SolutionRow])
+	{
+		io::stderr().write_line("Actual bindings:");
+		for vec::eachi(rows) |i, row|
+		{
+			io::stderr().write_line(fmt!("%?: %s   ", i, solution_row_to_str(store, solution, row)));
+		};
+	}
+	
+	let mut actual = copy groups[0];
+	for vec::each(vec::slice(groups, 1, groups.len())) |group|
+	{
+		let store = Store(~[], &HashMap());
+		actual = join_solutions(&store, &actual, group, false);
+	}
+	
+	let actual_rows = std::sort::merge_sort(|x, y| {x <= y}, actual.rows);
+	let expected_rows = std::sort::merge_sort(|x, y| {x <= y}, expected.rows);
+	
+	if actual_rows.len() != expected_rows.len()
+	{
+		io::stderr().write_line(fmt!("Actual length is %?, but expected %?", actual_rows.len(), expected_rows.len()));
+		dump_actual(store, &actual, actual_rows);
+		return false;
+	}
+	
+	for vec::eachi(actual_rows) |i, arow|
+	{
+		let erow = copy expected_rows[i];
+		
+		if *arow != erow
+		{
+			io::stderr().write_line(fmt!("Row #%? is %s, but expected %s", i, solution_row_to_str(store, &actual, arow), solution_row_to_str(store, expected, &erow)));
+			dump_actual(store, &actual, actual_rows);
+			return false;
+		}
+	}
+	
+	return true;
+}
 
 pub fn check_triples(actual: &[Triple], expected: &[Triple]) -> bool
 {
