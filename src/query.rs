@@ -696,6 +696,18 @@ priv fn order_by(context: &QueryContext, solution: &Solution, ordering: &[Expr])
 
 priv fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
 {
+	pure fn equal_rows(solution: &Solution, row1: &SolutionRow, row2: &SolutionRow) -> bool
+	{
+		for uint::range(0, solution.num_selected) |i|
+		{
+			if row1[i] != row2[i]
+			{
+				return false;
+			}
+		}
+		true
+	}
+	
 	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
 	// TODO: once quick_sort is fixed to use inherited mutability we should be able to switch to that
 	let rows = std::sort::merge_sort(|x, y| {x <= y}, solution.rows);
@@ -710,7 +722,7 @@ priv fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
 		vec::push(&mut result, copy row);
 		
 		i = i + 1;
-		while i < rows.len() && row == rows[i]
+		while i < rows.len() && equal_rows(solution, &row, &rows[i])
 		{
 			i += 1;
 		}

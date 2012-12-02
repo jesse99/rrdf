@@ -149,7 +149,7 @@ pub fn check_eval(store: &Store, expr: ~str, expected: &Solution) -> bool
 
 pub fn check_solution(actual: &Solution, expected: &Solution) -> bool
 {
-	assert actual.bindings.len() == expected.bindings.len();
+	assert actual.bindings == expected.bindings;
 	assert actual.num_selected == expected.num_selected;
 	
 	let actual = actual.sort();
@@ -171,8 +171,23 @@ pub fn check_solution(actual: &Solution, expected: &Solution) -> bool
 	// Actual should have only the expected values.
 	for uint::range(0, actual.rows.len()) |i|
 	{
-		let row1 = actual.rows[i].slice(0, actual.num_selected);
-		let row2 = expected.rows[i].slice(0, expected.num_selected);
+		let row1 = &actual.rows[i];
+		let row2 = &expected.rows[i];
+		if row1.len() < actual.num_selected
+		{
+			print_failure(#fmt["Actual row %? had size %? but num_selected is %?.",
+				i, row1.len(), actual.num_selected], &actual, expected);
+			return false;
+		}
+		if row2.len() < expected.num_selected
+		{
+			print_failure(#fmt["Expected row %? had size %? but num_selected is %?.",
+				i, row2.len(), expected.num_selected], &actual, expected);
+			return false;
+		}
+		
+		let row1 = row1.slice(0, actual.num_selected);
+		let row2 = row2.slice(0, expected.num_selected);
 		if row1.len() != row2.len()
 		{
 			print_failure(#fmt["Row %? had size %? but expected %?.",
