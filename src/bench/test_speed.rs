@@ -17,31 +17,32 @@ fn big_store() -> Store
 		if rng.gen_float() <= 0.1
 		{
 			let mut entries = ~[
-				(~"wiki:episode", IntValue(rng.gen_i64())),
-				(~"wiki:name", StringValue(rng.gen_str(10), ~"")),
+				(~"wiki:episode", @IntValue(rng.gen_i64())),
+				(~"wiki:name", @StringValue(rng.gen_str(10), ~"")),
 			];
 			if rng.gen_float() <= 0.1
 			{
-				entries.push((~"wiki:kenney_dies", StringValue(rng.gen_str(8), ~"")));
+				entries.push((~"wiki:kenney_dies", @StringValue(rng.gen_str(8), ~"")));
 			}
 			store.add(rng.gen_str(16), entries);
 		}
 		else
 		{
 			store.add(rng.gen_str(16), ~[
-				(~"wiki:phylum", StringValue(rng.choose(phylums), ~"")),
-				(~"wiki:class", StringValue(rng.choose(classes), ~"")),
-				(~"wiki:family", StringValue(rng.choose(families), ~"")),
+				(~"wiki:phylum", @StringValue(rng.choose(phylums), ~"")),
+				(~"wiki:class", @StringValue(rng.choose(classes), ~"")),
+				(~"wiki:family", @StringValue(rng.choose(families), ~"")),
 			]);
 		}
 	}
 	store
 }
 
-// This is very much like a very slow query gnos runs.
+// This is very much like a very slow query gnos run.
 //
 // Times				State
 // 7.276 7.355 7.414	Before optimization work (but with -O which seems to speed queries up by 35%, note that ---opt-level 3 did not help)
+// 0.887 0.801 0.913	Take advantage of new rust features, mostly more useable managed pointers and inherited mutability
 #[test]
 fn speed()
 {

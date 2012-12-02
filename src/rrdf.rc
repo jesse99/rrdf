@@ -45,9 +45,9 @@ mod tests
 	mod test_store;
 }
 
-//#[cfg(speed)]
-//#[cfg(test)]
-//mod bench
-//{
-//	mod test_speed;
-//}
+#[cfg(speed)]
+#[cfg(test)]
+mod bench
+{
+	mod test_speed;
+}
