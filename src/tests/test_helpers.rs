@@ -81,9 +81,9 @@ pub fn check_triples(actual: &[Triple], expected: &[Triple]) -> bool
 	let actual = std::sort::merge_sort(|x, y| {x.subject <= y.subject}, actual);
 	let expected = std::sort::merge_sort(|x, y| {x.subject <= y.subject}, expected);
 	
-	if vec::len(actual) != vec::len(expected)
+	if actual.len() != expected.len()
 	{
-		io::stderr().write_line(fmt!("Actual length is %?, but expected %?", vec::len(actual), vec::len(expected)));
+		io::stderr().write_line(fmt!("Actual length is %?, but expected %?", actual.len(), expected.len()));
 		dump_triples(actual);
 		return false;
 	}
@@ -161,21 +161,22 @@ pub fn check_solution(actual: &Solution, expected: &Solution) -> bool
 	}
 	
 	// Both sides should have the same number of rows.
-	if vec::len(actual.rows) != vec::len(expected.rows)
+	if actual.rows.len() != expected.rows.len()
 	{
 		print_failure(#fmt["Actual result had %? rows but expected %? rows.", 
-			vec::len(actual.rows), vec::len(expected.rows)], &actual, expected);
+			actual.rows.len(), expected.rows.len()], &actual, expected);
 		return false;
 	}
 	
 	// Actual should have only the expected values.
-	for vec::eachi(actual.rows) |i, row1|
+	for uint::range(0, actual.rows.len()) |i|
 	{
-		let row2 = copy expected.rows[i];
-		if vec::len(*row1) != vec::len(row2)
+		let row1 = actual.rows[i].slice(0, actual.num_selected);
+		let row2 = expected.rows[i].slice(0, expected.num_selected);
+		if row1.len() != row2.len()
 		{
 			print_failure(#fmt["Row %? had size %? but expected %?.",
-				i, vec::len(*row1), vec::len(row2)], &actual, expected);
+				i, row1.len(), row2.len()], &actual, expected);
 			return false;
 		}
 		

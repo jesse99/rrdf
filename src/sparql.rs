@@ -1098,35 +1098,34 @@ type SolutionModifiers = {order_by: Option<@~[expression::Expr]>, limit: Option<
 // namespaces are from the PREFIX clauses
 // patterns are from the SELECT clause
 // algebra is from the WHERE clause
-priv fn build_parser(_namespaces: &[Namespace], _query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
+priv fn build_parser(namespaces: &[Namespace], query: ((bool, ~[Pattern]), Algebra, SolutionModifiers)) -> result::Result<Selector, @~str>
 {
-//	let ((distinct, patterns), algebra, modifiers) = query;
-//	
-//	let variables = do vec::filter(patterns) |p| {match *p {Variable(ref _l)  => true, _  => false}};
-//	let names = do vec::map(variables) |p| {match *p {Variable(copy n)  => n, _  => fail}};
-//	
-//	let order_by = match modifiers.order_by {option::Some(x)  => x, option::None  => @~[]};
-//	
-//	let dupes = find_dupes(names);
-//	if vec::is_empty(dupes)
-//	{
-//		// eval will set namespaces and extensions
-//		if vec::is_not_empty(namespaces)
-//		{
-//			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: expand(namespaces, &algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
-//			result::Ok(eval(names, &context))
-//		}
-//		else
-//		{
-//			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
-//			result::Ok(eval(names, &context))
-//		}
-//	}
-//	else
-//	{
-//		result::Err(@fmt!("Select clause has duplicates: %s", str::connect(dupes, ~" ")))
-//	}
-	fail ~"not implemented"
+	let ((distinct, patterns), algebra, modifiers) = query;
+	
+	let variables = do vec::filter(patterns) |p| {match *p {Variable(ref _l)  => true, _  => false}};
+	let names = do vec::map(variables) |p| {match *p {Variable(copy n)  => n, _  => fail}};
+	
+	let order_by = match modifiers.order_by {option::Some(x)  => x, option::None  => @~[]};
+	
+	let dupes = find_dupes(names);
+	if vec::is_empty(dupes)
+	{
+		// eval will set namespaces and extensions
+		if vec::is_not_empty(namespaces)
+		{
+			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: expand(namespaces, &algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			result::Ok(eval(names, &context))
+		}
+		else
+		{
+			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			result::Ok(eval(names, &context))
+		}
+	}
+	else
+	{
+		result::Err(@fmt!("Select clause has duplicates: %s", str::connect(dupes, ~" ")))
+	}
 }
 
 /// Returns either a function capable of matching triples or a parse error.
