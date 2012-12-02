@@ -33,7 +33,7 @@ pub mod store;
 mod tests
 {
 	mod test_data;
-//	mod test_example;
+	mod test_example;
 	mod test_functions_on_strings;
 	mod test_helpers;
 	mod test_operands;

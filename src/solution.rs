@@ -104,6 +104,7 @@ pub impl  &Solution : ToStr
 		
 		for self.rows.eachi |i, row|
 		{
+			let row = row.slice(0, self.num_selected);
 			let entries = do row.mapi |i, r| {fmt!("%s: %s", self.bindings[i], r.to_friendly_str(self.namespaces))};
 			result += fmt!("%? %s\n", i, str::connect(entries, ", "));
 		}

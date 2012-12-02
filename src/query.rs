@@ -298,6 +298,8 @@ priv fn match_subject(solution: &Solution, actual: &str, pattern: &Pattern, row:
 		Variable(ref name) =>
 		{
 			let i = solution.bindings.position_elem(name);
+			assert row[i.get()].is_unbound();					// subject is always the first thing matched so this should always be true
+			
 			row[i.get()] = if actual.starts_with("_:")
 				{
 					@BlankValue(actual.to_unique())
@@ -326,43 +328,63 @@ priv fn match_subject(solution: &Solution, actual: &str, pattern: &Pattern, row:
 }
 
 // Attempts to match a pattern to an IRI predicate.
-priv fn match_predicate(solution: &Solution, actual: &str, pattern: &Pattern, row: &mut SolutionRow) -> bool
+priv fn match_predicate(solution: &Solution, actual: &str, pattern: &Pattern, row: &mut SolutionRow) -> result::Result<bool, ~str>
 {
 	match *pattern
 	{
 		Variable(ref name) =>
 		{
 			let i = solution.bindings.position_elem(name);
-			row[i.get()] = @IriValue(actual.to_unique());
-			true
+			match row[i.get()]
+			{
+				@UnboundValue =>
+				{
+					row[i.get()] = @IriValue(actual.to_unique());
+					result::Ok(true)
+				}
+				_ =>
+				{
+					result::Err(fmt!("Binding ?%s was set more than once.", *name))
+				}
+			}
 		}
 		Constant(@IriValue(ref value)) =>
 		{
 			//debug!("Actual predicate %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], value];
-			actual == *value
+			result::Ok(actual == *value)
 		}
 		_ =>
 		{
-			false
+			result::Ok(false)
 		}
 	}
 }
 
 // Attempts to match a pattern to an arbitrary object.
-priv fn match_object(solution: &Solution, actual: @Object, pattern: &Pattern, row: &mut SolutionRow) -> bool
+priv fn match_object(solution: &Solution, actual: @Object, pattern: &Pattern, row: &mut SolutionRow) -> result::Result<bool, ~str>
 {
 	match *pattern
 	{
 		Variable(ref name) =>
 		{
 			let i = solution.bindings.position_elem(name);
-			row[i.get()] = actual;
-			true
+			match row[i.get()]
+			{
+				@UnboundValue =>
+				{
+					row[i.get()] = actual;
+					result::Ok(true)
+				}
+				_ =>
+				{
+					result::Err(fmt!("Binding ?%s was set more than once.", *name))
+				}
+			}
 		}
 		Constant(ref expected) =>
 		{
 			//debug!("Actual object %? %s %?", actual.to_str(), [~"did not match", ~"matched")[matched as uint], expected.to_str()];
-			equal_objects(actual, *expected)
+			result::Ok(equal_objects(actual, *expected))
 		}
 	}
 }
@@ -417,24 +439,34 @@ priv fn iterate_matches(store: &Store, solution: &Solution, spattern: &Pattern, 
 }
 
 // Returns all the subjects that match the TriplePattern.
-pub fn eval_basic(store: &Store,  bindings: ~[~str], num_selected: uint, matcher: &TriplePattern) -> Solution
+pub fn eval_basic(store: &Store,  bindings: ~[~str], num_selected: uint, matcher: &TriplePattern) -> result::Result<Solution, ~str>
 {
 	let mut solution = Solution {namespaces: copy store.namespaces, bindings: move bindings, num_selected: num_selected, rows: ~[]};
 	
 	for iterate_matches(store, &solution, &matcher.subject) |r, entry|
 	{
 		let mut row = move r;		// need the move to shut the borrow checker up
-		if match_predicate(&solution, entry.predicate, &matcher.predicate, &mut row)
+		let result = match_predicate(&solution, entry.predicate, &matcher.predicate, &mut row);
+		if result.is_ok() && result.get()
 		{
-			if match_object(&solution, entry.object, &matcher.object, &mut row)
+			let result = match_object(&solution, entry.object, &matcher.object, &mut row);
+			if result.is_ok() && result.get()
 			{
 				info!("basic %s matched %s", triple_pattern_to_str(store, matcher), solution_row_to_str(store, &solution, &row));
 				solution.rows.push(row);
 			}
+			else if result.is_err()
+			{
+				return result::Err(result.get_err());
+			}
+		}
+		else if result.is_err()
+		{
+			return result::Err(result.get_err());
 		}
 	}
 	
-	solution
+	result::Ok(solution)
 }
 
 // Evaluate expr for each row in the solution and bind the result to name.
@@ -461,7 +493,14 @@ priv fn bind_solution(context: &QueryContext, solution: &mut Solution, expr: &Ex
 			_ =>
 			{
 				let j = solution.bindings.position_elem(&name);
-				solution.rows[i][j.get()] = value
+				if solution.rows[i][j.get()].is_unbound()
+				{
+					solution.rows[i][j.get()] = value;
+				}
+				else
+				{
+					return option::Some(fmt!("Binding ?%s was set more than once.", name));
+				}
 			}
 		}
 	}
@@ -597,7 +636,7 @@ priv fn eval_algebra(store: &Store, context: &QueryContext, bindings: ~[~str], n
 	{
 		Basic(ref pattern) =>
 		{
-			result::Ok(eval_basic(store, bindings, num_selected, pattern))
+			eval_basic(store, bindings, num_selected, pattern)
 		}
 		Group(ref terms) =>
 		{
@@ -736,8 +775,16 @@ priv fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
 pub fn eval(names: &[~str], context: &QueryContext) -> Selector
 {
 	let context = copy *context;
-	let bindings = get_bindings(names, &context.algebra);
-	let num_selected = names.len();
+	let (bindings, num_selected) = if names.len() == 1 && names[0] == ~"*"
+		{
+			let tmp = get_bindings(~[], &context.algebra);
+			let len = tmp.len();
+			(tmp, len)
+		}
+		else
+		{
+			(get_bindings(names, &context.algebra), names.len())
+		};
 	|store: &Store, move bindings|
 	{
 		info!("algebra: %s", algebra_to_str(store, &context.algebra));

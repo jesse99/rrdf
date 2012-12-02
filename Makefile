@@ -13,7 +13,7 @@ check: bin/test-rrdf
 
 # Logging seems all screwed up: if you want to see rparse logs use r=2
 check1: bin/test-rrdf
-	export RUST_LOG=rrdf::query=2,rrdf::expression=1,rparse=1,::rt::backtrace=4 && ./bin/test-rrdf duplicate_where_variables
+	export RUST_LOG=rrdf::query=2,rrdf::expression=1,rparse=1,::rt::backtrace=4 && ./bin/test-rrdf select_all
 
 speed: bin/test-speed
 	export RUST_LOG=rrdf::query=1 && ./bin/test-speed speed

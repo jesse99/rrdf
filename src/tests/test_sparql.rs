@@ -82,7 +82,7 @@ fn duplicate_where_variables()
 	let expr = ~"SELECT ?s ?p ?o WHERE {?s ?s ?o}";
 	let store = test_data::got_cast1();
 	
-	assert check_solution_err(&store, expr, ~"Binding s was set more than once.");
+	assert check_solution_err(&store, expr, ~"Binding ?s was set more than once.");
 }
 
 #[test]
@@ -91,8 +91,8 @@ fn unbound_variable()
 	let expr = ~"SELECT ?s ?p ?z WHERE {?s ?p ?o}";
 	let store = test_data::got_cast1();
 	let expected = Solution {namespaces: ~[], bindings: ~[~"s", ~"p", ~"z", ~"o"], num_selected: 3, rows: ~[
-		~[@IriValue(got(~"Eddard_Stark")), @IriValue(v(~"fn"))],
-		~[@IriValue(got(~"Eddard_Stark")), @IriValue(v(~"nickname"))]
+		~[@IriValue(got(~"Eddard_Stark")), @IriValue(v(~"fn")), @UnboundValue],
+		~[@IriValue(got(~"Eddard_Stark")), @IriValue(v(~"nickname")), @UnboundValue]
 	]};
 	
 	assert check_eval(&store, expr, &expected);
@@ -130,7 +130,7 @@ fn simple_path()
 		?z <http://www.w3.org/2006/vcard/ns#organisation-name> ?org
 	}";
 	let store = test_data::got_cast3();
-	let expected = Solution {namespaces: ~[], bindings: ~[~"org", ~"z"], num_selected: 2, rows: ~[
+	let expected = Solution {namespaces: ~[], bindings: ~[~"org", ~"z"], num_selected: 1, rows: ~[
 		~[@StringValue(~"Small Council", ~"")]
 	]};
 	
@@ -226,7 +226,7 @@ fn prefixes()
 		?z v:organisation-name ?org
 	}";
 	let store = test_data::got_cast3();
-	let expected = Solution {namespaces: ~[], bindings: ~[~"org", ~"z"], num_selected: 2, rows: ~[
+	let expected = Solution {namespaces: ~[], bindings: ~[~"org", ~"z"], num_selected: 1, rows: ~[
 		~[@StringValue(~"Small Council", ~"")]
 	]};
 	
@@ -238,7 +238,7 @@ fn options1()
 {
 	let expr = ~"PREFIX got: <http://awoiaf.westeros.org/index.php/>
 	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
-	SELECT ?name ?title ?pet
+	SELECT ?name ?title
 	WHERE {
 		?s v:fn ?name .
 		OPTIONAL {
@@ -246,10 +246,10 @@ fn options1()
 		}
 	}";
 	let store = test_data::got_cast3();
-	let expected = Solution {namespaces: ~[], bindings: ~[~"name", ~"title", ~"pet", ~"s"], num_selected: 3, rows: ~[
+	let expected = Solution {namespaces: ~[], bindings: ~[~"name", ~"title", ~"s"], num_selected: 2, rows: ~[
 		~[@StringValue(~"Eddard Stark", ~""), @StringValue(~"Lord", ~"")],
-		~[@StringValue(~"Jon Snow", ~"")],
-		~[@StringValue(~"Sandor Clegane", ~"")]
+		~[@StringValue(~"Jon Snow", ~""), @UnboundValue],
+		~[@StringValue(~"Sandor Clegane", ~""), @UnboundValue]
 	]};
 	
 	assert check_eval(&store, expr, &expected);
@@ -268,9 +268,9 @@ fn options2()
 	}";
 	let store = test_data::got_cast3();
 	let expected = Solution {namespaces: ~[], bindings: ~[~"name", ~"title", ~"pet", ~"s"], num_selected: 3, rows: ~[
-		~[@StringValue(~"Eddard Stark", ~""), @StringValue(~"Lord", ~"")],
-		~[@StringValue(~"Jon Snow", ~""), @StringValue(~"Ghost", ~"")],
-		~[@StringValue(~"Sandor Clegane", ~"")]
+		~[@StringValue(~"Eddard Stark", ~""), @StringValue(~"Lord", ~""), @UnboundValue],
+		~[@StringValue(~"Jon Snow", ~""), @UnboundValue, @StringValue(~"Ghost", ~"")],
+		~[@StringValue(~"Sandor Clegane", ~""), @UnboundValue, @UnboundValue]
 	]};
 	
 	assert check_eval(&store, expr, &expected);
@@ -553,14 +553,14 @@ fn filter_optional()
 {
 	let expr = ~"PREFIX got: <http://awoiaf.westeros.org/index.php/>
 	PREFIX v: <http://www.w3.org/2006/vcard/ns#>
-	SELECT ?name ?title ?nick
+	SELECT ?name ?nick
 	WHERE {
 		?s v:fn ?name .
 		OPTIONAL {?s v:nickname ?nick . FILTER CONTAINS(?nick, \" \")}
 	}";
 	let store = test_data::got_cast3();
-	let expected = Solution {namespaces: ~[], bindings: ~[~"name", ~"title", ~"nick", ~"s"], num_selected: 3, rows: ~[
-		~[@StringValue(~"Eddard Stark", ~"")],
+	let expected = Solution {namespaces: ~[], bindings: ~[~"name", ~"nick", ~"s"], num_selected: 2, rows: ~[
+		~[@StringValue(~"Eddard Stark", ~""), @UnboundValue],
 		~[@StringValue(~"Jon Snow", ~""), @StringValue(~"Lord Snow", ~"")],
 		~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")]
 	]};

@@ -176,7 +176,8 @@ fn test_basic()
 			~[@StringValue(~"Eddard Stark", ~""), @IriValue(~"http://awoiaf.westeros.org/index.php/Eddard_Stark"), @IriValue(~"http://www.w3.org/2006/vcard/ns#fn")],
 			~[@StringValue(~"Ned", ~""), @IriValue(~"http://awoiaf.westeros.org/index.php/Eddard_Stark"), @IriValue(~"http://www.w3.org/2006/vcard/ns#nickname")],
 		]};
-	assert check_solution(&actual, &expected);
+	assert actual.is_ok();
+	assert check_solution(result::get_ref(&actual), &expected);
 	
 	// Variable Variable Constant
 	let store = animals();
@@ -189,7 +190,8 @@ fn test_basic()
 			~[@IriValue(~"http://en.wikipedia.org/wiki/giraffe"), @IriValue(~"http://en.wikipedia.org/wiki/class")],
 			~[@IriValue(~"http://en.wikipedia.org/wiki/grizzly"), @IriValue(~"http://en.wikipedia.org/wiki/class")],
 		]};
-	assert check_solution(&actual, &expected);
+	assert actual.is_ok();
+	assert check_solution(result::get_ref(&actual), &expected);
 	
 	// Variable Constant Variable
 	let pattern = TriplePattern {subject: Variable(~"subject"), predicate: Constant(@IriValue(~"http://en.wikipedia.org/wiki/class")), object: Variable(~"value")};
@@ -204,7 +206,8 @@ fn test_basic()
 			~[@StringValue(~"mammalia", ~""), @IriValue(~"http://en.wikipedia.org/wiki/giraffe")],
 			~[@StringValue(~"mammalia", ~""), @IriValue(~"http://en.wikipedia.org/wiki/grizzly")],
 		]};
-	assert check_solution(&actual, &expected);
+	assert actual.is_ok();
+	assert check_solution(result::get_ref(&actual), &expected);
 	
 	// Constant Variable Variable
 	let pattern = TriplePattern {subject: Constant(@IriValue(~"http://en.wikipedia.org/wiki/black_widow")), predicate: Variable(~"predicate"), object: Variable(~"value")};
@@ -216,7 +219,8 @@ fn test_basic()
 			~[@StringValue(~"arthropoda", ~""), @IriValue(~"http://en.wikipedia.org/wiki/phylum")],
 			~[@StringValue(~"theridiidae", ~""), @IriValue(~"http://en.wikipedia.org/wiki/family")],
 		]};
-	assert check_solution(&actual, &expected);
+	assert actual.is_ok();
+	assert check_solution(result::get_ref(&actual), &expected);
 	
 	// Constant Variable Constant
 	let pattern = TriplePattern {subject: Constant(@IriValue(~"http://en.wikipedia.org/wiki/black_widow")), predicate: Variable(~"predicate"), object: Constant(@StringValue(~"arthropoda", ~""))};
@@ -226,7 +230,8 @@ fn test_basic()
 		~[
 			~[@IriValue(~"http://en.wikipedia.org/wiki/phylum")],
 		]};
-	assert check_solution(&actual, &expected);
+	assert actual.is_ok();
+	assert check_solution(result::get_ref(&actual), &expected);
 	
 	// Constant Constant Constant
 	let pattern = TriplePattern {subject: Constant(@IriValue(~"http://en.wikipedia.org/wiki/black_widow")), predicate: Constant(@IriValue(~"http://en.wikipedia.org/wiki/phylum")), object: Constant(@StringValue(~"arthropoda", ~""))};
@@ -236,7 +241,8 @@ fn test_basic()
 		~[
 			~[],
 		]};
-	assert check_solution(&actual, &expected);
+	assert actual.is_ok();
+	assert check_solution(result::get_ref(&actual), &expected);
 }
 
 #[test]

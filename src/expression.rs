@@ -45,7 +45,7 @@ pub pure fn eval_expr(context: &QueryContext, solution: &Solution, row: &Solutio
 			match solution.bindings.position_elem(name)
 			{
 				option::Some(i) => row[i],
-				option::None     => @ErrorValue(fmt!("%s is not bound", *name)),
+				option::None     => @ErrorValue(fmt!("?%s was not bound.", *name)),
 			}
 		}
 		ExtensionExpr(copy fname, ref args) =>
