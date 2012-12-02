@@ -27,88 +27,89 @@ Here is a usage example:
     import rrdf::*;
     
     // Creates a triple store and adds monsters to it.
-    fn monsters() -> store
+    fn monsters() -> Store
     {
         // Namespaces allow subjects and predicates to be added to the 
         // store using a prefixed name instead of a full URL.
-        let namespaces = [{prefix: "game", path: "http://game/ns#"}];
+        let namespaces = ~[Namespace {prefix: ~"game", path: ~"http://game/ns#"}];
         
         // Vector of function name and function pointer tuples. These
         // represent user defined functions that may be called from
         // within SPARQL queries.
-        let extensions = ~[];
+        let extensions = HashMap();
         
         // Create an empty triple store.
-        let store = create_store(namespaces, extensions);
+        let store = Store(namespaces, &extensions);
         
         // Start adding statements to the store. Individual triples may be added,
         // containers, aggregates, reified statements, and predicates/objects
         // associated with a subject (which is what we use here).
-        store.add("game:snake", ~[
-            ("game:name", string_value("King Snake", "")),    // "" is for an optional language
-            ("game:min_level", int_value(1)),
-            ("game:max_level", int_value(5)),
-            ("game:weight", int_value(4)),                // relative probability
-            ("game:habitat", string_value("|land|water|", "")),
+        store.add(~"game:snake", ~[
+            (~"game:name", @StringValue(~"King Snake", ~"")),    // "" is for an optional language
+            (~"game:min_level", @IntValue(1)),
+            (~"game:max_level", @IntValue(5)),
+            (~"game:weight", @IntValue(4)),                // relative probability
+            (~"game:habitat", @StringValue(~"|land|water|", ~"")),
         ]);
         
-        store.add("game:bear", ~[
-            ("game:name", string_value("Grizzly Bear", "")),
-            ("game:min_level", int_value(3)),
-            ("game:max_level", int_value(6)),
-            ("game:weight", int_value(3)),
-            ("game:habitat", string_value("|land|", "")),
+        store.add(~"game:bear", ~[
+            (~"game:name", @StringValue(~"Grizzly Bear", ~"")),
+            (~"game:min_level", @IntValue(3)),
+            (~"game:max_level", @IntValue(6)),
+            (~"game:weight", @IntValue(3)),
+            (~"game:habitat", @StringValue(~"|land|", ~"")),
         ]);
         
-        store.add("game:naga", ~[
-            ("game:name", string_value("Naga Warrior", "")),
-            ("game:min_level", int_value(7)),
-            ("game:max_level", int_value(15)),
-            ("game:weight", int_value(2)),
-            ("game:habitat", string_value("|land|water|", "")),
+        store.add(~"game:naga", ~[
+            (~"game:name", @StringValue(~"Naga Warrior", ~"")),
+            (~"game:min_level", @IntValue(7)),
+            (~"game:max_level", @IntValue(15)),
+            (~"game:weight", @IntValue(2)),
+            (~"game:habitat", @StringValue(~"|land|water|", ~"")),
         ]);
         
-        store.add("game:shark", ~[
-            ("game:name", string_value("Hammerhead Shark", "")),
-            ("game:min_level", int_value(5)),
-            ("game:max_level", int_value(21)),
-            ("game:weight", int_value(1)),
-            ("game:habitat", string_value("|water|", "")),
+        store.add(~"game:shark", ~[
+            (~"game:name", @StringValue(~"Hammerhead Shark", ~"")),
+            (~"game:min_level", @IntValue(5)),
+            (~"game:max_level", @IntValue(21)),
+            (~"game:weight", @IntValue(1)),
+            (~"game:habitat", @StringValue(~"|water|", ~"")),
         ]);
         
-        store.add("game:mummy", ~[
-            ("game:name", string_value("Mummy", "")),
-            ("game:min_level", int_value(10)),
-            ("game:max_level", int_value(20)),
-            ("game:weight", int_value(2)),
-            ("game:habitat", string_value("|land|", "")),
+        store.add(~"game:mummy", ~[
+            (~"game:name", @StringValue(~"Mummy", ~"")),
+            (~"game:min_level", @IntValue(10)),
+            (~"game:max_level", @IntValue(20)),
+            (~"game:weight", @IntValue(2)),
+            (~"game:habitat", @StringValue(~"|land|", ~"")),
         ]);
         
-        store.add("game:lich", ~[
-            ("game:name", string_value("Lich", "")),
-            ("game:min_level", int_value(15)),
-            ("game:max_level", int_value(30)),
-            ("game:weight", int_value(3)),
-            ("game:habitat", string_value("|land|", "")),
-            ("game:announce", string_value("You feel a chill.", "")),    
+        store.add(~"game:lich", ~[
+            (~"game:name", @StringValue(~"Lich", ~"")),
+            (~"game:min_level", @IntValue(15)),
+            (~"game:max_level", @IntValue(30)),
+            (~"game:weight", @IntValue(3)),
+            (~"game:habitat", @StringValue(~"|land|", ~"")),
+            (~"game:announce", @StringValue(~"You feel a chill.", ~"")),
         ]);
         
-        store.add("game:necromancer", ~[
-            ("game:name", string_value("Necromancer", "")),
-            ("game:min_level", int_value(20)),
-            ("game:max_level", int_value(30)),
-            ("game:weight", int_value(2)),
-            ("game:habitat", string_value("|land|", "")),
+        store.add(~"game:necromancer", ~[
+            (~"game:name", @StringValue(~"Necromancer", ~"")),
+            (~"game:min_level", @IntValue(20)),
+            (~"game:max_level", @IntValue(30)),
+            (~"game:weight", @IntValue(2)),
+            (~"game:habitat", @StringValue(~"|land|", ~"")),
         ]);
         
-        ret store;
+        return store;
     }
     
+    #[test]
     fn query_monsters()
     {
         // Return the names and weights for all land monsters allowed on level 20.
         // If the monster has an announcement then return that as well
-        let expr = "PREFIX game: <http://game/ns#>
+        let expr = ~"PREFIX game: <http://game/ns#>
             SELECT
                 ?name ?weight ?announcement
             WHERE
@@ -128,36 +129,32 @@ Here is a usage example:
         // Parse the query expression and return a result with either a function
         // that will run the query against a store or parse error.
         let store = monsters();
-        alt compile(expr)
+        match compile(expr)
         {
-            result::ok(selector)
+            result::Ok(selector) =>
             {
                 // Run the query function against the store. This will either return
                 // a row for each monster that matched the query or an eval error.
-                alt selector(store)
+                match selector(&store)
                 {
-                    result::ok(solution)
+                    result::Ok(ref solution) =>
                     {
                         // This will print:
-                        // 0: [(name, "Lich"), (weight, 3), (announcement, "You feel a chill.")]
-                        // 1: [(name, "Mummy"), (weight, 2)]
-                        // 2: [(name, "Necromancer"), (weight, 2)]
-                        for vec::eachi(solution)
-                        |i, row|
-                        {
-                            io::println(#fmt["%?: %s", i, row.to_str()]);
-                        };
+                        // 0 name: "Lich", weight: 3, announcement: "You feel a chill."
+                        // 1 name: "Mummy", weight: 2, announcement:  unbound
+                        // 2 name: "Necromancer", weight: 2, announcement:  unbound
+                        io::println(fmt!("%s", solution.to_str()));
                     }
-                    result::err(err)
+                    result::Err(ref err) =>
                     {
-                        io::stderr().write_line(#fmt["Eval error: %s", err]);
+                        io::stderr().write_line(fmt!("Eval error: %s", *err));
                     }
                 }
             }
-            result::err(err)
+            result::Err(ref err) =>
             {
-                io::stderr().write_line(#fmt["Parse error: expected %s", err]);
+                io::stderr().write_line(fmt!("Parse error: expected %s", *err));
             }
         }
     }
-    
+        
