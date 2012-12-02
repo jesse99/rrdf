@@ -386,22 +386,22 @@ pub impl Object : cmp::Ord
 {
 	pure fn lt(other: &Object) -> bool
 	{
-		unsafe {self.to_str() < other.to_str()}
+		self.to_str() < other.to_str()
 	}
 	
 	pure fn le(other: &Object) -> bool
 	{
-		unsafe {self.to_str() <= other.to_str()}
+		self.to_str() <= other.to_str()
 	}
 	
 	pure fn ge(other: &Object) -> bool
 	{
-		unsafe {self.to_str() > other.to_str()}
+		self.to_str() > other.to_str()
 	}
 	
 	pure fn gt(other: &Object) -> bool
 	{
-		unsafe {self.to_str() >= other.to_str()}
+		self.to_str() > other.to_str()
 	}
 }
 
@@ -410,12 +410,12 @@ pub impl Object : cmp::Eq
 {
 	pure fn eq(other: &Object) -> bool
 	{
-		unsafe {self.to_str() == other.to_str()}
+		self.to_str() == other.to_str()
 	}
 	
 	pure fn ne(other: &Object) -> bool
 	{
-		unsafe {self.to_str() != other.to_str()}
+		self.to_str() != other.to_str()
 	}
 }
 

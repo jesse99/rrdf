@@ -620,3 +620,101 @@ priv fn eval_algebra(store: &Store, context: &QueryContext, bindings: ~[~str], n
 		}
 	}
 }
+
+// Returns either the solution sorted using exprs or an error message.
+priv fn order_by(context: &QueryContext, solution: &Solution, ordering: &[Expr]) -> result::Result<Solution, ~str>
+{
+	pure fn compare_rows(err_mesg: @mut ~str, ordering: &[Expr], context: &QueryContext, solution: &Solution, row1: &SolutionRow, row2: &SolutionRow) -> bool
+	{
+		pure fn compare_order_values(lhs: &(bool, @Object), rhs: &(bool, @Object)) -> result::Result<int, ~str>
+		{
+			assert lhs.first() == rhs.first();
+			
+			match *lhs
+			{
+				(true, ref x) =>
+				{
+					compare_values(~"<", *x, rhs.second())		// ascending
+				}
+				(false, ref x) =>
+				{
+					compare_values(~"<", rhs.second(), *x)		// descending
+				}
+			}
+		}
+		
+		pure fn eval_order_expr(context: &QueryContext, solution: &Solution, row: &SolutionRow, expr: &Expr) -> (bool, @Object)
+		{
+			match *expr
+			{
+				CallExpr(~"!desc", ref e) => (false, eval_expr(context, solution, row, e[0])),
+				CallExpr(~"!asc", ref e) => (true, eval_expr(context, solution, row, e[0])),
+				_ => (true, eval_expr(context, solution, row, expr)),
+			}
+		}
+		
+		let order1 = vec::map(ordering, |o| {eval_order_expr(context, solution, row1, o)});
+		let order2 = vec::map(ordering, |o| {eval_order_expr(context, solution, row2, o)});
+		let order = vec::map2(order1, order2, |x, y| {compare_order_values(x, y)});
+		let order = do vec::foldl(result::Ok(0), order) |x, y|
+		{
+			match x
+			{
+				result::Ok(0)	=>	copy *y,
+				_			 	=> x,
+			}
+		};
+		match order
+		{
+			result::Ok(x) =>
+			{
+				x < 0
+			}
+			result::Err(copy err) =>
+			{
+				if str::is_empty(*err_mesg)
+				{
+					unsafe {*err_mesg = err;}
+				}
+				false
+			}
+		}
+	}
+	
+	// TODO: once quick_sort is fixed to use inherited mutability we should be able to switch to that
+	let err_mesg = @mut ~"";
+	let rows = std::sort::merge_sort(|x, y| {compare_rows(err_mesg, ordering, context, &*solution, x, y)}, solution.rows);
+	if str::is_empty(*err_mesg)
+	{
+		result::Ok(Solution {rows: rows, ..*solution})
+	}
+	else
+	{
+		result::Err(copy *err_mesg)
+	}
+}
+
+priv fn make_distinct(solution: &Solution) -> Solution
+{
+	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
+	// TODO: once quick_sort is fixed to use inherited mutability we should be able to switch to that
+	let rows = std::sort::merge_sort(|x, y| {x <= y}, solution.rows);
+	
+	let mut result = ~[];
+	vec::reserve(&mut result, rows.len());
+	
+	let mut i = 0;
+	while i < rows.len()
+	{
+		let row = copy rows[i];
+		vec::push(&mut result, copy row);
+		
+		i = i + 1;
+		while i < rows.len() && row == rows[i]
+		{
+			i += 1;
+		}
+	}
+	
+	return Solution {rows: result, ..*solution};
+}

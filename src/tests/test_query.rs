@@ -332,3 +332,53 @@ fn test_group()
 		]};
 	assert check_solution(result::get_ref(&actual), &expected);
 }
+
+#[test]
+fn test_order_by()
+{
+	let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: Group(~[]), order_by: ~[], distinct: false, limit: option::None, rng: rand::Rng(), timestamp: time::now()};
+	let bindings = ~[~"name", ~"nickname"];
+	let mut solution = Solution {namespaces: ~[], bindings: bindings, num_selected: 2, rows: 
+		~[
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"Tiny", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],
+			~[@StringValue(~"Eddark Stark", ~""), @StringValue(~"Ned", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"Dog", ~"")],
+			~[@StringValue(~"Jon Snow", ~""), @StringValue(~"Lord Snow", ~"")],
+		]};
+	let exprs = ~[VariableExpr(~"name"), VariableExpr(~"nickname")];
+	let actual = order_by(&context, &solution, exprs);
+	assert actual.is_ok();
+	let expected = Solution {namespaces: ~[], bindings: bindings, num_selected: 2, rows: 
+		~[
+			~[@StringValue(~"Eddark Stark", ~""), @StringValue(~"Ned", ~"")],
+			~[@StringValue(~"Jon Snow", ~""), @StringValue(~"Lord Snow", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"Dog", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"Tiny", ~"")],
+		]};
+	assert check_solution(result::get_ref(&actual), &expected);
+}
+
+#[test]
+fn test_distinct()
+{
+	let bindings = ~[~"name", ~"nickname"];
+	let solution = Solution {namespaces: ~[], bindings: bindings, num_selected: 2, rows: 
+		~[
+			~[@StringValue(~"Jon Snow", ~""), @StringValue(~"Lord Snow", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"Dog", ~"")],
+			~[@StringValue(~"Jon Snow", ~""), @StringValue(~"Lord Snow", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],
+		]};
+	let expected = Solution {namespaces: ~[], bindings: bindings, num_selected: 2, rows: 
+		~[
+			~[@StringValue(~"Jon Snow", ~""), @StringValue(~"Lord Snow", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"Dog", ~"")],
+			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],
+		]};
+	let actual = make_distinct(&solution);
+	assert check_solution(&actual, &expected);
+}
