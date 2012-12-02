@@ -256,8 +256,10 @@ pub fn join_solutions(store: &Store, group1: &Solution, group2: &Solution, optio
 	info!("   group2 = %s", solution_to_str(store, group2));
 	if vec::is_not_empty(group1.rows) && (vec::is_not_empty(group2.rows) || optional_join)
 	{
-		// TODO: Could speed this up by creating indexes for group2 where the keys are binding name/value and the values are row indexes.
-		// Union would then be the intersection of matching row indexes.
+		// TODO: 
+		// Could speed this up by creating indexes for group2 where the keys are binding name/value and the values are row indexes.
+		// Union would then be the intersection of matching row indexes. Another option would be to use tasks (probably would only
+		// want to do this for big stores).
 		for vec::each(group1.rows) |lhs|
 		{
 			let count = vec::len(result);
