@@ -1,3 +1,6 @@
+// Used to test the individual query functions. These aren't necessarily intended to be
+// exhaustive, they're just a handy way to unit test components. The exhaustive tests
+// are elsewhere, e.g. the test_sparql modules.
 use io::WriterUtil;
 use query::*;
 use test_data::*;
@@ -286,4 +289,46 @@ fn test_bind()
 			~[@IriValue(~"subject2"), @IriValue(~"predicate2"), @StringValue(~"value2", ~""), @StringValue(~"VALUE2", ~"")],
 		]};
 	assert check_solution(&actual, &expected);
+}
+
+#[test]
+fn test_filter()
+{
+	let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: Group(~[]), order_by: ~[], distinct: false, limit: option::None, rng: rand::Rng(), timestamp: time::now()};
+	let bindings = ~[~"subject", ~"predicate", ~"value"];
+	let solution = Solution {namespaces: ~[], bindings: bindings, num_selected: 3, rows: 
+		~[
+			~[@IriValue(~"subject0"), @IriValue(~"predicate0"), @StringValue(~"value0", ~"")],
+			~[@IriValue(~"subject1"), @IriValue(~"predicate1"), @StringValue(~"value1", ~"")],
+			~[@IriValue(~"subject2"), @IriValue(~"predicate2"), @StringValue(~"value2", ~"")],
+		]};
+	
+	let mut actual = copy solution;
+	let expr = CallExpr(~"strends_fn", ~[@VariableExpr(~"value"), @ConstantExpr(StringValue(~"1", ~""))]);
+	let result = filter_solution(&context, &mut actual, &expr);
+	assert result.is_none();
+	let expected = Solution {namespaces: ~[], bindings: bindings, num_selected: 3, rows: 
+		~[
+			~[@IriValue(~"subject1"), @IriValue(~"predicate1"), @StringValue(~"value1", ~"")],
+		]};
+	assert check_solution(&actual, &expected);
+}
+
+// This is starting to get complex so we'll do the bulk of eval_group and eval_algebra testing in test_sparql.rs
+#[test]
+fn test_group()
+{
+	// basic + basic
+	let store = got_cast3();
+	let p1 = @Basic(TriplePattern {subject: Variable(~"subject"), predicate: Constant(@IriValue(~"http://www.w3.org/2006/vcard/ns#nickname")), object: Variable(~"name")});
+	let p2 = @Basic(TriplePattern {subject: Variable(~"subject"), predicate: Constant(@IriValue(~"http://www.w3.org/2006/vcard/ns#honorific-prefix")), object: Variable(~"title")});
+	let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: Group(~[]), order_by: ~[], distinct: false, limit: option::None, rng: rand::Rng(), timestamp: time::now()};
+	let bindings = ~[~"name", ~"title", ~"subject"];
+	let actual = eval_group(&store, &context, copy bindings, 2, &[p1, p2]);
+	assert actual.is_ok();
+	let expected = Solution {namespaces: ~[], bindings: bindings, num_selected: 2, rows: 
+		~[
+			~[@StringValue(~"Ned", ~""), @StringValue(~"Lord", ~""), @IriValue(~"http://awoiaf.westeros.org/index.php/Eddard_Stark")],
+		]};
+	assert check_solution(result::get_ref(&actual), &expected);
 }

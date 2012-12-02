@@ -468,3 +468,155 @@ priv fn bind_solution(context: &QueryContext, solution: &mut Solution, expr: &Ex
 	
 	option::None
 }
+
+// Evaluate expr for each row in the solution. If expr returns false the row is removed.
+// May return an error message.
+priv fn filter_solution(context: &QueryContext, solution: &mut Solution, expr: &Expr) -> option::Option<~str>
+{
+	let mut i = 0;
+	while i < solution.rows.len()
+	{
+		let value = eval_expr(context, &*solution, &solution.rows[i], expr);
+		match get_ebv(value)
+		{
+			result::Ok(true) =>
+			{
+				i += 1;
+			}
+			result::Ok(false) =>
+			{
+				debug!("FILTER rejected %?", solution.rows[i]);
+				solution.rows.swap_remove(i);
+			}
+			result::Err(copy err) =>
+			{
+				return option::Some(err);
+			}
+		}
+	}
+	
+	option::None
+}
+
+// Evaluates an optional term against the store. Returns either the solution rows that matched or an empty solution.
+priv fn eval_optional(store: &Store, context: &QueryContext, bindings: ~[~str], num_selected: uint, term: &Algebra) -> Solution
+{
+	match eval_algebra(store, &QueryContext {algebra: copy *term, ..*context}, copy bindings, num_selected)
+	{
+		result::Ok(move solution) =>
+		{
+			solution
+		}
+		result::Err(_) =>
+		{
+			Solution {namespaces: copy store.namespaces, bindings: copy bindings, num_selected: num_selected, rows: ~[]}
+		}
+	}
+}
+
+// Evaluates the terms against either the store or the current version of the solution. Terms that return new
+// solutions join their solution to the current solution. Returns either a solution or an error message.
+priv fn eval_group(store: &Store, context: &QueryContext, bindings: ~[~str], num_selected: uint, terms: &[@Algebra]) -> result::Result<Solution, ~str>
+{
+	let mut result = Solution {namespaces: copy store.namespaces, bindings: copy bindings, num_selected: num_selected, rows: ~[]};
+	
+	for vec::eachi(terms) |i, term|
+	{
+		info!(" ");
+		match term
+		{
+			&@Filter(ref expr) =>
+			{
+				match filter_solution(context, &mut result, expr)
+				{
+					option::None => info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, &result)),
+					option::Some(copy mesg) => return result::Err(mesg),
+				}
+			}
+			&@Bind(ref expr, ref name) =>
+			{
+				match bind_solution(context, &mut result, expr, copy *name)
+				{
+					option::None => info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, &result)),
+					option::Some(copy mesg) => return result::Err(mesg),
+				}
+			}
+			_ =>
+			{
+				match eval_algebra(store, &QueryContext {algebra: copy **term, ..*context}, copy bindings, num_selected)
+				{
+					result::Ok(move solution) =>
+					{
+						match **term
+						{
+							Optional(_t) =>
+							{
+								if result.rows.is_not_empty()
+								{
+									result = join_solutions(store, &result, &solution, true);
+									info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, &result));
+								}
+							}
+							_ =>
+							{
+								if solution.rows.is_empty()
+								{
+									info!("term%? %s matched nothing", i, algebra_to_str(store, *term));
+									return result::Ok(Solution {rows: ~[], ..result});
+								}
+								else if result.rows.is_not_empty()
+								{
+									result = join_solutions(store, &result, &solution, false);
+									info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, &result));
+								}
+								else if i == 0		// the very first pattern in the group has nothing to join with
+								{
+									result = solution;
+									info!("term%? %s matched %s", i, algebra_to_str(store, *term), solution_to_str(store, &result));
+								}
+							}
+						}
+					}
+					result::Err(copy mesg) =>
+					{
+						return result::Err(mesg);
+					}
+				}
+			}
+		}
+	}
+	
+	return result::Ok(result);
+}
+
+// Evaluates the terms against either the store or the current version of the solution. Terms that return new
+// solutions join their solution to the current solution. Returns either the solution or an error message.
+priv fn eval_algebra(store: &Store, context: &QueryContext, bindings: ~[~str], num_selected: uint) -> result::Result<Solution, ~str>
+{
+	match context.algebra
+	{
+		Basic(ref pattern) =>
+		{
+			result::Ok(eval_basic(store, bindings, num_selected, pattern))
+		}
+		Group(ref terms) =>
+		{
+			eval_group(store, context, bindings, num_selected, *terms)
+		}
+		Optional(term) =>
+		{
+			result::Ok(eval_optional(store, context, bindings, num_selected, term))
+		}
+		Bind(*) =>
+		{
+			result::Err(~"BIND should appear in a pattern group.")
+		}
+		Filter(*) =>
+		{
+			// Not sure what's supposed to happen here. According to GroupGraphPatternSub a
+			// group can contain just a FILTER (should be a no-op?) or a filter and then a triple
+			// pattern (filter position doesn't matter?).
+			result::Err(~"FILTER should appear last in a pattern group.")
+		}
+	}
+}
