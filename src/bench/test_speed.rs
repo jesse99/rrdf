@@ -43,6 +43,8 @@ fn big_store() -> Store
 // Times				State
 // 7.276 7.355 7.414	Before optimization work (but with -O which seems to speed queries up by 35%, note that ---opt-level 3 did not help)
 // 0.887 0.801 0.913	Take advantage of new rust features, mostly more useable managed pointers and inherited mutability
+// 0.841 0.843 0.813	Object comparisons no longer use to_str (don't think that code is used in this test)
+// 0.404 0.400 0.403	op_equals no longer heap allocates the function pointer name
 #[test]
 fn speed()
 {

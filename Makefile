@@ -47,4 +47,4 @@ bin/test-rrdf: src/rrdf.rc src/*.rs src/tests/*.rs
 	$(RUSTC) -g -L bin --test -o $@ $<
 
 bin/test-speed: src/rrdf.rc src/*.rs src/tests/*.rs src/bench/*.rs
-	$(RUSTC) -g -L bin --cfg speed --opt-level=3 --test -o $@ $<
+	$(RUSTC) -g -L bin --cfg speed -O --test -o $@ $<

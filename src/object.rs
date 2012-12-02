@@ -381,41 +381,100 @@ pub impl Object
 	}
 }
 
-// TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
+priv pure fn get_key(o: &Object) -> uint
+{
+	match *o
+	{
+		BoolValue(*) => 1,
+		IntValue(*) => 2,
+		FloatValue(*) => 3,
+		DateTimeValue(*) => 4,
+		StringValue(*) => 5,
+		TypedValue(*) => 6,
+		IriValue(*) => 7,
+		BlankValue(*) => 8,
+		UnboundValue => 9,
+		InvalidValue(*) => 10,
+		ErrorValue(*) => 11,
+	}
+}
+
+priv pure fn lt_(o1: &Object, o2: &Object) -> bool
+{
+	let k1 = get_key(o1);
+	let k2 = get_key(o2);
+	if k1 < k2
+	{
+		true
+	}
+	else if k1 > k2
+	{
+		false
+	}
+	else
+	{
+		match *o1
+		{
+			BoolValue(x1) => match *o2 {BoolValue(x2) => x1 < x2, _ => fail},
+			IntValue(x1) => match *o2 {IntValue(x2) => x1 < x2, _ => fail},
+			FloatValue(x1) => match *o2 {FloatValue(x2) => x1 < x2, _ => fail},
+			DateTimeValue(ref x1) => match *o2
+			{
+				DateTimeValue(ref x2) =>
+				{
+					unsafe
+					{
+						let t1 = x1.to_timespec();
+						let t2 = x2.to_timespec();
+						t1.sec < t2.sec || (t1.sec == t2.sec && t1.nsec < t2.nsec)
+					}
+				}
+				_ => fail,
+			},
+			StringValue(ref x1, ref y1) => match *o2 {StringValue(ref x2, ref y2) => x1 < x2 || (x1 == x2 && y1 < y2), _ => fail},
+			TypedValue(ref x1, ref y1) => match *o2 {TypedValue(ref x2, ref y2) => x1 < x2 || (x1 == x2 && y1 < y2), _ => fail},
+			IriValue(ref x1) => match *o2 {IriValue(ref x2) => x1 < x2, _ => fail},
+			BlankValue(ref x1) => match *o2 {BlankValue(ref x2) => x1 < x2, _ => fail},
+			UnboundValue => match *o2 {UnboundValue => false, _ => fail},
+			InvalidValue(ref x1, ref y1) => match *o2 {InvalidValue(ref x2, ref y2) => x1 < x2 || (x1 == x2 && y1 < y2), _ => fail},
+			ErrorValue(ref x1) => match *o2 {ErrorValue(ref x2) => x1 < x2, _ => fail},
+		}
+	}
+}
+
 pub impl Object : cmp::Ord
 {
 	pure fn lt(other: &Object) -> bool
 	{
-		self.to_str() < other.to_str()
+		lt_(&self, other)
 	}
 	
 	pure fn le(other: &Object) -> bool
 	{
-		self.to_str() <= other.to_str()
-	}
-	
-	pure fn ge(other: &Object) -> bool
-	{
-		self.to_str() > other.to_str()
+		!lt_(other, &self)
 	}
 	
 	pure fn gt(other: &Object) -> bool
 	{
-		self.to_str() > other.to_str()
+		lt_(other, &self)
+	}
+	
+	pure fn ge(other: &Object) -> bool
+	{
+		!lt_(&self, other)
 	}
 }
 
-// TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
 pub impl Object : cmp::Eq
 {
 	pure fn eq(other: &Object) -> bool
 	{
-		self.to_str() == other.to_str()
+		!lt_(&self, other) && !lt_(other, &self)
 	}
 	
 	pure fn ne(other: &Object) -> bool
 	{
-		self.to_str() != other.to_str()
+		lt_(&self, other) || lt_(other, &self)
 	}
 }
 
@@ -655,7 +714,7 @@ pub pure fn get_ebv(operand: &Object) -> result::Result<bool, ~str>
 	}
 }
 
-pub pure fn type_error(fname: ~str, operand: &Object, expected: ~str) -> ~str
+pub pure fn type_error(fname: &str, operand: &Object, expected: ~str) -> ~str
 {
 	match *operand
 	{

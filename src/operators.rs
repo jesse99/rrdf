@@ -2,7 +2,7 @@
 
 // Operators used within SPARQL FILTER expressions. See 17.2 and related.
 
-pub pure fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::Result<bool, ~str>
+pub pure fn equal_values(operator: &str, lhs: &Object, rhs: &Object) -> result::Result<bool, ~str>
 {
 	match *lhs
 	{
@@ -76,7 +76,14 @@ pub pure fn equal_values(operator: ~str, lhs: &Object, rhs: &Object) -> result::
 			{
 				StringValue(ref rvalue, ref rlang) =>
 				{
-					result::Ok(str::to_lower(*llang) == str::to_lower(*rlang) && lvalue == rvalue)
+					if llang.is_empty() && rlang.is_empty()
+					{
+						result::Ok(lvalue == rvalue)
+					}
+					else
+					{
+						result::Ok(str::to_lower(*llang) == str::to_lower(*rlang) && lvalue == rvalue)
+					}
 				}
 				_ =>
 				{
@@ -450,7 +457,7 @@ pub pure fn op_and(lhs: &Object, rhs: &Object) -> Object
 
 pub pure fn op_equals(lhs: &Object, rhs: &Object) -> Object
 {
-	match equal_values(~"=", lhs, rhs)
+	match equal_values(&"=", lhs, rhs)
 	{
 		result::Ok(value) =>
 		{
@@ -465,7 +472,7 @@ pub pure fn op_equals(lhs: &Object, rhs: &Object) -> Object
 
 pub pure fn op_not_equals(lhs: &Object, rhs: &Object) -> Object
 {
-	match equal_values(~"!=", lhs, rhs)
+	match equal_values(&"!=", lhs, rhs)
 	{
 		result::Ok(value) =>
 		{
