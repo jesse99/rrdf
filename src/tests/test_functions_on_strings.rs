@@ -1,5 +1,5 @@
 use functions_on_strings::*;
-use test_helpers::*;
+use tests::test_helpers::*;
 
 #[test]
 fn substr2()

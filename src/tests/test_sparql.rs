@@ -1,4 +1,4 @@
-use test_helpers::*;
+use tests::test_helpers::*;
 
 fn got(s: ~str) -> ~str
 {

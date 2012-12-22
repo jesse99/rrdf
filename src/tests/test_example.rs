@@ -1,6 +1,6 @@
 /// This is the example code we drop into the readme.
 use io::WriterUtil;
-use test_helpers::*;
+use tests::test_helpers::*;
 
 // Creates a triple store and adds monsters to it.
 fn monsters() -> Store

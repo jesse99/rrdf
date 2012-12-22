@@ -89,7 +89,7 @@ pub impl  &Solution : SolutionMethods
 		
 		unsafe
 		{
-			Solution {namespaces: copy self.namespaces, bindings: copy self.bindings, num_selected: self.num_selected, rows: std::sort::merge_sort(solution_row_le, self.rows)}
+			Solution {namespaces: copy self.namespaces, bindings: copy self.bindings, num_selected: self.num_selected, rows: std::sort::merge_sort(self.rows, solution_row_le)}
 		}
 	}
 }
@@ -115,12 +115,12 @@ pub impl  &Solution : ToStr
 
 pub impl Namespace : cmp::Eq
 {
-	pure fn eq(other: &Namespace) -> bool
+	pure fn eq(&self, other: &Namespace) -> bool
 	{
 		self.prefix == other.prefix && self.path == other.path
 	}
 	
-	pure fn ne(other: &Namespace) -> bool
+	pure fn ne(&self, other: &Namespace) -> bool
 	{
 		!self.eq(other)
 	}
@@ -128,12 +128,12 @@ pub impl Namespace : cmp::Eq
 
 pub impl Solution : cmp::Eq
 {
-	pure fn eq(other: &Solution) -> bool
+	pure fn eq(&self, other: &Solution) -> bool
 	{
 		self.namespaces == other.namespaces && self.rows == other.rows
 	}
 	
-	pure fn ne(other: &Solution) -> bool
+	pure fn ne(&self, other: &Solution) -> bool
 	{
 		!self.eq(other)
 	}

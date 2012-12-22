@@ -41,8 +41,8 @@ pub fn check_bgp(store: &Store, groups: &[Solution], expected: &Solution) -> boo
 		actual = join_solutions(&store, &actual, group, false);
 	}
 	
-	let actual_rows = std::sort::merge_sort(|x, y| {x <= y}, actual.rows);
-	let expected_rows = std::sort::merge_sort(|x, y| {x <= y}, expected.rows);
+	let actual_rows = std::sort::merge_sort(actual.rows, |x, y| {x <= y});
+	let expected_rows = std::sort::merge_sort(expected.rows, |x, y| {x <= y});
 	
 	if actual_rows.len() != expected_rows.len()
 	{
@@ -78,8 +78,8 @@ pub fn check_triples(actual: &[Triple], expected: &[Triple]) -> bool
 		};
 	}
 	
-	let actual = std::sort::merge_sort(|x, y| {x.subject <= y.subject}, actual);
-	let expected = std::sort::merge_sort(|x, y| {x.subject <= y.subject}, expected);
+	let actual = std::sort::merge_sort(actual, |x, y| {x.subject <= y.subject});
+	let expected = std::sort::merge_sort(expected, |x, y| {x.subject <= y.subject});
 	
 	if actual.len() != expected.len()
 	{
@@ -163,8 +163,8 @@ pub fn check_solution(actual: &Solution, expected: &Solution) -> bool
 	// Both sides should have the same number of rows.
 	if actual.rows.len() != expected.rows.len()
 	{
-		print_failure(#fmt["Actual result had %? rows but expected %? rows.", 
-			actual.rows.len(), expected.rows.len()], &actual, expected);
+		print_failure(fmt!("Actual result had %? rows but expected %? rows.", 
+			actual.rows.len(), expected.rows.len()), &actual, expected);
 		return false;
 	}
 	
@@ -175,14 +175,14 @@ pub fn check_solution(actual: &Solution, expected: &Solution) -> bool
 		let row2 = &expected.rows[i];
 		if row1.len() < actual.num_selected
 		{
-			print_failure(#fmt["Actual row %? had size %? but num_selected is %?.",
-				i, row1.len(), actual.num_selected], &actual, expected);
+			print_failure(fmt!("Actual row %? had size %? but num_selected is %?.",
+				i, row1.len(), actual.num_selected), &actual, expected);
 			return false;
 		}
 		if row2.len() < expected.num_selected
 		{
-			print_failure(#fmt["Expected row %? had size %? but num_selected is %?.",
-				i, row2.len(), expected.num_selected], &actual, expected);
+			print_failure(fmt!("Expected row %? had size %? but num_selected is %?.",
+				i, row2.len(), expected.num_selected), &actual, expected);
 			return false;
 		}
 		
@@ -190,8 +190,8 @@ pub fn check_solution(actual: &Solution, expected: &Solution) -> bool
 		let row2 = row2.slice(0, expected.num_selected);
 		if row1.len() != row2.len()
 		{
-			print_failure(#fmt["Row %? had size %? but expected %?.",
-				i, row1.len(), row2.len()], &actual, expected);
+			print_failure(fmt!("Row %? had size %? but expected %?.",
+				i, row1.len(), row2.len()), &actual, expected);
 			return false;
 		}
 		
@@ -202,8 +202,8 @@ pub fn check_solution(actual: &Solution, expected: &Solution) -> bool
 			let value2 = row2[i];
 			if value1 != value2
 			{
-				print_failure(#fmt["Row %? actual %s was %s but expected %s.",
-					i, name1, value1.to_str(), value2.to_str()], &actual, expected);
+				print_failure(fmt!("Row %? actual %s was %s but expected %s.",
+					i, name1, value1.to_str(), value2.to_str()), &actual, expected);
 				return false;
 			}
 		};

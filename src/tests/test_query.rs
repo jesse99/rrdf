@@ -3,8 +3,8 @@
 // are elsewhere, e.g. the test_sparql modules.
 use io::WriterUtil;
 use query::*;
-use test_data::*;
-use test_helpers::*;
+use tests::test_data::*;
+use tests::test_helpers::*;
 
 pub fn check_str_array(actual: &[~str], expected: &[~str]) -> bool
 {
@@ -250,7 +250,7 @@ fn test_bind()
 {
 	let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: Group(~[]), order_by: ~[], distinct: false, limit: option::None, rng: rand::Rng(), timestamp: time::now()};
 	let bindings = ~[~"subject", ~"predicate", ~"value", ~"x"];
-	let solution = Solution {namespaces: ~[], bindings: bindings, num_selected: 3, rows: 
+	let solution = Solution {namespaces: ~[], bindings: copy bindings, num_selected: 3, rows: 
 		~[
 			~[@IriValue(~"subject0"), @IriValue(~"predicate0"), @StringValue(~"value0", ~""), @UnboundValue],
 			~[@IriValue(~"subject1"), @IriValue(~"predicate1"), @StringValue(~"value1", ~""), @UnboundValue],
@@ -262,7 +262,7 @@ fn test_bind()
 	let expr = ConstantExpr(IntValue(42));
 	let result = bind_solution(&context, &mut actual, &expr, ~"x");
 	assert result.is_none();
-	let expected = Solution {namespaces: ~[], bindings: bindings, num_selected: 3, rows: 
+	let expected = Solution {namespaces: ~[], bindings: copy bindings, num_selected: 3, rows: 
 		~[
 			~[@IriValue(~"subject0"), @IriValue(~"predicate0"), @StringValue(~"value0", ~""), @IntValue(42)],
 			~[@IriValue(~"subject1"), @IriValue(~"predicate1"), @StringValue(~"value1", ~""), @IntValue(42)],
@@ -275,7 +275,7 @@ fn test_bind()
 	let expr = VariableExpr(~"predicate");
 	let result = bind_solution(&context, &mut actual, &expr, ~"x");
 	assert result.is_none();
-	let expected = Solution {namespaces: ~[], bindings: bindings, num_selected: 3, rows: 
+	let expected = Solution {namespaces: ~[], bindings: copy bindings, num_selected: 3, rows: 
 		~[
 			~[@IriValue(~"subject0"), @IriValue(~"predicate0"), @StringValue(~"value0", ~""), @IriValue(~"predicate0")],
 			~[@IriValue(~"subject1"), @IriValue(~"predicate1"), @StringValue(~"value1", ~""), @IriValue(~"predicate1")],
@@ -302,7 +302,7 @@ fn test_filter()
 {
 	let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: Group(~[]), order_by: ~[], distinct: false, limit: option::None, rng: rand::Rng(), timestamp: time::now()};
 	let bindings = ~[~"subject", ~"predicate", ~"value"];
-	let solution = Solution {namespaces: ~[], bindings: bindings, num_selected: 3, rows: 
+	let solution = Solution {namespaces: ~[], bindings: copy bindings, num_selected: 3, rows: 
 		~[
 			~[@IriValue(~"subject0"), @IriValue(~"predicate0"), @StringValue(~"value0", ~"")],
 			~[@IriValue(~"subject1"), @IriValue(~"predicate1"), @StringValue(~"value1", ~"")],
@@ -344,7 +344,7 @@ fn test_order_by()
 {
 	let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: Group(~[]), order_by: ~[], distinct: false, limit: option::None, rng: rand::Rng(), timestamp: time::now()};
 	let bindings = ~[~"name", ~"nickname"];
-	let mut solution = Solution {namespaces: ~[], bindings: bindings, num_selected: 2, rows: 
+	let mut solution = Solution {namespaces: ~[], bindings: copy bindings, num_selected: 2, rows: 
 		~[
 			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"Tiny", ~"")],
 			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],
@@ -370,7 +370,7 @@ fn test_order_by()
 fn test_distinct()
 {
 	let bindings = ~[~"name", ~"nickname"];
-	let solution = Solution {namespaces: ~[], bindings: bindings, num_selected: 2, rows: 
+	let solution = Solution {namespaces: ~[], bindings: copy bindings, num_selected: 2, rows: 
 		~[
 			~[@StringValue(~"Jon Snow", ~""), @StringValue(~"Lord Snow", ~"")],
 			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],

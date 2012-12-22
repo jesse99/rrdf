@@ -1,5 +1,5 @@
 //! Resource Description Language (RDF) library
-#[link(name = "rrdf", vers = "0.2", uuid = "04400014-FB9C-44DD-B5DD-A49BE5613BD7")];
+#[link(name = "rrdf", vers = "0.3", uuid = "04400014-FB9C-44DD-B5DD-A49BE5613BD7")];
 #[crate_type = "lib"];
 
 #[author = "Jesse Jones"];
@@ -24,7 +24,6 @@ pub mod functions_on_terms;
 pub mod object;
 pub mod operators;
 pub mod query;
-pub mod rrdf;
 pub mod solution;
 pub mod sparql;
 pub mod store;
@@ -51,3 +50,13 @@ mod bench
 {
 	mod test_speed;
 }
+
+use core::dvec::*;
+use std::map::*;
+use Option = option::Option;
+
+pub use store::*;
+pub use solution::*;
+pub use object::*;
+pub use sparql::*;
+pub use query::*;

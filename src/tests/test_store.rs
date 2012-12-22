@@ -1,6 +1,6 @@
 use io::WriterUtil;
-use test_data::*;
-use test_helpers::*;
+use tests::test_data::*;
+use tests::test_helpers::*;
 
 #[test]
 fn to_strs()

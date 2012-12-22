@@ -1,4 +1,4 @@
-use test_helpers::*;
+use tests::test_helpers::*;
 
 #[test]
 fn invalid_values()

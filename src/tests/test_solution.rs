@@ -1,5 +1,5 @@
-use test_data::*;
-use test_helpers::*;
+use tests::test_data::*;
+use tests::test_helpers::*;
 
 #[test]
 fn solution_to_str()

@@ -1,5 +1,5 @@
 use operators::*;
-use test_helpers::*;
+use tests::test_helpers::*;
 
 // Also tests get_ebv.
 #[test]

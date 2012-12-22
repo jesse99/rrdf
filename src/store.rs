@@ -25,12 +25,12 @@ pub type Entry = {predicate: ~str, object: @Object};
 // TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
 pub impl Entry : cmp::Eq
 {
-	pure fn eq(other: &Entry) -> bool
+	pure fn eq(&self, other: &Entry) -> bool
 	{
 		self.predicate == other.predicate && self.object == other.object
 	}
 	
-	pure fn ne(other: &Entry) -> bool
+	pure fn ne(&self, other: &Entry) -> bool
 	{
 		!self.eq(other)
 	}
@@ -89,7 +89,7 @@ pub pure fn contract_uri(namespaces: &[Namespace], iri: &str) -> ~str
 		}
 		option::None =>
 		{
-			iri.to_unique()
+			iri.to_owned()
 		}
 	}
 }
@@ -198,7 +198,7 @@ pub impl  &Store : StoreTrait
 	fn add_aggregate(subject: &str, predicate: &str, label: &str, entries: &[(~str, @Object)]) -> ~str
 	{
 		let blank = get_blank_name(self, label);
-		self.add_triple(~[], {subject: subject.to_unique(), predicate: predicate.to_unique(), object: @BlankValue(blank.to_unique())});
+		self.add_triple(~[], {subject: subject.to_owned(), predicate: predicate.to_owned(), object: @BlankValue(blank.to_owned())});
 		self.add(blank, entries);
 		return blank;
 	}
@@ -216,9 +216,9 @@ pub impl  &Store : StoreTrait
 	fn add_container(subject: &str, kind: &str, values: &[@Object])
 	{
 		let blank = get_blank_name(self, after(subject, ':') + "-items");
-		self.add_triple(~[], {subject: subject.to_unique(), predicate: kind.to_unique(), object: @BlankValue(blank.to_unique())});
+		self.add_triple(~[], {subject: subject.to_owned(), predicate: kind.to_owned(), object: @BlankValue(blank.to_owned())});
 		
-		let predicates = do iter::map_to_vec(&vec::len(values)) |i: uint| {fmt!("http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", i+1u)};
+		let predicates = do iter::map_to_vec(&vec::len(values)) |i: &uint| {fmt!("http://www.w3.org/1999/02/22-rdf-syntax-ns#_%?", *i+1u)};
 		self.add(blank, vec::zip(predicates, vec::from_slice(values)));
 	}
 	
@@ -226,7 +226,7 @@ pub impl  &Store : StoreTrait
 	{
 		let prefix = after(predicate, ':');
 		let mut blank = get_blank_name(self, prefix);
-		self.add_triple(~[], {subject: subject.to_unique(), predicate: predicate.to_unique(), object: @BlankValue(blank.to_unique())});
+		self.add_triple(~[], {subject: subject.to_owned(), predicate: predicate.to_owned(), object: @BlankValue(blank.to_owned())});
 		for vec::each(values) |value|
 		{
 			let next = get_blank_name(self, prefix);
@@ -241,8 +241,8 @@ pub impl  &Store : StoreTrait
 	{
 		let mut blank = get_blank_name(self, after(predicate, ':'));
 		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#type", object: @IriValue(~"http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement")});
-		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#subject", object: @IriValue(subject.to_unique())});
-		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate", object: @IriValue(predicate.to_unique())});
+		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#subject", object: @IriValue(subject.to_owned())});
+		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate", object: @IriValue(predicate.to_owned())});
 		self.add_triple(~[], {subject: copy blank, predicate: ~"http://www.w3.org/1999/02/22-rdf-syntax-ns#object", object: value});
 	}
 	
@@ -375,7 +375,7 @@ pub impl &Store : ToStr
 pub impl Store : BaseIter<Triple>
 {
 	/// Calls the blk for each triple in the store (in an undefined order).
-	pure fn each(blk: fn(v: &Triple) -> bool)
+	pure fn each(&self, blk: fn(v: &Triple) -> bool)
 	{
 		unsafe		// TODO: remove once bug 3372 is fixed
 		{
@@ -393,7 +393,7 @@ pub impl Store : BaseIter<Triple>
 		}
 	}
 	
-	pure fn size_hint() -> Option<uint>
+	pure fn size_hint(&self) -> Option<uint>
 	{
 		unsafe
 		{
@@ -433,14 +433,14 @@ priv fn expand_uri(namespaces: &[Namespace], name: &str) -> ~str
 			return namespace.path + str::slice(name, str::len(namespace.prefix) + 1u, str::len(name));
 		}
 	};
-	return name.to_unique();
+	return name.to_owned();
 }
 
 priv fn expand_uri_or_blank(namespaces: &[Namespace], name: &str) -> ~str
 {
 	if str::starts_with(name, "_:")
 	{
-		name.to_unique()
+		name.to_owned()
 	}
 	else
 	{
@@ -490,7 +490,7 @@ priv fn make_triple_str(store: &Store, subject: &str, predicate: &str, value: &s
 	{
 		subject: expand_uri_or_blank(store.namespaces, subject), 
 		predicate: expand_uri(store.namespaces, predicate), 
-		object: @StringValue(value.to_unique(), ~"")
+		object: @StringValue(value.to_owned(), ~"")
 	}
 }
 
@@ -505,10 +505,10 @@ priv fn make_triple_uri(store: &Store, subject: &str, predicate: &str, value: &s
 
 impl uint : BaseIter<uint>
 {
-	pure fn each(blk: fn(v: &uint) -> bool)
+	pure fn each(&self, blk: fn(v: &uint) -> bool)
 	{
 		let mut i = 0u;
-		while i < self
+		while i < *self
 		{
 			if (!blk(&i))
 			{
@@ -518,9 +518,9 @@ impl uint : BaseIter<uint>
 		}
 	}
 	
-	pure fn size_hint() -> Option<uint>
+	pure fn size_hint(&self) -> Option<uint>
 	{
-		option::Some(self)
+		option::Some(*self)
 	}
 }
 
@@ -534,7 +534,7 @@ priv fn after(text: &str, ch: char) -> ~str
 		}
 		option::None =>
 		{
-			text.to_unique()
+			text.to_owned()
 		}
 	}
 }

@@ -131,7 +131,7 @@ priv fn expand(namespaces: &[Namespace], algebra: &Algebra) -> Algebra
 
 priv fn find_dupes(names: &[~str]) -> ~[~str]
 {
-	let names = std::sort::merge_sort(|x, y| {*x <= *y}, names);	// TODO: probably dont want to de-reference the pointers
+	let names = std::sort::merge_sort(names, |x, y| {*x <= *y});	// TODO: probably dont want to de-reference the pointers
 	
 	let mut dupes = ~[];
 	
@@ -553,8 +553,8 @@ priv fn built_in_call(Expression: Parser<expression::Expr>, Var: Parser<@~str>) 
 	let ternary = seq7("(".lit().ws(), Expression, ",".lit().ws(), Expression, ",".lit().ws(), Expression, ")".lit().ws(), |_a0, a1, _a2, a3, _a4, a5, _a6| {result::Ok(~[a1, a3, a5])});
 	let variadic: Parser<@~[expression::Expr]> = seq3_ret1("(".lit().ws(), Expression.list(",".lit().ws()), ")".lit().ws());
 	
-	macro_rules! unary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), unary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@copy a]))}) })
-	macro_rules! binary_fn (($name: expr) => { let n = $name.to_unique(); seq2(n.liti().ws(), binary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@copy a[0], @copy a[1]]))}) })
+	macro_rules! unary_fn (($name: expr) => ({let n = $name.to_owned(); seq2(n.liti().ws(), unary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@copy a]))})}))
+	macro_rules! binary_fn (($name: expr) => ({let n = $name.to_owned(); seq2(n.liti().ws(), binary, |_f, a| {result::Ok(expression::CallExpr(n + ~"_fn", ~[@copy a[0], @copy a[1]]))})}))
 	
 	// [111] BuiltInCall ::= 
 	or_v(@~[

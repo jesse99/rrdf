@@ -207,7 +207,7 @@ pub pure fn strbefore_fn(arg1: &Object, arg2: &Object) -> Object
 		{
 			option::Some(i) =>
 			{
-				StringValue(str::slice(value1, 0u, i), lang1.to_unique())
+				StringValue(str::slice(value1, 0u, i), lang1.to_owned())
 			}
 			option::None =>
 			{
@@ -226,7 +226,7 @@ pub pure fn strafter_fn(arg1: &Object, arg2: &Object) -> Object
 		{
 			option::Some(i) =>
 			{
-				StringValue(str::slice(value1, i + str::len(value2), str::len(value1)), lang1.to_unique())
+				StringValue(str::slice(value1, i + str::len(value2), str::len(value1)), lang1.to_owned())
 			}
 			option::None =>
 			{

@@ -291,7 +291,7 @@ pub fn join_solutions(store: &Store, group1: &Solution, group2: &Solution, optio
 		info!("   empty result");
 	}
 	
-	return Solution {namespaces: copy store.namespaces, bindings: group1.bindings, num_selected: group1.num_selected, rows: result};
+	return Solution {namespaces: copy store.namespaces, bindings: copy group1.bindings, num_selected: group1.num_selected, rows: result};
 }
 
 // Attempts to match a pattern to an IRI or blank subject.
@@ -306,11 +306,11 @@ priv fn match_subject(solution: &Solution, actual: &str, pattern: &Pattern, row:
 			
 			row[i.get()] = if actual.starts_with("_:")
 				{
-					@BlankValue(actual.to_unique())
+					@BlankValue(actual.to_owned())
 				}
 				else
 				{
-					@IriValue(actual.to_unique())
+					@IriValue(actual.to_owned())
 				};
 			true
 		}
@@ -343,7 +343,7 @@ priv fn match_predicate(solution: &Solution, actual: &str, pattern: &Pattern, ro
 			{
 				@UnboundValue =>
 				{
-					row[i.get()] = @IriValue(actual.to_unique());
+					row[i.get()] = @IriValue(actual.to_owned());
 					result::Ok(true)
 				}
 				_ =>
@@ -421,7 +421,7 @@ priv fn iterate_matches(store: &Store, solution: &Solution, spattern: &Pattern, 
 			if option::is_some(&candidate)
 			{
 				info!("--- matched subject %?", subject);
-				let entries = option::get(&candidate);
+				let entries = option::get(candidate);
 				if !invoke(solution, *subject, spattern, entries, callback)
 				{
 					return;
@@ -726,7 +726,7 @@ priv fn order_by(context: &QueryContext, solution: &Solution, ordering: &[Expr])
 	
 	// TODO: once quick_sort is fixed to use inherited mutability we should be able to switch to that
 	let err_mesg = @mut ~"";
-	let rows = std::sort::merge_sort(|x, y| {compare_rows(err_mesg, ordering, context, &*solution, x, y)}, solution.rows);
+	let rows = std::sort::merge_sort(solution.rows, |x, y| {compare_rows(err_mesg, ordering, context, &*solution, x, y)});
 	if str::is_empty(*err_mesg)
 	{
 		result::Ok(Solution {rows: rows, ..*solution})
@@ -753,7 +753,7 @@ priv fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
 	
 	// TODO: Could skip this, but only if the user uses ORDER BY for every variable in the result.
 	// TODO: once quick_sort is fixed to use inherited mutability we should be able to switch to that
-	let rows = std::sort::merge_sort(|x, y| {x <= y}, solution.rows);
+	let rows = std::sort::merge_sort(solution.rows, |x, y| {x <= y});
 	
 	let mut result = ~[];
 	vec::reserve(&mut result, rows.len());

@@ -444,37 +444,37 @@ priv pure fn lt_(o1: &Object, o2: &Object) -> bool
 
 pub impl Object : cmp::Ord
 {
-	pure fn lt(other: &Object) -> bool
+	pure fn lt(&self, other: &Object) -> bool
 	{
-		lt_(&self, other)
+		lt_(self, other)
 	}
 	
-	pure fn le(other: &Object) -> bool
+	pure fn le(&self, other: &Object) -> bool
 	{
-		!lt_(other, &self)
+		!lt_(other, self)
 	}
 	
-	pure fn gt(other: &Object) -> bool
+	pure fn gt(&self, other: &Object) -> bool
 	{
-		lt_(other, &self)
+		lt_(other, self)
 	}
 	
-	pure fn ge(other: &Object) -> bool
+	pure fn ge(&self, other: &Object) -> bool
 	{
-		!lt_(&self, other)
+		!lt_(self, other)
 	}
 }
 
 pub impl Object : cmp::Eq
 {
-	pure fn eq(other: &Object) -> bool
+	pure fn eq(&self, other: &Object) -> bool
 	{
-		!lt_(&self, other) && !lt_(other, &self)
+		!lt_(self, other) && !lt_(other, self)
 	}
 	
-	pure fn ne(other: &Object) -> bool
+	pure fn ne(&self, other: &Object) -> bool
 	{
-		lt_(&self, other) || lt_(other, &self)
+		lt_(self, other) || lt_(other, self)
 	}
 }
 
@@ -537,7 +537,7 @@ pub impl  Object : ToStr
 /// Note that it is usually simplest to simply use the object enum directly.
 pub fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
 {
-	match (value.to_unique(), kind.to_unique(), lang.to_unique())	// TODO: https://github.com/mozilla/rust/issues/3574
+	match (value.to_owned(), kind.to_owned(), lang.to_owned())	// TODO: https://github.com/mozilla/rust/issues/3574
 	{
 		(copy v, ~"blank", ~"") =>
 		{
@@ -566,7 +566,7 @@ pub fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
 			}
 			else
 			{
-				InvalidValue(copy *v, kind.to_unique())
+				InvalidValue(copy *v, kind.to_owned())
 			}
 		}
 		(ref v, ~"http://www.w3.org/2001/XMLSchema#dateTime", ~"") =>
@@ -625,7 +625,7 @@ pub fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
 					}
 					else
 					{
-						InvalidValue(v.to_unique(), kind.to_unique())
+						InvalidValue(v.to_owned(), kind.to_owned())
 					}
 				}
 			}
@@ -647,7 +647,7 @@ pub fn literal_to_object(value: &str, kind: &str, lang: &str) -> Object
 					}
 					else
 					{
-						InvalidValue(v.to_unique(), kind.to_unique())
+						InvalidValue(v.to_owned(), kind.to_owned())
 					}
 				}
 			}
