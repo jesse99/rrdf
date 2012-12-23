@@ -295,13 +295,13 @@ pub fn join_solutions(store: &Store, group1: &Solution, group2: &Solution, optio
 }
 
 // Attempts to match a pattern to an IRI or blank subject.
-priv fn match_subject(solution: &Solution, actual: &str, pattern: &Pattern, row: &mut SolutionRow) -> bool
+priv fn match_subject(bindings: &[~str], actual: &str, pattern: &Pattern, row: &mut SolutionRow) -> bool
 {
 	match *pattern
 	{
 		Variable(ref name) =>
 		{
-			let i = solution.bindings.position_elem(name);
+			let i = bindings.position_elem(name);
 			assert row[i.get()].is_unbound();					// subject is always the first thing matched so this should always be true
 			
 			row[i.get()] = if actual.starts_with("_:")
@@ -332,13 +332,13 @@ priv fn match_subject(solution: &Solution, actual: &str, pattern: &Pattern, row:
 }
 
 // Attempts to match a pattern to an IRI predicate.
-priv fn match_predicate(solution: &Solution, actual: &str, pattern: &Pattern, row: &mut SolutionRow) -> result::Result<bool, ~str>
+priv fn match_predicate(bindings: &[~str], actual: &str, pattern: &Pattern, row: &mut SolutionRow) -> result::Result<bool, ~str>
 {
 	match *pattern
 	{
 		Variable(ref name) =>
 		{
-			let i = solution.bindings.position_elem(name);
+			let i = bindings.position_elem(name);
 			match row[i.get()]
 			{
 				@UnboundValue =>
@@ -394,14 +394,14 @@ priv fn match_object(solution: &Solution, actual: @Object, pattern: &Pattern, ro
 }
 
 // Iterates over all the statements where the subject matches spattern and calls callback for each one.
-priv fn iterate_matches(store: &Store, solution: &Solution, spattern: &Pattern, callback: fn (SolutionRow, &Entry) -> bool)
+priv fn iterate_matches(store: &Store, bindings: &[~str], spattern: &Pattern, callback: fn (SolutionRow, &Entry) -> bool)
 {
-	fn invoke(solution: &Solution, subject: &str, pattern: &Pattern, entries: @DVec<Entry>, callback: fn (SolutionRow, &Entry) -> bool) -> bool
+	fn invoke(bindings: &[~str], subject: &str, pattern: &Pattern, entries: @DVec<Entry>, callback: fn (SolutionRow, &Entry) -> bool) -> bool
 	{
 		for entries.each() |entry|
 		{
-			let mut row = vec::from_elem(solution.bindings.len(), @UnboundValue);
-			if match_subject(solution, subject, pattern, &mut row)
+			let mut row = vec::from_elem(bindings.len(), @UnboundValue);
+			if match_subject(bindings, subject, pattern, &mut row)
 			{
 				if !callback(move row, entry)
 				{
@@ -422,7 +422,7 @@ priv fn iterate_matches(store: &Store, solution: &Solution, spattern: &Pattern, 
 			{
 				info!("--- matched subject %?", subject);
 				let entries = option::get(candidate);
-				if !invoke(solution, *subject, spattern, entries, callback)
+				if !invoke(bindings, *subject, spattern, entries, callback)
 				{
 					return;
 				}
@@ -433,7 +433,7 @@ priv fn iterate_matches(store: &Store, solution: &Solution, spattern: &Pattern, 
 			for store.subjects.each() |subject, entries|
 			{
 				debug!("--- trying subject %?", subject);
-				if !invoke(solution, *subject, spattern, entries, callback)
+				if !invoke(bindings, *subject, spattern, entries, callback)
 				{
 					return;
 				}
@@ -445,12 +445,12 @@ priv fn iterate_matches(store: &Store, solution: &Solution, spattern: &Pattern, 
 // Returns all the subjects that match the TriplePattern.
 pub fn eval_basic(store: &Store,  bindings: ~[~str], num_selected: uint, matcher: &TriplePattern) -> result::Result<Solution, ~str>
 {
-	let mut solution = Solution {namespaces: copy store.namespaces, bindings: move bindings, num_selected: num_selected, rows: ~[]};
+	let mut solution = Solution {namespaces: copy store.namespaces, bindings: copy bindings, num_selected: num_selected, rows: ~[]};
 	
-	for iterate_matches(store, &solution, &matcher.subject) |r, entry|
+	for iterate_matches(store, bindings, &matcher.subject) |r, entry|
 	{
 		let mut row = move r;		// need the move to shut the borrow checker up
-		let result = match_predicate(&solution, entry.predicate, &matcher.predicate, &mut row);
+		let result = match_predicate(bindings, entry.predicate, &matcher.predicate, &mut row);
 		if result.is_ok() && result.get()
 		{
 			let result = match_object(&solution, entry.object, &matcher.object, &mut row);
