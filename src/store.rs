@@ -20,21 +20,8 @@ pub type Predicate = ~str;
 pub type Triple = {subject: Subject, predicate: Predicate, object: @Object};
 
 /// Predicate and object associated with a subject.
+#[deriving_eq]
 pub type Entry = {predicate: ~str, object: @Object};
-
-// TODO: This is hopefully temporary: at some point rust should again be able to compare enums without assistence.
-pub impl Entry : cmp::Eq
-{
-	pure fn eq(&self, other: &Entry) -> bool
-	{
-		self.predicate == other.predicate && self.object == other.object
-	}
-	
-	pure fn ne(&self, other: &Entry) -> bool
-	{
-		!self.eq(other)
-	}
-}
 
 /// SPARQL extension function.
 pub type ExtensionFn = pure fn@ (namespaces: &[Namespace], args: &[@Object]) -> @Object;

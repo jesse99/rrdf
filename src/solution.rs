@@ -3,6 +3,7 @@
 /// Name of a namespace plus the IRI it expands to.
 ///
 /// This is a sendable type.
+#[deriving_eq]
 pub struct Namespace {prefix: ~str, path: ~str}
 
 /// Result of matching a triple with a SPARQL query.
@@ -14,6 +15,7 @@ pub type SolutionRow = ~[@Object];
 /// will match the order in the SELECT clause. To allow for faster query execution
 /// there may be more bindings than those listed in the SELECT clause. Note that 
 /// this is a sendable type.
+#[deriving_eq]
 pub struct Solution
 {
 	pub namespaces: ~[Namespace],
@@ -110,31 +112,5 @@ pub impl  &Solution : ToStr
 		}
 		
 		result
-	}
-}
-
-pub impl Namespace : cmp::Eq
-{
-	pure fn eq(&self, other: &Namespace) -> bool
-	{
-		self.prefix == other.prefix && self.path == other.path
-	}
-	
-	pure fn ne(&self, other: &Namespace) -> bool
-	{
-		!self.eq(other)
-	}
-}
-
-pub impl Solution : cmp::Eq
-{
-	pure fn eq(&self, other: &Solution) -> bool
-	{
-		self.namespaces == other.namespaces && self.rows == other.rows
-	}
-	
-	pure fn ne(&self, other: &Solution) -> bool
-	{
-		!self.eq(other)
 	}
 }
