@@ -27,6 +27,7 @@ pub mod query;
 pub mod solution;
 pub mod sparql;
 pub mod store;
+mod bug4260;
 
 #[cfg(test)]
 mod tests

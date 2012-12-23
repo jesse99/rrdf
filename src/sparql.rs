@@ -4,11 +4,13 @@ use std::time;
 
 use rparse::{identifier, decimal_number, octal_number, hex_number, float_number, char_literal, string_literal, comment, line_comment};
 use rparse::{ParseStatus, ParseFailed, anycp, CharParsers, 
-	match0, match1, match1_0, scan, seq2_ret_str, seq3_ret_str, seq4_ret_str, seq5_ret_str, StringParsers,
-	fails, forward_ref, or_v, ret, seq2, seq3, seq4, seq5, seq6, seq7, seq8, seq9, seq2_ret0, seq2_ret1, seq3_ret0, seq3_ret1, seq3_ret2, seq4_ret0, 
-	seq4_ret1, seq4_ret2, seq4_ret3, GenericParsers, Combinators, optional_str};
+	match0, match1, StringParsers,
+	fails, forward_ref, GenericParsers, Combinators, optional_str};
 use rparse::{EOT, is_alpha, is_digit, is_alphanum, is_print, is_whitespace};
 use rparse::{Parser, State, Status, Succeeded, Failed};
+
+use bug4260::{seq2_ret_str, seq3_ret_str, seq4_ret_str, seq5_ret_str, seq2, seq3, seq4, seq5, seq6, seq7, seq8, seq9, seq2_ret0, seq2_ret1, 
+	seq3_ret0, seq3_ret1, seq3_ret2, seq4_ret0, seq4_ret1, seq4_ret2, seq4_ret3, scan, or_v, ret, Combinators2};
 
 priv fn bool_literal(value: &str) -> Pattern
 {
@@ -162,7 +164,7 @@ priv pure fn is_langtag_suffix(ch: char) -> bool
 	return is_langtag_prefix(ch) || char::is_digit(ch);
 }
 
-priv fn langtag() -> Parser<@~str>
+priv fn langtag() -> Parser<@~str> 
 {
 	let at = "@".lit();												// '@'
 	let prefix = match1(is_langtag_prefix);						// [a-zA-Z]+
@@ -1088,7 +1090,7 @@ priv fn make_parser() -> Parser<Selector>
 		|p, s| {build_parser(*p, s)};
 	
 	// [1] QueryUnit ::= Query
-	let QueryUnit = Query.everything(ret(0).ws());
+	let QueryUnit = Query.everything2(ret(0).ws());
 	
 	return QueryUnit;
 }
@@ -1134,8 +1136,7 @@ priv fn build_parser(namespaces: &[Namespace], query: ((bool, ~[Pattern]), Algeb
 pub fn compile(expr: &str) -> result::Result<Selector, ~str>
 {
 	let parser = make_parser();
-	do result::chain_err(parser.parse(@~"sparql", expr))
-	|err|
+	do result::chain_err(parser.parse(@~"sparql", expr)) |err|
 	{
 		result::Err(fmt!("%s on line %? col %?", *err.mesg, err.line, err.col))
 	}
