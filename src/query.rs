@@ -563,7 +563,7 @@ priv fn eval_group(store: &Store, context: &QueryContext, bindings: ~[~str], num
 {
 	let mut result = Solution {namespaces: copy store.namespaces, bindings: copy bindings, num_selected: num_selected, rows: ~[]};
 	
-	let i = 0;
+	let mut i = 0;
 	while i < terms.len()			// we don't use vec::eachi to work around the borrow checker
 	{
 		let term = &terms[i];
@@ -629,6 +629,7 @@ priv fn eval_group(store: &Store, context: &QueryContext, bindings: ~[~str], num
 				}
 			}
 		}
+		i += 1;
 	}
 	
 	return result::Ok(result);
