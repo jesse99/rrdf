@@ -563,8 +563,12 @@ priv fn eval_group(store: &Store, context: &QueryContext, bindings: ~[~str], num
 {
 	let mut result = Solution {namespaces: copy store.namespaces, bindings: copy bindings, num_selected: num_selected, rows: ~[]};
 	
-	for vec::eachi(terms) |i, term|
+	let i = 0;
+	while i < terms.len()
 	{
+		let term = &terms[i];
+//	for vec::eachi(terms) |i, term|
+//	{
 		info!(" ");
 		match term
 		{
