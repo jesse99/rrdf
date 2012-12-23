@@ -1,6 +1,3 @@
-//use io::WriterUtil;
-//use test_data::*;
-//use test_helpers::*;
 use std::time;
 
 fn big_store() -> Store
@@ -45,6 +42,7 @@ fn big_store() -> Store
 // 0.887 0.801 0.913	Take advantage of new rust features, mostly more useable managed pointers and inherited mutability
 // 0.841 0.843 0.813	Object comparisons no longer use to_str (don't think that code is used in this test)
 // 0.404 0.400 0.403	op_equals no longer heap allocates the function pointer name
+// 0.377 0.389 0.384	With rust 0.5
 #[test]
 fn speed()
 {
