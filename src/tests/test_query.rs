@@ -353,7 +353,7 @@ fn test_order_by()
 			~[@StringValue(~"Jon Snow", ~""), @StringValue(~"Lord Snow", ~"")],
 		]};
 	let exprs = ~[VariableExpr(~"name"), VariableExpr(~"nickname")];
-	let actual = order_by(&context, &solution, exprs);
+	let actual = order_by(&context, solution, exprs);
 	assert actual.is_ok();
 	let expected = Solution {namespaces: ~[], bindings: bindings, num_selected: 2, rows: 
 		~[
@@ -385,6 +385,6 @@ fn test_distinct()
 			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"Dog", ~"")],
 			~[@StringValue(~"Sandor Clegane", ~""), @StringValue(~"The Hound", ~"")],
 		]};
-	let actual = make_distinct(&solution);
+	let actual = make_distinct(solution);
 	assert check_solution(result::get_ref(&actual), &expected);
 }

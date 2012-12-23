@@ -564,11 +564,9 @@ priv fn eval_group(store: &Store, context: &QueryContext, bindings: ~[~str], num
 	let mut result = Solution {namespaces: copy store.namespaces, bindings: copy bindings, num_selected: num_selected, rows: ~[]};
 	
 	let i = 0;
-	while i < terms.len()
+	while i < terms.len()			// we don't use vec::eachi to work around the borrow checker
 	{
 		let term = &terms[i];
-//	for vec::eachi(terms) |i, term|
-//	{
 		info!(" ");
 		match term
 		{
@@ -669,7 +667,7 @@ priv fn eval_algebra(store: &Store, context: &QueryContext, bindings: ~[~str], n
 }
 
 // Returns either the solution sorted using exprs or an error message.
-priv fn order_by(context: &QueryContext, solution: &Solution, ordering: &[Expr]) -> result::Result<Solution, ~str>
+priv fn order_by(context: &QueryContext, solution: Solution, ordering: &[Expr]) -> result::Result<Solution, ~str>
 {
 	pure fn compare_rows(err_mesg: @mut ~str, ordering: &[Expr], context: &QueryContext, solution: &Solution, row1: &SolutionRow, row2: &SolutionRow) -> bool
 	{
@@ -730,10 +728,10 @@ priv fn order_by(context: &QueryContext, solution: &Solution, ordering: &[Expr])
 	
 	// TODO: once quick_sort is fixed to use inherited mutability we should be able to switch to that
 	let err_mesg = @mut ~"";
-	let rows = std::sort::merge_sort(solution.rows, |x, y| {compare_rows(err_mesg, ordering, context, &*solution, x, y)});
+	let rows = std::sort::merge_sort(solution.rows, |x, y| {compare_rows(err_mesg, ordering, context, &solution, x, y)});
 	if str::is_empty(*err_mesg)
 	{
-		result::Ok(Solution {rows: rows, ..*solution})
+		result::Ok(Solution {rows: rows, ..solution})
 	}
 	else
 	{
@@ -741,7 +739,7 @@ priv fn order_by(context: &QueryContext, solution: &Solution, ordering: &[Expr])
 	}
 }
 
-priv fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
+priv fn make_distinct(solution: Solution) -> result::Result<Solution, ~str>
 {
 	pure fn equal_rows(solution: &Solution, row1: &SolutionRow, row2: &SolutionRow) -> bool
 	{
@@ -769,13 +767,13 @@ priv fn make_distinct(solution: &Solution) -> result::Result<Solution, ~str>
 		vec::push(&mut result, copy row);
 		
 		i = i + 1;
-		while i < rows.len() && equal_rows(solution, &row, &rows[i])
+		while i < rows.len() && equal_rows(&solution, &row, &rows[i])
 		{
 			i += 1;
 		}
 	}
 	
-	return result::Ok(Solution {rows: result, ..*solution});
+	return result::Ok(Solution {rows: result, ..solution});
 }
 
 // Creates a closure which will evaulate the terms in context against a store passed into the closure.
@@ -796,15 +794,15 @@ pub fn eval(names: &[~str], context: &QueryContext) -> Selector
 	|store: &Store, move bindings|
 	{
 		info!("algebra: %s", algebra_to_str(store, &context.algebra));
-		let context = QueryContext {namespaces: store.namespaces, extensions: store.extensions, ..context};
+		let context = QueryContext {namespaces: copy store.namespaces, extensions: store.extensions, ..copy context};
 		do eval_algebra(store, &context, copy bindings, num_selected).chain() |solution|
 		{
 			// Optionally remove duplicates.
-			do result::chain(if context.distinct {make_distinct(&solution)} else {result::Ok(move solution)})
+			do result::chain(if context.distinct {make_distinct(solution)} else {result::Ok(move solution)})
 			|solution|
 			{
 				// Optionally sort the solution.
-				do result::chain(if vec::is_not_empty(context.order_by) {order_by(&context, &solution, context.order_by)} else {result::Ok(move solution)})
+				do result::chain(if vec::is_not_empty(context.order_by) {order_by(&context, solution, context.order_by)} else {result::Ok(move solution)})
 				|solution|
 				{
 					match context.limit

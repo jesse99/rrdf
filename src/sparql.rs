@@ -447,7 +447,7 @@ priv fn pn_chars_or_dot_or_plx(chars: @[char], index: uint) -> uint
 	}
 }
 
-priv fn ws<T: Copy Owned>(parser: Parser<T>) -> Parser<T>
+priv fn ws<T: Copy Durable>(parser: Parser<T>) -> Parser<T>
 {
 	|input: State|
 	{
@@ -495,12 +495,12 @@ priv fn ws<T: Copy Owned>(parser: Parser<T>) -> Parser<T>
 	}
 }
 
-trait MyParserTrait<T: Copy Owned>
+trait MyParserTrait<T: Copy Durable>
 {
 	fn ws() -> Parser<T>;
 }
 
-impl<T: Copy Owned> Parser<T> : MyParserTrait<T>
+impl<T: Copy Durable> Parser<T> : MyParserTrait<T>
 {
 	fn ws() -> Parser<T>
 	{
@@ -1113,12 +1113,12 @@ priv fn build_parser(namespaces: &[Namespace], query: ((bool, ~[Pattern]), Algeb
 		// eval will set namespaces and extensions
 		if vec::is_not_empty(namespaces)
 		{
-			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: expand(namespaces, &algebra), order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: expand(namespaces, &algebra), order_by: copy *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
 			result::Ok(eval(names, &context))
 		}
 		else
 		{
-			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: algebra, order_by: *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
+			let context = QueryContext {namespaces: ~[], extensions: HashMap(), algebra: algebra, order_by: copy *order_by, distinct: distinct, limit: modifiers.limit, rng: rand::Rng(), timestamp: time::now()};
 			result::Ok(eval(names, &context))
 		}
 	}
